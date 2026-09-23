@@ -1,0 +1,74 @@
+version: "3.9"
+
+# FlowETL Development Database Stack
+#
+# Services:
+#   mysql    — MySQL 8.0 on port 3306   (database: hospital_db)
+#   postgres — PostgreSQL 16 on port 5432 (database: hospital_dw)
+#
+# Usage:
+#   docker compose up -d          # start both services
+#   docker compose ps             # check health status
+#   docker compose down -v        # stop and remove volumes
+#
+# Credentials match .env.example defaults. Override via environment variables.
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: flowetl_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-flowetl_root}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-hospital_db}
+      MYSQL_USER: ${MYSQL_USER:-flowetl}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-flowetl_pass}
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "root",
+          "-p${MYSQL_ROOT_PASSWORD:-flowetl_root}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  postgres:
+    image: postgres:16
+    container_name: flowetl_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${PG_DATABASE:-hospital_dw}
+      POSTGRES_USER: ${PG_USER:-flowetl}
+      POSTGRES_PASSWORD: ${PG_PASSWORD:-flowetl_pass}
+    ports:
+      - "${PG_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${PG_USER:-flowetl} -d ${PG_DATABASE:-hospital_dw}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+volumes:
+  mysql_data:
+    driver: local
+  postgres_data:
+    driver: local

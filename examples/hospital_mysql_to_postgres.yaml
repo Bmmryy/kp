@@ -1,0 +1,40 @@
+name: hospital_mysql_to_postgresql
+description: "Migrate hospital patient records from MySQL to PostgreSQL warehouse"
+
+source:
+  type: mysql
+  connection: hospital_mysql
+  table: patients
+  query: "SELECT patient_id, name, age, diagnosis, admission_date FROM patients"
+  options:
+    chunk_size: 1000
+
+transformations:
+  - type: select_columns
+    params:
+      columns:
+        - patient_id
+        - name
+        - age
+        - diagnosis
+        - admission_date
+
+  - type: rename
+    params:
+      mapping:
+        name: patient_name
+
+  - type: cast
+    params:
+      column: age
+      data_type: integer
+
+  - type: filter
+    params:
+      condition: "age >= 18"
+
+destination:
+  type: postgresql
+  connection: hospital_postgres
+  table: patients
+  mode: append

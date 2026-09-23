@@ -1,0 +1,9 @@
+Patient_ID,Patient_Name,Age,Gender,Blood_Type,Medical_Condition,Date_of_Admission,Doctor,Hospital,Billing_Amount
+101,Alice Wonderland,29,Female,O+,Migraine,2026-01-10,Dr. Gregory House,Princeton Plainsboro,1250.50
+102,Bob Marley,45,Male,A+,Hypertension,2026-02-14,Dr. Meredith Grey,Seattle Grace,3400.00
+103,Charlie Chaplin,15,Male,B-,Tonsillitis,2026-03-01,Dr. John Watson,St. Bartholomew,850.00
+104,Diana Prince,34,Female,AB+,Diabetes,2026-03-12,Dr. Leonard McCoy,Starfleet Medical,4120.75
+105,Edward Scissorhands,12,Male,O-,Allergy,2026-04-05,Dr. Stephen Strange,Metro General,600.00
+106,Fiona Gallagher,52,Female,A-,Arthritis,2026-04-18,Dr. Shaun Murphy,San Jose St. Bonaventure,2150.25
+107,George Clark,68,Male,O+,Heart Disease,2026-05-02,Dr. Gregory House,Princeton Plainsboro,8900.00
+108,Hannah Abbott,24,Female,B+,Asthma,2026-05-15,Dr. John Watson,St. Bartholomew,1100.00

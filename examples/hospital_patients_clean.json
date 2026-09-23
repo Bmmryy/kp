@@ -1,0 +1,56 @@
+[
+  {
+    "patient_id": 101,
+    "full_name": "Alice Wonderland",
+    "patient_age": 29,
+    "gender": "Female",
+    "diagnosis": "Migraine",
+    "billing_amount": 1250.5,
+    "attending_physician": "Dr. Gregory House"
+  },
+  {
+    "patient_id": 102,
+    "full_name": "Bob Marley",
+    "patient_age": 45,
+    "gender": "Male",
+    "diagnosis": "Hypertension",
+    "billing_amount": 3400,
+    "attending_physician": "Dr. Meredith Grey"
+  },
+  {
+    "patient_id": 104,
+    "full_name": "Diana Prince",
+    "patient_age": 34,
+    "gender": "Female",
+    "diagnosis": "Diabetes",
+    "billing_amount": 4120.75,
+    "attending_physician": "Dr. Leonard McCoy"
+  },
+  {
+    "patient_id": 106,
+    "full_name": "Fiona Gallagher",
+    "patient_age": 52,
+    "gender": "Female",
+    "diagnosis": "Arthritis",
+    "billing_amount": 2150.25,
+    "attending_physician": "Dr. Shaun Murphy"
+  },
+  {
+    "patient_id": 107,
+    "full_name": "George Clark",
+    "patient_age": 68,
+    "gender": "Male",
+    "diagnosis": "Heart Disease",
+    "billing_amount": 8900,
+    "attending_physician": "Dr. Gregory House"
+  },
+  {
+    "patient_id": 108,
+    "full_name": "Hannah Abbott",
+    "patient_age": 24,
+    "gender": "Female",
+    "diagnosis": "Asthma",
+    "billing_amount": 1100,
+    "attending_physician": "Dr. John Watson"
+  }
+]
