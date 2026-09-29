@@ -2,13 +2,14 @@
 from __future__ import annotations
 
 import asyncio
+from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
-from server.pipeline_runner import runner
+from server.pipeline_runner import runner, RunStatus
 
 router = APIRouter(prefix="/api", tags=["pipelines"])
 
@@ -78,19 +79,41 @@ async def stream_progress(run_id: str) -> StreamingResponse:
         raise HTTPException(status_code=404, detail=f"Run ID '{run_id}' tidak ditemukan.")
 
     async def event_generator():
+        import json
+
+        # Jika pipeline sudah selesai sebelum stream tersambung
+        if run.status in (RunStatus.SUCCESS, RunStatus.ERROR):
+            for line in run.log_lines:
+                yield f"event: progress\ndata: {json.dumps({'log': line, 'percent': 100 if run.status == RunStatus.SUCCESS else 0, 'step': 'DONE', 'message': line})}\n\n"
+            done_payload = {
+                "status": run.status.value,
+                "metrics": run.metrics,
+                "error": run.error_message,
+            }
+            yield f"event: done\ndata: {json.dumps(done_payload)}\n\n"
+            yield "event: close\ndata: done\n\n"
+            return
+
         # Kirim log yang sudah ada dulu (jika reconnect)
         for line in run.log_lines:
-            yield f"data: {line}\n\n"
+            yield f"event: progress\ndata: {json.dumps({'log': line, 'percent': 50, 'step': 'RUNNING', 'message': line})}\n\n"
 
-        # Streaming events baru
+        # Streaming events baru dari queue
         queue = run._event_queue
         if queue is None:
             return
 
-        import json
         while True:
             event = await queue.get()
             if event is None:  # sentinel — stream selesai
+                # Kirim status akhir jika belum terkirim
+                if run.status in (RunStatus.SUCCESS, RunStatus.ERROR):
+                    done_payload = {
+                        "status": run.status.value,
+                        "metrics": run.metrics,
+                        "error": run.error_message,
+                    }
+                    yield f"event: done\ndata: {json.dumps(done_payload)}\n\n"
                 yield "event: close\ndata: done\n\n"
                 break
             yield f"event: {event['type']}\ndata: {json.dumps(event)}\n\n"
@@ -103,3 +126,95 @@ async def stream_progress(run_id: str) -> StreamingResponse:
             "X-Accel-Buffering": "no",
         },
     )
+
+
+# ---------------------------------------------------------------------------
+# File Download & Management Endpoints
+# ---------------------------------------------------------------------------
+
+from pathlib import Path
+from fastapi.responses import FileResponse
+
+DATA_DIR = Path("data")
+
+
+@router.get("/files")
+def list_exported_files() -> List[Dict[str, Any]]:
+    """Daftar semua file hasil export di direktori data/."""
+    files_list = []
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+    # Check data/ folder and output/ folder
+    search_dirs = [DATA_DIR, Path("output"), Path(".")]
+    seen = set()
+
+    for directory in search_dirs:
+        if not directory.exists():
+            continue
+        for p in directory.glob("*.*"):
+            if p.suffix.lower() in (".csv", ".json", ".jsonl", ".sqlite", ".db") and p.name not in seen:
+                if p.name.startswith("."):
+                    continue
+                seen.add(p.name)
+                stat = p.stat()
+                files_list.append({
+                    "name": p.name,
+                    "path": str(p),
+                    "size_bytes": stat.st_size,
+                    "size_formatted": f"{stat.st_size / 1024:.1f} KB" if stat.st_size >= 1024 else f"{stat.st_size} B",
+                    "modified": datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S"),
+                    "download_url": f"/api/files/download?path={p}",
+                })
+
+    files_list.sort(key=lambda x: x["modified"], reverse=True)
+    return files_list
+
+
+@router.get("/files/download")
+def download_file(path: str) -> FileResponse:
+    """Download file hasil export."""
+    target_path = Path(path).resolve()
+    base_dir = Path(".").resolve()
+
+    # Prevent path traversal outside project workspace
+    try:
+        target_path.relative_to(base_dir)
+    except ValueError:
+        raise HTTPException(status_code=403, detail="Akses ditolak.")
+
+    if not target_path.exists() or not target_path.is_file():
+        raise HTTPException(status_code=404, detail=f"File '{path}' tidak ditemukan.")
+
+    return FileResponse(
+        path=str(target_path),
+        filename=target_path.name,
+        media_type="application/octet-stream",
+    )
+
+
+@router.post("/database/install-sql")
+def install_hospital_sql() -> Dict[str, Any]:
+    """Install / re-import Hospital_Management_System.sql secara otomatis."""
+    import subprocess
+    sql_path = Path("/tmp/hospital_v3.sql")
+    if not sql_path.exists():
+        sql_path = Path("/Users/ghn/.gemini/antigravity/brain/1c06a422-44e4-4627-b23e-92f843b079bf/scratch/hospital_mysql.sql")
+
+    if not sql_path.exists():
+        raise HTTPException(status_code=404, detail="File SQL konversi tidak ditemukan.")
+
+    cmd = ["mysql", "-u", "root", "--force"]
+    with open(sql_path, "r", encoding="utf-8") as f:
+        res = subprocess.run(cmd, stdin=f, capture_output=True, text=True, timeout=120)
+
+    # Get row counts
+    count_cmd = ["mysql", "-u", "root", "HospitalManagementSystem", "-e", "SHOW TABLES;"]
+    verify = subprocess.run(count_cmd, capture_output=True, text=True, timeout=10)
+    tables = [l for l in verify.stdout.split("\n") if l and "Tables_in" not in l]
+
+    return {
+        "status": "success",
+        "message": f"Database HospitalManagementSystem berhasil di-install! Total {len(tables)} tabel siap digunakan.",
+        "tables": tables,
+    }
+

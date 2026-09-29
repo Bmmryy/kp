@@ -38,6 +38,7 @@ class PipelineRun:
     pipeline_name: str
     source_type: str
     destination_type: str
+    destination_options: Dict[str, Any] = field(default_factory=dict)
     status: RunStatus = RunStatus.PENDING
     started_at: Optional[datetime] = None
     finished_at: Optional[datetime] = None
@@ -55,11 +56,17 @@ class PipelineRun:
             self._loop.call_soon_threadsafe(self._event_queue.put_nowait, payload)
 
     def to_dict(self) -> Dict[str, Any]:
+        output_file = None
+        if self.destination_type in ("csv", "json", "jsonl", "sqlite"):
+            output_file = self.destination_options.get("path") or self.destination_options.get("database")
+
         return {
             "run_id": self.run_id,
             "pipeline_name": self.pipeline_name,
             "source_type": self.source_type,
             "destination_type": self.destination_type,
+            "destination_options": self.destination_options,
+            "output_file": output_file,
             "status": self.status.value,
             "started_at": self.started_at.isoformat() if self.started_at else None,
             "finished_at": self.finished_at.isoformat() if self.finished_at else None,
@@ -124,6 +131,7 @@ class PipelineRunnerService:
             pipeline_name=pipeline_name,
             source_type=source_type,
             destination_type=destination_type,
+            destination_options=destination_options,
         )
         run._loop = loop
         run._event_queue = asyncio.Queue()
@@ -183,8 +191,8 @@ class PipelineRunnerService:
             destination = ConnectorRegistry.create_destination(dst_cfg)
 
             # Determine table names (optional in options; connector handles defaults)
-            source_table = source_options.get("table_name", "")
-            destination_table = destination_options.get("table_name", source_table or "etl_output")
+            source_table = source_options.get("table_name") or source_options.get("table") or ""
+            destination_table = destination_options.get("table_name") or destination_options.get("table") or source_table or "etl_output"
 
             pipeline = Pipeline(
                 name=run.pipeline_name,

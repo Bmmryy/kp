@@ -1,0 +1,374 @@
+[
+  {
+    "dept_Id": 101,
+    "dept_Name": "Cardiology"
+  },
+  {
+    "dept_Id": 102,
+    "dept_Name": "Neurology"
+  },
+  {
+    "dept_Id": 103,
+    "dept_Name": "Gastroenterology"
+  },
+  {
+    "dept_Id": 104,
+    "dept_Name": "Nephrology"
+  },
+  {
+    "dept_Id": 105,
+    "dept_Name": "Pulmonology"
+  },
+  {
+    "dept_Id": 106,
+    "dept_Name": "Endocrinology"
+  },
+  {
+    "dept_Id": 107,
+    "dept_Name": "General Medicine"
+  },
+  {
+    "dept_Id": 108,
+    "dept_Name": "Pediatrics"
+  },
+  {
+    "dept_Id": 109,
+    "dept_Name": "Orthopedics"
+  },
+  {
+    "dept_Id": 110,
+    "dept_Name": "Gynecology"
+  },
+  {
+    "dept_Id": 111,
+    "dept_Name": "Dentistry"
+  },
+  {
+    "dept_Id": 112,
+    "dept_Name": "Dermatology"
+  },
+  {
+    "dept_Id": 113,
+    "dept_Name": "Psychiatry"
+  },
+  {
+    "dept_Id": 114,
+    "dept_Name": "Psychology"
+  },
+  {
+    "dept_Id": 115,
+    "dept_Name": "Urology"
+  },
+  {
+    "dept_Id": 116,
+    "dept_Name": "ENT"
+  },
+  {
+    "dept_Id": 117,
+    "dept_Name": "Surgery"
+  },
+  {
+    "dept_Id": 118,
+    "dept_Name": "Radiology"
+  },
+  {
+    "dept_Id": 119,
+    "dept_Name": "Oncology"
+  },
+  {
+    "dept_Id": 120,
+    "dept_Name": "Anesthesiology"
+  },
+  {
+    "dept_Id": 121,
+    "dept_Name": "Emergency Medicine"
+  },
+  {
+    "dept_Id": 122,
+    "dept_Name": "Nutrition & Dietetics"
+  },
+  {
+    "dept_Id": 123,
+    "dept_Name": "Rehabilitation"
+  },
+  {
+    "dept_Id": 124,
+    "dept_Name": "Hematology"
+  },
+  {
+    "dept_Id": 125,
+    "dept_Name": "Immunology"
+  },
+  {
+    "dept_Id": 126,
+    "dept_Name": "Audiology & Speech"
+  },
+  {
+    "dept_Id": 127,
+    "dept_Name": "Homeopathy"
+  },
+  {
+    "dept_Id": 128,
+    "dept_Name": "Sexology"
+  },
+  {
+    "dept_Id": 129,
+    "dept_Name": "Family Medicine"
+  },
+  {
+    "dept_Id": 130,
+    "dept_Name": "Critical Care"
+  },
+  {
+    "dept_Id": 131,
+    "dept_Name": "Geriatrics"
+  },
+  {
+    "dept_Id": 101,
+    "dept_Name": "Cardiology"
+  },
+  {
+    "dept_Id": 102,
+    "dept_Name": "Neurology"
+  },
+  {
+    "dept_Id": 103,
+    "dept_Name": "Gastroenterology"
+  },
+  {
+    "dept_Id": 104,
+    "dept_Name": "Nephrology"
+  },
+  {
+    "dept_Id": 105,
+    "dept_Name": "Pulmonology"
+  },
+  {
+    "dept_Id": 106,
+    "dept_Name": "Endocrinology"
+  },
+  {
+    "dept_Id": 107,
+    "dept_Name": "General Medicine"
+  },
+  {
+    "dept_Id": 108,
+    "dept_Name": "Pediatrics"
+  },
+  {
+    "dept_Id": 109,
+    "dept_Name": "Orthopedics"
+  },
+  {
+    "dept_Id": 110,
+    "dept_Name": "Gynecology"
+  },
+  {
+    "dept_Id": 111,
+    "dept_Name": "Dentistry"
+  },
+  {
+    "dept_Id": 112,
+    "dept_Name": "Dermatology"
+  },
+  {
+    "dept_Id": 113,
+    "dept_Name": "Psychiatry"
+  },
+  {
+    "dept_Id": 114,
+    "dept_Name": "Psychology"
+  },
+  {
+    "dept_Id": 115,
+    "dept_Name": "Urology"
+  },
+  {
+    "dept_Id": 116,
+    "dept_Name": "ENT"
+  },
+  {
+    "dept_Id": 117,
+    "dept_Name": "Surgery"
+  },
+  {
+    "dept_Id": 118,
+    "dept_Name": "Radiology"
+  },
+  {
+    "dept_Id": 119,
+    "dept_Name": "Oncology"
+  },
+  {
+    "dept_Id": 120,
+    "dept_Name": "Anesthesiology"
+  },
+  {
+    "dept_Id": 121,
+    "dept_Name": "Emergency Medicine"
+  },
+  {
+    "dept_Id": 122,
+    "dept_Name": "Nutrition & Dietetics"
+  },
+  {
+    "dept_Id": 123,
+    "dept_Name": "Rehabilitation"
+  },
+  {
+    "dept_Id": 124,
+    "dept_Name": "Hematology"
+  },
+  {
+    "dept_Id": 125,
+    "dept_Name": "Immunology"
+  },
+  {
+    "dept_Id": 126,
+    "dept_Name": "Audiology & Speech"
+  },
+  {
+    "dept_Id": 127,
+    "dept_Name": "Homeopathy"
+  },
+  {
+    "dept_Id": 128,
+    "dept_Name": "Sexology"
+  },
+  {
+    "dept_Id": 129,
+    "dept_Name": "Family Medicine"
+  },
+  {
+    "dept_Id": 130,
+    "dept_Name": "Critical Care"
+  },
+  {
+    "dept_Id": 131,
+    "dept_Name": "Geriatrics"
+  },
+  {
+    "dept_Id": 101,
+    "dept_Name": "Cardiology"
+  },
+  {
+    "dept_Id": 102,
+    "dept_Name": "Neurology"
+  },
+  {
+    "dept_Id": 103,
+    "dept_Name": "Gastroenterology"
+  },
+  {
+    "dept_Id": 104,
+    "dept_Name": "Nephrology"
+  },
+  {
+    "dept_Id": 105,
+    "dept_Name": "Pulmonology"
+  },
+  {
+    "dept_Id": 106,
+    "dept_Name": "Endocrinology"
+  },
+  {
+    "dept_Id": 107,
+    "dept_Name": "General Medicine"
+  },
+  {
+    "dept_Id": 108,
+    "dept_Name": "Pediatrics"
+  },
+  {
+    "dept_Id": 109,
+    "dept_Name": "Orthopedics"
+  },
+  {
+    "dept_Id": 110,
+    "dept_Name": "Gynecology"
+  },
+  {
+    "dept_Id": 111,
+    "dept_Name": "Dentistry"
+  },
+  {
+    "dept_Id": 112,
+    "dept_Name": "Dermatology"
+  },
+  {
+    "dept_Id": 113,
+    "dept_Name": "Psychiatry"
+  },
+  {
+    "dept_Id": 114,
+    "dept_Name": "Psychology"
+  },
+  {
+    "dept_Id": 115,
+    "dept_Name": "Urology"
+  },
+  {
+    "dept_Id": 116,
+    "dept_Name": "ENT"
+  },
+  {
+    "dept_Id": 117,
+    "dept_Name": "Surgery"
+  },
+  {
+    "dept_Id": 118,
+    "dept_Name": "Radiology"
+  },
+  {
+    "dept_Id": 119,
+    "dept_Name": "Oncology"
+  },
+  {
+    "dept_Id": 120,
+    "dept_Name": "Anesthesiology"
+  },
+  {
+    "dept_Id": 121,
+    "dept_Name": "Emergency Medicine"
+  },
+  {
+    "dept_Id": 122,
+    "dept_Name": "Nutrition & Dietetics"
+  },
+  {
+    "dept_Id": 123,
+    "dept_Name": "Rehabilitation"
+  },
+  {
+    "dept_Id": 124,
+    "dept_Name": "Hematology"
+  },
+  {
+    "dept_Id": 125,
+    "dept_Name": "Immunology"
+  },
+  {
+    "dept_Id": 126,
+    "dept_Name": "Audiology & Speech"
+  },
+  {
+    "dept_Id": 127,
+    "dept_Name": "Homeopathy"
+  },
+  {
+    "dept_Id": 128,
+    "dept_Name": "Sexology"
+  },
+  {
+    "dept_Id": 129,
+    "dept_Name": "Family Medicine"
+  },
+  {
+    "dept_Id": 130,
+    "dept_Name": "Critical Care"
+  },
+  {
+    "dept_Id": 131,
+    "dept_Name": "Geriatrics"
+  }
+]

@@ -19,6 +19,15 @@ app = FastAPI(
     redoc_url="/api/redoc",
 )
 
+@app.middleware("http")
+async def no_cache_middleware(request, call_next):
+    response = await call_next(request)
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
+
+
 # Static files (CSS, JS)
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 
@@ -29,9 +38,25 @@ app.include_router(pipeline_router)
 @app.get("/", response_class=HTMLResponse)
 async def index() -> FileResponse:
     """Serve the single-page application shell."""
-    return FileResponse(str(BASE_DIR / "templates" / "index.html"))
+    return FileResponse(
+        str(BASE_DIR / "templates" / "index.html"),
+        headers={
+            "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0",
+            "Pragma": "no-cache",
+            "Expires": "0",
+        },
+    )
 
 
 @app.get("/health")
 def health() -> dict:
     return {"status": "ok", "app": "FlowETL"}
+
+
+from server.api.pipelines import stream_progress
+
+@app.get("/stream/{run_id}")
+async def root_stream(run_id: str):
+    """Direct alias for /api/stream/{run_id}."""
+    return await stream_progress(run_id)
+

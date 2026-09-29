@@ -3,8 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>FlowETL — Visual Data Integration</title>
-  <link rel="stylesheet" href="/static/app.css">
+  <link rel="stylesheet" href="/static/app.css?v=20260928_hig2">
 </head>
 <body>
 
@@ -16,10 +19,15 @@
   <aside class="sidebar">
     <div class="sidebar-logo">
       <a class="logo-mark" href="#">
-        <div class="logo-icon">🔄</div>
+        <div class="logo-icon">
+          <!-- Apple Style Geometric Flow SF Symbol -->
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.19"/>
+          </svg>
+        </div>
         <div>
           <div class="logo-name">FlowETL</div>
-          <div class="logo-tagline">Data Integration Platform</div>
+          <div class="logo-tagline">Data Integration</div>
         </div>
       </a>
     </div>
@@ -27,25 +35,71 @@
     <nav class="sidebar-nav">
       <div class="nav-section-label">Menu</div>
 
-      <button class="nav-item" data-view="dashboard">
-        <span class="nav-icon">📊</span>
+      <button class="nav-item active" data-view="dashboard">
+        <span class="nav-icon">
+          <!-- square.grid.2x2 -->
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7" rx="2"></rect>
+            <rect x="14" y="3" width="7" height="7" rx="2"></rect>
+            <rect x="14" y="14" width="7" height="7" rx="2"></rect>
+            <rect x="3" y="14" width="7" height="7" rx="2"></rect>
+          </svg>
+        </span>
         <span>Dashboard</span>
       </button>
 
       <button class="nav-item" data-view="builder">
-        <span class="nav-icon">⚡</span>
+        <span class="nav-icon">
+          <!-- slider.horizontal.3 / flowchart -->
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="4" y1="21" x2="4" y2="14"></line>
+            <line x1="4" y1="10" x2="4" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="12"></line>
+            <line x1="12" y1="8" x2="12" y2="3"></line>
+            <line x1="20" y1="21" x2="20" y2="16"></line>
+            <line x1="20" y1="12" x2="20" y2="3"></line>
+            <line x1="1" y1="14" x2="7" y2="14"></line>
+            <line x1="9" y1="8" x2="15" y2="8"></line>
+            <line x1="17" y1="16" x2="23" y2="16"></line>
+          </svg>
+        </span>
         <span>Pipeline Builder</span>
       </button>
 
       <button class="nav-item" data-view="history">
-        <span class="nav-icon">📋</span>
+        <span class="nav-icon">
+          <!-- clock.arrow.circlepath -->
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+        </span>
         <span>History</span>
       </button>
 
-      <div class="nav-section-label" style="margin-top:12px">Resources</div>
+      <button class="nav-item" data-view="files">
+        <span class="nav-icon">
+          <!-- arrow.down.doc -->
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="12" y1="18" x2="12" y2="12"></line>
+            <polyline points="9 15 12 18 15 15"></polyline>
+          </svg>
+        </span>
+        <span>File Data (Unduh)</span>
+      </button>
+
+      <div class="nav-section-label" style="margin-top:10px">Resources</div>
 
       <a class="nav-item" href="/api/docs" target="_blank">
-        <span class="nav-icon">📖</span>
+        <span class="nav-icon">
+          <!-- book.closed / doc.text -->
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+          </svg>
+        </span>
         <span>API Docs</span>
       </a>
     </nav>
@@ -53,7 +107,7 @@
     <div class="sidebar-footer">
       <div class="status-badge">
         <div class="status-dot"></div>
-        <span>Server berjalan</span>
+        <span>Server Aktif</span>
       </div>
     </div>
   </aside>
@@ -66,7 +120,11 @@
       <span id="topbar-title" class="topbar-title">Dashboard</span>
       <div class="topbar-actions">
         <button class="btn btn-primary btn-sm" onclick="showView('builder')">
-          + Pipeline Baru
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          Pipeline Baru
         </button>
       </div>
     </header>
@@ -77,93 +135,259 @@
       <!-- ===================================================== -->
       <!-- VIEW: DASHBOARD                                        -->
       <!-- ===================================================== -->
-      <div id="view-dashboard" class="view">
+      <div id="view-dashboard" class="view active">
 
         <div class="section-header">
           <h1 class="section-title">Selamat datang di FlowETL</h1>
         </div>
 
-        <!-- Stats Grid -->
+        <!-- Stats Grid (Apple HIG Widgets) -->
         <div class="stats-grid">
+
+          <!-- Stat 1: Total Pipeline -->
           <div class="stat-card">
-            <div class="stat-icon">🔄</div>
-            <div class="stat-label">Total Pipeline Run</div>
+            <div class="stat-header">
+              <div class="stat-label">Total Pipeline</div>
+              <div class="stat-icon-badge blue">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="23 4 23 10 17 10"></polyline>
+                  <polyline points="1 20 1 14 7 14"></polyline>
+                  <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                </svg>
+              </div>
+            </div>
             <div class="stat-value" id="stat-total">0</div>
             <div class="stat-sub">Sejak server dimulai</div>
           </div>
+
+          <!-- Stat 2: Sukses -->
           <div class="stat-card">
-            <div class="stat-icon">✅</div>
-            <div class="stat-label">Sukses</div>
-            <div class="stat-value" id="stat-success" style="color:var(--green)">0</div>
+            <div class="stat-header">
+              <div class="stat-label">Sukses</div>
+              <div class="stat-icon-badge green">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                  <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+              </div>
+            </div>
+            <div class="stat-value" id="stat-success" style="color:var(--green-text)">0</div>
             <div class="stat-sub">Pipeline berhasil dimuat</div>
           </div>
+
+          <!-- Stat 3: Error -->
           <div class="stat-card">
-            <div class="stat-icon">❌</div>
-            <div class="stat-label">Error</div>
-            <div class="stat-value" id="stat-error" style="color:var(--red)">0</div>
+            <div class="stat-header">
+              <div class="stat-label">Error</div>
+              <div class="stat-icon-badge red">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="15" y1="9" x2="9" y2="15"></line>
+                  <line x1="9" y1="9" x2="15" y2="15"></line>
+                </svg>
+              </div>
+            </div>
+            <div class="stat-value" id="stat-error" style="color:var(--red-text)">0</div>
             <div class="stat-sub">Pipeline gagal</div>
           </div>
+
+          <!-- Stat 4: Sedang Berjalan -->
           <div class="stat-card">
-            <div class="stat-icon">⟳</div>
-            <div class="stat-label">Sedang Berjalan</div>
-            <div class="stat-value" id="stat-running" style="color:var(--accent)">0</div>
+            <div class="stat-header">
+              <div class="stat-label">Aktif</div>
+              <div class="stat-icon-badge indigo">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="12" y1="2" x2="12" y2="6"></line>
+                  <line x1="12" y1="18" x2="12" y2="22"></line>
+                  <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line>
+                  <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line>
+                  <line x1="2" y1="12" x2="6" y2="12"></line>
+                  <line x1="18" y1="12" x2="22" y2="12"></line>
+                  <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line>
+                  <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line>
+                </svg>
+              </div>
+            </div>
+            <div class="stat-value" id="stat-running" style="color:#5856D6">0</div>
             <div class="stat-sub">Pipeline aktif sekarang</div>
           </div>
+
+          <!-- Stat 5: Success Rate -->
           <div class="stat-card">
-            <div class="stat-icon">📈</div>
-            <div class="stat-label">Success Rate</div>
+            <div class="stat-header">
+              <div class="stat-label">Success Rate</div>
+              <div class="stat-icon-badge teal">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                  <polyline points="17 6 23 6 23 12"></polyline>
+                </svg>
+              </div>
+            </div>
             <div class="stat-value" id="stat-rate">—</div>
-            <div class="stat-sub">Dari seluruh run</div>
+            <div class="stat-sub">Rata-rata keberhasilan</div>
           </div>
+
+          <!-- Stat 6: Terakhir Dijalankan -->
           <div class="stat-card">
-            <div class="stat-icon">🕐</div>
-            <div class="stat-label">Terakhir Dijalankan</div>
-            <div class="stat-value" id="stat-last" style="font-size:14px;letter-spacing:0">—</div>
-            <div class="stat-sub">Waktu pipeline terakhir</div>
+            <div class="stat-header">
+              <div class="stat-label">Terakhir Dijalankan</div>
+              <div class="stat-icon-badge gray">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+              </div>
+            </div>
+            <div class="stat-value" id="stat-last" style="font-size:13px;letter-spacing:0;font-weight:500">—</div>
+            <div class="stat-sub">Waktu run terakhir</div>
           </div>
+
         </div>
 
         <!-- Quick Start -->
-        <div class="card" style="margin-bottom:20px">
+        <div class="card">
           <div class="card-header">
-            <div class="card-title">⚡ Quick Start</div>
+            <div class="card-title">
+              <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+              </svg>
+              Template Integrasi
+            </div>
           </div>
           <div class="card-body">
-            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px">
+            <div class="quick-grid">
 
-              <div style="padding:18px;background:var(--surface-2);border-radius:10px;border:1px solid var(--border)">
-                <div style="font-size:24px;margin-bottom:8px">📄 → 🗄️</div>
-                <div style="font-weight:600;margin-bottom:4px">CSV ke SQLite</div>
-                <div style="font-size:12px;color:var(--text-3);margin-bottom:12px">Import file CSV lokal ke database SQLite</div>
+              <!-- Quick 1: CSV ke SQLite -->
+              <div class="quick-card">
+                <div class="quick-flow-icons">
+                  <div class="quick-flow-badge" title="CSV Document">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                      <polyline points="14 2 14 8 20 8"></polyline>
+                      <line x1="8" y1="13" x2="16" y2="13"></line>
+                      <line x1="8" y1="17" x2="16" y2="17"></line>
+                    </svg>
+                  </div>
+                  <svg class="quick-flow-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                    <polyline points="12 5 19 12 12 19"></polyline>
+                  </svg>
+                  <div class="quick-flow-badge" title="SQLite Database">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+                      <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+                      <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+                    </svg>
+                  </div>
+                </div>
+                <div class="quick-title">CSV ke SQLite</div>
+                <div class="quick-desc">Import dataset file CSV lokal langsung ke database SQLite.</div>
                 <button class="btn btn-secondary btn-sm" onclick="presetCSVtoSQLite()">Gunakan Template</button>
               </div>
 
-              <div style="padding:18px;background:var(--surface-2);border-radius:10px;border:1px solid var(--border)">
-                <div style="font-size:24px;margin-bottom:8px">🗄️ → 📋</div>
-                <div style="font-weight:600;margin-bottom:4px">SQLite ke JSON</div>
-                <div style="font-size:12px;color:var(--text-3);margin-bottom:12px">Export tabel SQLite ke format JSON</div>
+              <!-- Quick 2: SQLite ke JSON -->
+              <div class="quick-card">
+                <div class="quick-flow-icons">
+                  <div class="quick-flow-badge" title="SQLite Database">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+                      <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+                      <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+                    </svg>
+                  </div>
+                  <svg class="quick-flow-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                    <polyline points="12 5 19 12 12 19"></polyline>
+                  </svg>
+                  <div class="quick-flow-badge" title="JSON File">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="16 18 22 12 16 6"></polyline>
+                      <polyline points="8 6 2 12 8 18"></polyline>
+                    </svg>
+                  </div>
+                </div>
+                <div class="quick-title">SQLite ke JSON</div>
+                <div class="quick-desc">Ekstraksi tabel SQLite ke dokumen JSON siap pakai.</div>
                 <button class="btn btn-secondary btn-sm" onclick="presetSQLiteToJSON()">Gunakan Template</button>
               </div>
 
-              <div style="padding:18px;background:var(--surface-2);border-radius:10px;border:1px solid var(--border)">
-                <div style="font-size:24px;margin-bottom:8px">🐬 → 🐘</div>
-                <div style="font-weight:600;margin-bottom:4px">MySQL ke PostgreSQL</div>
-                <div style="font-size:12px;color:var(--text-3);margin-bottom:12px">Migrasi lintas database (butuh Docker)</div>
+              <!-- Quick 3: MySQL ke PostgreSQL -->
+              <div class="quick-card">
+                <div class="quick-flow-icons">
+                  <div class="quick-flow-badge" title="MySQL Server">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+                      <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+                      <line x1="6" y1="6" x2="6.01" y2="6"></line>
+                      <line x1="6" y1="18" x2="6.01" y2="18"></line>
+                    </svg>
+                  </div>
+                  <svg class="quick-flow-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                    <polyline points="12 5 19 12 12 19"></polyline>
+                  </svg>
+                  <div class="quick-flow-badge" title="PostgreSQL Server">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="3" y="4" width="18" height="16" rx="3"></rect>
+                      <line x1="3" y1="10" x2="21" y2="10"></line>
+                      <line x1="9" y1="20" x2="9" y2="10"></line>
+                    </svg>
+                  </div>
+                </div>
+                <div class="quick-title">MySQL ke PostgreSQL</div>
+                <div class="quick-desc">Migrasi data relasional lintas engine database.</div>
                 <button class="btn btn-secondary btn-sm" onclick="presetMySQLtoPostgres()">Gunakan Template</button>
+              </div>
+
+              <!-- Quick 4: Install Database RS (Featured) -->
+              <div class="quick-card featured">
+                <div class="quick-flow-icons">
+                  <div class="quick-flow-badge" style="color:var(--accent)" title="Hospital Database">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-3"></path>
+                      <line x1="9" y1="9" x2="9" y2="9.01"></line>
+                      <line x1="9" y1="13" x2="9" y2="13.01"></line>
+                      <line x1="9" y1="17" x2="9" y2="17.01"></line>
+                    </svg>
+                  </div>
+                  <svg class="quick-flow-arrow" style="color:var(--accent)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                    <polyline points="12 5 19 12 12 19"></polyline>
+                  </svg>
+                  <div class="quick-flow-badge" style="color:var(--accent)" title="MySQL 1-Click Install">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                    </svg>
+                  </div>
+                </div>
+                <div class="quick-title">Install Database RS</div>
+                <div class="quick-desc">Import 14 tabel HospitalManagementSystem ke MySQL secara otomatis.</div>
+                <button class="btn btn-primary btn-sm" id="btn-install-db" onclick="installHospitalDatabase()">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                  </svg>
+                  Install Database
+                </button>
               </div>
 
             </div>
           </div>
         </div>
 
-        <!-- Connector info -->
+        <!-- Connector Registry -->
         <div class="card">
           <div class="card-header">
-            <div class="card-title">🔌 Connector Terdaftar</div>
+            <div class="card-title">
+              <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+              </svg>
+              Connector Terdaftar
+            </div>
           </div>
           <div class="card-body">
             <div style="display:flex;flex-wrap:wrap;gap:8px" id="dashboard-connectors">
-              <span style="color:var(--text-3);font-size:13px">Memuat...</span>
+              <span style="color:var(--text-tertiary);font-size:13px">Memuat data connector...</span>
             </div>
           </div>
         </div>
@@ -195,65 +419,80 @@
           <div class="pipeline-panel">
             <div class="pipeline-panel-header">
               <span class="panel-badge badge-source">Source</span>
-              <span style="font-size:13px;font-weight:600;color:var(--text)">Pilih Sumber Data</span>
+              <span style="font-size:13px;font-weight:600;color:var(--text)">Sumber Data</span>
             </div>
             <div class="pipeline-panel-body">
               <div class="form-group">
-                <label class="form-label">Connector Type</label>
+                <label class="form-label">Tipe Connector</label>
                 <div class="connector-grid" id="source-chips">
-                  <span style="color:var(--text-3);font-size:12px">Memuat...</span>
+                  <span style="color:var(--text-tertiary);font-size:12px">Memuat...</span>
                 </div>
               </div>
-              <div class="divider" style="margin:8px 0"></div>
+              <div class="divider"></div>
               <div id="source-fields">
-                <div class="empty-desc" style="font-size:12px;color:var(--text-3)">
-                  Pilih connector di atas untuk mengisi opsi.
+                <div class="empty-desc" style="font-size:12px;color:var(--text-tertiary)">
+                  Pilih connector di atas untuk melengkapi konfigurasi.
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Arrow -->
-          <div class="pipeline-arrow">→</div>
+          <!-- Connecting Arrow -->
+          <div class="pipeline-arrow" title="Alur Data">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+          </div>
 
           <!-- Transform Panel -->
           <div class="pipeline-panel">
             <div class="pipeline-panel-header">
               <span class="panel-badge badge-transform">Transform</span>
-              <span style="font-size:13px;font-weight:600;color:var(--text)">Transformasi (Opsional)</span>
+              <span style="font-size:13px;font-weight:600;color:var(--text)">Transformasi</span>
             </div>
             <div class="pipeline-panel-body">
-              <div style="padding:20px 0;text-align:center;color:var(--text-3)">
-                <div style="font-size:36px;margin-bottom:8px">🔧</div>
-                <div style="font-size:13px;font-weight:500;color:var(--text-2);margin-bottom:4px">Pass-Through Mode</div>
-                <div style="font-size:12px;line-height:1.6">
-                  Data mengalir langsung dari source ke destination tanpa transformasi.<br><br>
-                  Transformasi custom (filter, rename, retype) akan tersedia di versi selanjutnya.
+              <div style="padding:24px 8px;text-align:center;color:var(--text-tertiary)">
+                <div style="width:40px;height:40px;border-radius:10px;background:var(--purple-tint);color:var(--purple-text);display:inline-flex;align-items:center;justify-content:center;margin-bottom:12px">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="16 3 21 3 21 8"></polyline>
+                    <line x1="4" y1="20" x2="21" y2="3"></line>
+                    <polyline points="21 16 21 21 16 21"></polyline>
+                    <line x1="15" y1="15" x2="21" y2="21"></line>
+                    <line x1="4" y1="4" x2="9" y2="9"></line>
+                  </svg>
+                </div>
+                <div style="font-size:13.5px;font-weight:600;color:var(--text);margin-bottom:4px">Pass-Through Mode</div>
+                <div style="font-size:12px;line-height:1.55;color:var(--text-secondary)">
+                  Data dialirkan secara langsung dari sumber ke tujuan dengan integritas penuh.
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Arrow -->
-          <div class="pipeline-arrow">→</div>
+          <!-- Connecting Arrow -->
+          <div class="pipeline-arrow" title="Alur Data">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+          </div>
 
           <!-- Destination Panel -->
           <div class="pipeline-panel">
             <div class="pipeline-panel-header">
               <span class="panel-badge badge-destination">Destination</span>
-              <span style="font-size:13px;font-weight:600;color:var(--text)">Pilih Tujuan Data</span>
+              <span style="font-size:13px;font-weight:600;color:var(--text)">Tujuan Data</span>
             </div>
             <div class="pipeline-panel-body">
               <div class="form-group">
-                <label class="form-label">Connector Type</label>
+                <label class="form-label">Tipe Connector</label>
                 <div class="connector-grid" id="dest-chips">
-                  <span style="color:var(--text-3);font-size:12px">Memuat...</span>
+                  <span style="color:var(--text-tertiary);font-size:12px">Memuat...</span>
                 </div>
               </div>
-              <div class="divider" style="margin:8px 0"></div>
+              <div class="divider"></div>
               <div id="dest-fields">
-                <div class="empty-desc" style="font-size:12px;color:var(--text-3)">
-                  Pilih connector di atas untuk mengisi opsi.
+                <div class="empty-desc" style="font-size:12px;color:var(--text-tertiary)">
+                  Pilih connector di atas untuk melengkapi konfigurasi.
                 </div>
               </div>
             </div>
@@ -261,10 +500,13 @@
 
         </div>
 
-        <!-- Run Button -->
-        <div style="display:flex;justify-content:center;margin-top:8px">
-          <button id="run-pipeline-btn" class="btn btn-primary" style="padding:12px 36px;font-size:15px">
-            ▶ Jalankan Pipeline
+        <!-- Run Action Button -->
+        <div style="display:flex;justify-content:center;margin-top:12px">
+          <button id="run-pipeline-btn" class="btn btn-primary" style="padding:11px 32px;font-size:14.5px;font-weight:600">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+            Jalankan Pipeline
           </button>
         </div>
 
@@ -277,7 +519,14 @@
 
         <div class="section-header">
           <h1 class="section-title">Pipeline History</h1>
-          <button class="btn btn-secondary btn-sm" onclick="loadHistory()">↻ Refresh</button>
+          <button class="btn btn-secondary btn-sm" onclick="loadHistory()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="23 4 23 10 17 10"></polyline>
+              <polyline points="1 20 1 14 7 14"></polyline>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+            </svg>
+            Refresh
+          </button>
         </div>
 
         <div class="card">
@@ -290,13 +539,59 @@
                   <th>Source</th>
                   <th>Destination</th>
                   <th>Status</th>
-                  <th>Rows Loaded</th>
+                  <th>Rows</th>
                   <th>Waktu</th>
+                  <th>Aksi</th>
                 </tr>
               </thead>
               <tbody id="history-tbody">
-                <tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-3)">
+                <tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-tertiary)">
                   Klik History di sidebar untuk memuat data.
+                </td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ===================================================== -->
+      <!-- VIEW: FILES (DOWNLOAD / INSTALL DATA)                  -->
+      <!-- ===================================================== -->
+      <div id="view-files" class="view">
+
+        <div class="section-header">
+          <h1 class="section-title">
+            <svg class="section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+            </svg>
+            File Data Hasil Export (Unduh)
+          </h1>
+          <button class="btn btn-secondary btn-sm" onclick="loadFiles()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="23 4 23 10 17 10"></polyline>
+              <polyline points="1 20 1 14 7 14"></polyline>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+            </svg>
+            Refresh
+          </button>
+        </div>
+
+        <div class="card">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nama File</th>
+                  <th>Ukuran</th>
+                  <th>Terakhir Diubah</th>
+                  <th>Lokasi File</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="files-tbody">
+                <tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-tertiary)">
+                  Memuat daftar file...
                 </td></tr>
               </tbody>
             </table>
@@ -313,24 +608,32 @@
 <div id="progress-drawer" class="progress-drawer">
   <div id="drawer-header" class="drawer-header">
     <div class="drawer-title">
-      <span>⚡</span>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+      </svg>
       <span id="drawer-run-id">Pipeline Progress</span>
       <span id="drawer-status-pill"></span>
     </div>
-    <button id="drawer-close-btn" class="btn btn-secondary btn-sm btn-icon" title="Tutup">✕</button>
+    <button id="drawer-close-btn" class="btn btn-secondary btn-sm btn-icon" title="Tutup">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    </button>
   </div>
   <div class="drawer-body">
     <div class="progress-bar-wrap">
       <div id="progress-bar-fill" class="progress-bar-fill"></div>
     </div>
     <div id="log-console" class="log-console">
-      <span style="color:var(--text-3)">Menunggu pipeline dimulai...</span>
+      <span style="color:var(--text-tertiary)">Menunggu pipeline dimulai...</span>
     </div>
     <div id="drawer-metrics"></div>
+    <div id="drawer-download-btn" style="margin-top:16px;text-align:center"></div>
   </div>
 </div>
 
-<script src="/static/app.js"></script>
+<script src="/static/app.js?v=20260928_hig2"></script>
 <script>
 // ─── Quick-start presets ───────────────────────────────────────────────────
 
@@ -340,7 +643,6 @@ function applyPreset(src, srcOpts, dst, dstOpts, name) {
   state.selectedDestination = dst;
   showView("builder");
 
-  // Wait a tick for builder to render
   setTimeout(() => {
     const nameInput = document.getElementById("pipeline-name-input");
     if (nameInput) nameInput.value = name;
@@ -382,7 +684,7 @@ function presetSQLiteToJSON() {
 
 function presetMySQLtoPostgres() {
   applyPreset(
-    "mysql",      { host: "localhost", port: 3306, database: "hospital_db", user: "root", password: "rootpwd" },
+    "mysql",      { host: "localhost", port: 3306, database: "HospitalManagementSystem", user: "root", password: "" },
     "postgresql", { host: "localhost", port: 5432, database: "hospital_dw", user: "postgres", password: "postgrespwd" },
     "MySQL → PostgreSQL Migration"
   );
@@ -392,12 +694,11 @@ function presetMySQLtoPostgres() {
 const _origInit = init;
 async function init() {
   await _origInit();
-  // Show connectors on dashboard
   const container = document.getElementById("dashboard-connectors");
   if (container && state.connectors.sources.length) {
     const all = [...new Set([...state.connectors.sources, ...state.connectors.destinations])];
     container.innerHTML = all.map(c =>
-      `<span class="connector-chip" style="cursor:default">${CONNECTOR_ICONS[c] || "🔌"} ${c}</span>`
+      `<span class="connector-chip" style="cursor:default">${CONNECTOR_ICONS[c] || getConnectorSVG(c)} ${c}</span>`
     ).join("");
   }
 }
