@@ -7,7 +7,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <title>FlowETL — Visual Data Integration</title>
-  <link rel="stylesheet" href="/static/app.css?v=20260928_hig2">
+  <link rel="stylesheet" href="/static/app.css?v=20260929_sched1">
 </head>
 <body>
 
@@ -88,6 +88,20 @@
           </svg>
         </span>
         <span>File Data (Unduh)</span>
+      </button>
+
+      <button class="nav-item" data-view="schedules">
+        <span class="nav-icon">
+          <!-- calendar.badge.clock -->
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+            <circle cx="12" cy="15" r="2"></circle>
+          </svg>
+        </span>
+        <span>Penjadwalan (Schedules)</span>
       </button>
 
       <div class="nav-section-label" style="margin-top:10px">Resources</div>
@@ -434,6 +448,29 @@
                   Pilih connector di atas untuk melengkapi konfigurasi.
                 </div>
               </div>
+
+              <!-- Custom SQL / Multi-table Toggle -->
+              <div class="divider" style="margin-top:12px"></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px;margin-bottom:8px">
+                <div>
+                  <span style="font-size:12px;font-weight:600;color:var(--text)">Custom SQL Query</span>
+                  <div style="font-size:11px;color:var(--text-tertiary);margin-top:2px">Gabung beberapa tabel dengan SQL (JOIN, UNION, dll.)</div>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="toggle-custom-sql" onchange="toggleCustomSQLMode(this.checked)">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+              <div id="source-single-table" style="display:block"></div>
+              <div id="source-custom-sql" style="display:none">
+                <label class="form-label">Query SQL</label>
+                <textarea id="custom-sql-query" class="form-input" rows="5"
+                  style="width:100%;box-sizing:border-box;font-family:var(--mono);font-size:12px;resize:vertical"
+                  placeholder="SELECT p.*, d.DepartmentName&#10;FROM Patient p&#10;JOIN Department d ON p.DepartmentID = d.DepartmentID&#10;LIMIT 1000"></textarea>
+                <div style="font-size:11px;color:var(--text-tertiary);margin-top:6px">
+                  Koneksi diambil dari pengaturan Source connector di atas.
+                </div>
+              </div>
             </div>
           </div>
 
@@ -629,6 +666,70 @@
 
       </div>
 
+      <!-- ===== SCHEDULES VIEW ===== -->
+      <div id="view-schedules" class="view">
+
+        <div class="section-header">
+          <h1 class="section-title">
+            <svg class="section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            Penjadwalan Otomatis
+          </h1>
+          <div style="display:flex;gap:8px;align-items:center">
+            <button class="btn btn-secondary btn-sm" onclick="loadSchedules()">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <polyline points="1 20 1 14 7 14"></polyline>
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+              </svg>
+              Refresh
+            </button>
+            <button class="btn btn-primary btn-sm" onclick="showCreateScheduleModal()">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+              Tambah Jadwal
+            </button>
+          </div>
+        </div>
+
+        <!-- Info banner -->
+        <div style="display:flex;align-items:flex-start;gap:10px;background:#F0F7FF;border:1px solid rgba(0,113,227,0.15);border-radius:12px;padding:12px 16px;margin-bottom:20px;font-size:13px;color:#0071E3">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+          <span>Frekuensi <strong>30 Detik</strong> dan <strong>1 Menit</strong> tersedia untuk demo/uji coba. Untuk produksi gunakan <strong>Per Jam</strong> atau lebih.</span>
+        </div>
+
+        <div class="card">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nama Jadwal</th>
+                  <th>Pipeline</th>
+                  <th>Source → Dest</th>
+                  <th>Frekuensi</th>
+                  <th>Status</th>
+                  <th>Terakhir Jalan</th>
+                  <th>Jadwal Berikutnya</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="schedules-tbody">
+                <tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-tertiary)">
+                  Memuat jadwal...
+                </td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
     </div> <!-- /content -->
   </div> <!-- /main -->
 </div> <!-- /layout -->
@@ -662,7 +763,7 @@
   </div>
 </div>
 
-<script src="/static/app.js?v=20260928_hig2"></script>
+<script src="/static/app.js?v=20260929_sched1"></script>
 <script>
 // ─── Quick-start presets ───────────────────────────────────────────────────
 

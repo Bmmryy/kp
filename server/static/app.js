@@ -6,14 +6,18 @@
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 const API = {
-  connectors: "/api/connectors",
-  run:        "/api/pipeline/run",
-  status:     (id) => `/api/pipeline/status/${id}`,
-  history:    "/api/pipeline/history",
-  stream:     (id) => `/stream/${id}`,
-  files:      "/api/files",
-  download:   (path) => `/api/files/download?path=${encodeURIComponent(path)}`,
-  installDb:  "/api/database/install-sql",
+  connectors:       "/api/connectors",
+  run:              "/api/pipeline/run",
+  status:           (id) => `/api/pipeline/status/${id}`,
+  history:          "/api/pipeline/history",
+  stream:           (id) => `/stream/${id}`,
+  files:            "/api/files",
+  download:         (path) => `/api/files/download?path=${encodeURIComponent(path)}`,
+  installDb:        "/api/database/install-sql",
+  schedules:        "/api/schedules",
+  schedulesToggle:  (id) => `/api/schedules/${id}/toggle`,
+  schedulesTrigger: (id) => `/api/schedules/${id}/trigger`,
+  schedulesDelete:  (id) => `/api/schedules/${id}`,
 };
 
 // Connector field definitions (what options each connector needs)
@@ -152,14 +156,16 @@ function showView(name) {
   // Update topbar title
   const titles = {
     dashboard: "Dashboard",
-    builder: "Pipeline Builder",
-    history: "Pipeline History",
-    files: "File Data (Unduh / Install)"
+    builder:   "Pipeline Builder",
+    history:   "Pipeline History",
+    files:     "File Data (Unduh / Install)",
+    schedules: "Penjadwalan Otomatis",
   };
   $("#topbar-title").textContent = titles[name] || name;
-  if (name === "history") loadHistory();
+  if (name === "history")   loadHistory();
   if (name === "dashboard") updateDashboardStats();
-  if (name === "files") loadFiles();
+  if (name === "files")     loadFiles();
+  if (name === "schedules") loadSchedules();
 }
 
 // ─── Connector Selection ──────────────────────────────────────────────────────
@@ -280,6 +286,14 @@ async function handleRunPipeline() {
   const srcOpts = collectOptions("source-fields", state.selectedSource);
   const dstOpts = collectOptions("dest-fields", state.selectedDestination);
   const transforms = collectTransformations();
+
+  // Inject custom SQL query if mode is active
+  const customSQLActive = $("#toggle-custom-sql")?.checked;
+  if (customSQLActive) {
+    const sql = $("#custom-sql-query")?.value?.trim();
+    if (!sql) { toast("Tulis SQL Query terlebih dahulu.", "error"); return; }
+    srcOpts.query = sql;
+  }
 
   // Basic validation
   const srcFields = CONNECTOR_FIELDS[state.selectedSource] || [];
@@ -531,6 +545,233 @@ async function loadFiles() {
     tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--red);padding:24px">Gagal memuat file.</td></tr>`;
   }
 }
+
+// ─── Schedules ────────────────────────────────────────────────────────────────
+
+const FREQ_LABEL = {
+  "30s":     "Setiap 30 Detik (Demo)",
+  "1m":      "Setiap 1 Menit (Demo)",
+  "5m":      "Setiap 5 Menit",
+  "15m":     "Setiap 15 Menit",
+  "hourly":  "Per Jam",
+  "daily":   "Per Hari",
+  "weekly":  "Per Minggu",
+  "monthly": "Per Bulan",
+};
+
+async function loadSchedules() {
+  const tbody = $("#schedules-tbody");
+  if (!tbody) return;
+  tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:32px"><div class="spinner" style="margin:0 auto"></div></td></tr>`;
+  try {
+    const res  = await fetch(API.schedules);
+    const jobs = await res.json();
+    renderSchedules(jobs);
+  } catch (_) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--red);padding:24px">Gagal memuat jadwal.</td></tr>`;
+  }
+}
+
+function renderSchedules(jobs) {
+  const tbody = $("#schedules-tbody");
+  if (!jobs.length) {
+    tbody.innerHTML = `<tr><td colspan="8">
+      <div class="empty-state">
+        <div class="empty-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+          </svg>
+        </div>
+        <div class="empty-title">Belum ada jadwal</div>
+        <div class="empty-desc">Klik "Tambah Jadwal" untuk membuat ETL otomatis pertama Anda.</div>
+      </div>
+    </td></tr>`;
+    return;
+  }
+  tbody.innerHTML = jobs.map(j => `
+    <tr>
+      <td style="font-weight:600">${j.name}</td>
+      <td style="color:var(--text-secondary)">${j.pipeline_name}</td>
+      <td>
+        <span class="connector-chip" style="display:inline-flex;align-items:center;gap:5px;font-size:11px">
+          ${j.source_type} <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg> ${j.dest_type}
+        </span>
+      </td>
+      <td><span class="pill pill-pending">${FREQ_LABEL[j.frequency] || j.frequency}</span></td>
+      <td>
+        <label class="toggle-switch" title="${j.enabled ? 'Nonaktifkan' : 'Aktifkan'}">
+          <input type="checkbox" ${j.enabled ? "checked" : ""} onchange="toggleSchedule('${j.id}', this)">
+          <span class="toggle-slider"></span>
+        </label>
+      </td>
+      <td style="color:var(--text-tertiary);font-size:12px">${j.last_run ? formatDate(j.last_run) : "—"}</td>
+      <td style="color:var(--text-tertiary);font-size:12px">${j.next_run ? formatDate(j.next_run) : "—"}</td>
+      <td style="display:flex;gap:6px;align-items:center">
+        <button class="btn btn-secondary btn-sm" style="padding:4px 10px;font-size:12px" onclick="triggerScheduleNow('${j.id}')" title="Jalankan Sekarang">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+        </button>
+        <button class="btn btn-sm" style="padding:4px 10px;font-size:12px;background:var(--red,#FF3B30);color:#fff;border:none;border-radius:8px" onclick="deleteSchedule('${j.id}')" title="Hapus Jadwal">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path></svg>
+        </button>
+      </td>
+    </tr>
+  `).join("");
+}
+
+async function toggleSchedule(id, checkbox) {
+  try {
+    const res = await fetch(API.schedulesToggle(id), { method: "PATCH" });
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    toast(`Jadwal ${data.enabled ? "diaktifkan" : "dinonaktifkan"}.`, "success");
+  } catch (_) {
+    toast("Gagal mengubah status jadwal.", "error");
+    checkbox.checked = !checkbox.checked; // revert
+  }
+}
+
+async function triggerScheduleNow(id) {
+  try {
+    const res = await fetch(API.schedulesTrigger(id), { method: "POST" });
+    if (!res.ok) throw new Error();
+    toast("Pipeline dijadwalkan dijalankan sekarang!", "success");
+  } catch (_) {
+    toast("Gagal menjalankan jadwal.", "error");
+  }
+}
+
+async function deleteSchedule(id) {
+  if (!confirm("Hapus jadwal ini? Tindakan ini tidak dapat dibatalkan.")) return;
+  try {
+    const res = await fetch(API.schedulesDelete(id), { method: "DELETE" });
+    if (!res.ok) throw new Error();
+    toast("Jadwal dihapus.", "success");
+    loadSchedules();
+  } catch (_) {
+    toast("Gagal menghapus jadwal.", "error");
+  }
+}
+
+function showCreateScheduleModal() {
+  const existing = $("#modal-create-schedule");
+  if (existing) { existing.remove(); return; }
+
+  const freqOptions = Object.entries(FREQ_LABEL).map(([v, l]) =>
+    `<option value="${v}">${l}</option>`
+  ).join("");
+
+  const modal = document.createElement("div");
+  modal.id = "modal-create-schedule";
+  modal.style.cssText = `
+    position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;
+    background:rgba(0,0,0,0.35);backdrop-filter:blur(6px);
+  `;
+  modal.innerHTML = `
+    <div style="background:#fff;border-radius:18px;padding:32px;width:520px;max-width:95vw;box-shadow:0 24px 64px rgba(0,0,0,0.18);animation:fadeInUp .22s ease">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+        <h2 style="font-size:17px;font-weight:700;margin:0">Tambah Jadwal ETL</h2>
+        <button onclick="document.getElementById('modal-create-schedule').remove()" style="background:none;border:none;cursor:pointer;padding:4px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <div style="display:grid;gap:14px">
+        <div class="form-group" style="margin:0">
+          <label class="form-label">Nama Jadwal</label>
+          <input class="form-input" id="sc-name" placeholder="Sinkronisasi Harian Pasien" style="width:100%;box-sizing:border-box">
+        </div>
+        <div class="form-group" style="margin:0">
+          <label class="form-label">Nama Pipeline</label>
+          <input class="form-input" id="sc-pipeline" placeholder="daily_sync" style="width:100%;box-sizing:border-box">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Tipe Source</label>
+            <input class="form-input" id="sc-src-type" placeholder="mysql" style="width:100%;box-sizing:border-box">
+          </div>
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Tipe Destination</label>
+            <input class="form-input" id="sc-dst-type" placeholder="csv" style="width:100%;box-sizing:border-box">
+          </div>
+        </div>
+        <div class="form-group" style="margin:0">
+          <label class="form-label">Source Options (JSON)</label>
+          <textarea class="form-input" id="sc-src-opts" rows="3" style="width:100%;box-sizing:border-box;font-family:var(--mono);font-size:12px;resize:vertical" placeholder='{"host":"localhost","user":"root","password":"","database":"MyDB","table":"patients"}'></textarea>
+        </div>
+        <div class="form-group" style="margin:0">
+          <label class="form-label">Destination Options (JSON)</label>
+          <textarea class="form-input" id="sc-dst-opts" rows="2" style="width:100%;box-sizing:border-box;font-family:var(--mono);font-size:12px;resize:vertical" placeholder='{"path":"output/patients_daily.csv"}'></textarea>
+        </div>
+        <div class="form-group" style="margin:0">
+          <label class="form-label">Frekuensi</label>
+          <select class="form-input" id="sc-freq" style="width:100%;box-sizing:border-box">${freqOptions}</select>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:24px">
+        <button class="btn btn-secondary" onclick="document.getElementById('modal-create-schedule').remove()">Batal</button>
+        <button class="btn btn-primary" onclick="submitCreateSchedule()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          Buat Jadwal
+        </button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  modal.addEventListener("click", (e) => { if (e.target === modal) modal.remove(); });
+  setTimeout(() => document.getElementById("sc-name")?.focus(), 50);
+}
+
+async function submitCreateSchedule() {
+  const name     = $("#sc-name")?.value.trim();
+  const pipeline = $("#sc-pipeline")?.value.trim();
+  const srcType  = $("#sc-src-type")?.value.trim();
+  const dstType  = $("#sc-dst-type")?.value.trim();
+  const freq     = $("#sc-freq")?.value;
+  let srcOpts, dstOpts;
+
+  if (!name || !pipeline || !srcType || !dstType) {
+    toast("Lengkapi semua field yang wajib diisi.", "error"); return;
+  }
+
+  try { srcOpts = JSON.parse($("#sc-src-opts")?.value || "{}"); }
+  catch (_) { toast("Source Options bukan JSON valid.", "error"); return; }
+  try { dstOpts = JSON.parse($("#sc-dst-opts")?.value || "{}"); }
+  catch (_) { toast("Destination Options bukan JSON valid.", "error"); return; }
+
+  try {
+    const res = await fetch(API.schedules, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name, pipeline_name: pipeline,
+        source_type: srcType, source_options: srcOpts,
+        dest_type: dstType, dest_options: dstOpts,
+        frequency: freq,
+      }),
+    });
+    if (!res.ok) { const err = await res.json(); throw new Error(err.detail || "Error"); }
+    toast(`Jadwal "${name}" berhasil dibuat!`, "success");
+    $("#modal-create-schedule")?.remove();
+    loadSchedules();
+  } catch (e) {
+    toast(`Gagal membuat jadwal: ${e.message}`, "error");
+  }
+}
+
+// ─── Custom SQL Mode Toggle ────────────────────────────────────────────────────
+
+function toggleCustomSQLMode(enabled) {
+  const singleBlock = $("#source-single-table");
+  const sqlBlock    = $("#source-custom-sql");
+  if (singleBlock) singleBlock.style.display = enabled ? "none" : "";
+  if (sqlBlock)    sqlBlock.style.display    = enabled ? "" : "none";
+}
+
+
 
 // ─── Database Install (1-Click) ──────────────────────────────────────────────
 

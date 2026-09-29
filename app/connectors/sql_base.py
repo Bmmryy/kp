@@ -201,9 +201,43 @@ class SQLBaseSource(SourceConnector):
         if not self.is_connected or not self._engine:
             self.connect()
 
-        schema = self.get_schema(table_name)
-        sql = query or f"SELECT * FROM {self._quote_identifier(table_name)}"
         effective_chunk = chunk_size or 5000
+
+        if query:
+            logger.info("Extracting with custom multi-table query in %s (chunk_size=%d):\n%s", self.dialect, effective_chunk, query)
+            try:
+                with self._engine.connect() as conn:
+                    result = conn.execution_options(stream_results=True).execute(text(query))
+                    col_keys = list(result.keys())
+                    first_rows = result.fetchmany(effective_chunk)
+                    if not first_rows:
+                        cols = [ColumnDefinition(name=k, data_type=DataType.STRING) for k in col_keys]
+                        schema = TableSchema(name=table_name or "query_result", columns=cols)
+                        yield Dataset(schema=schema, rows=[])
+                        return
+
+                    records = [dict(zip(col_keys, row)) for row in first_rows]
+                    inferred_ds = Dataset.infer_from_dicts(table_name or "query_result", records)
+                    schema = inferred_ds.schema_def
+                    yield Dataset(schema=schema, rows=records)
+
+                    while True:
+                        rows = result.fetchmany(effective_chunk)
+                        if not rows:
+                            break
+                        records = [dict(zip(col_keys, row)) for row in rows]
+                        yield Dataset(schema=schema, rows=records)
+                return
+            except ExtractionError:
+                raise
+            except SQLAlchemyError as err:
+                raise ExtractionError(
+                    message=f"Custom query extraction from {self.dialect} failed: {err}",
+                    details=str(err),
+                ) from err
+
+        schema = self.get_schema(table_name)
+        sql = f"SELECT * FROM {self._quote_identifier(table_name)}"
 
         logger.info(
             "Extracting from %s table '%s' with chunk_size=%d",
@@ -213,10 +247,7 @@ class SQLBaseSource(SourceConnector):
         )
         try:
             with self._engine.connect() as conn:
-                # stream_results enables server-side cursors where supported
-                result = conn.execution_options(stream_results=True).execute(
-                    text(sql)
-                )
+                result = conn.execution_options(stream_results=True).execute(text(sql))
                 col_keys = list(result.keys())
                 while True:
                     rows = result.fetchmany(effective_chunk)

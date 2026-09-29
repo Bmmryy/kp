@@ -1,6 +1,7 @@
 """FlowETL Web Server — FastAPI application factory."""
 from __future__ import annotations
 
+import asyncio
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -8,6 +9,9 @@ from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
 from server.api.pipelines import router as pipeline_router
+from server.api.schedules import router as schedules_router
+from server.pipeline_runner import runner
+from app.services.scheduler import scheduler
 
 BASE_DIR = Path(__file__).parent
 
@@ -33,6 +37,14 @@ app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="stat
 
 # API routes
 app.include_router(pipeline_router)
+app.include_router(schedules_router)
+
+
+@app.on_event("startup")
+async def startup_event():
+    """Start the background scheduler with the active asyncio loop."""
+    loop = asyncio.get_event_loop()
+    scheduler.set_runner_callback(runner.submit, loop)
 
 
 @app.get("/", response_class=HTMLResponse)

@@ -1051,3 +1051,56 @@ table tr:hover td {
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+/* ─── Toggle Switch (Schedules + Custom SQL) ─────────────────────────────── */
+
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 38px;
+  height: 22px;
+  flex-shrink: 0;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background: rgba(0,0,0,0.15);
+  border-radius: 22px;
+  transition: background 0.22s;
+}
+
+.toggle-slider::before {
+  content: "";
+  position: absolute;
+  height: 16px;
+  width: 16px;
+  left: 3px;
+  bottom: 3px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  transition: transform 0.22s cubic-bezier(.34,1.56,.64,1);
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background: var(--accent, #0071E3);
+}
+
+.toggle-switch input:checked + .toggle-slider::before {
+  transform: translateX(16px);
+}
+
+/* fadeInUp for modals */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
