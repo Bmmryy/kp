@@ -39,6 +39,7 @@ class PipelineRun:
     source_type: str
     destination_type: str
     destination_options: Dict[str, Any] = field(default_factory=dict)
+    transformations: List[Dict[str, Any]] = field(default_factory=list)
     status: RunStatus = RunStatus.PENDING
     started_at: Optional[datetime] = None
     finished_at: Optional[datetime] = None
@@ -123,6 +124,7 @@ class PipelineRunnerService:
         destination_type: str,
         destination_options: Dict[str, Any],
         loop: asyncio.AbstractEventLoop,
+        transformations: Optional[List[Dict[str, Any]]] = None,
     ) -> str:
         """Submit a pipeline for async execution. Returns run_id."""
         run_id = str(uuid.uuid4())[:8]
@@ -132,6 +134,7 @@ class PipelineRunnerService:
             source_type=source_type,
             destination_type=destination_type,
             destination_options=destination_options,
+            transformations=transformations or [],
         )
         run._loop = loop
         run._event_queue = asyncio.Queue()
@@ -144,6 +147,7 @@ class PipelineRunnerService:
             source_options,
             destination_type,
             destination_options,
+            transformations or [],
         )
         return run_id
 
@@ -158,6 +162,7 @@ class PipelineRunnerService:
         source_options: Dict[str, Any],
         destination_type: str,
         destination_options: Dict[str, Any],
+        transformations: Optional[List[Dict[str, Any]]] = None,
     ) -> None:
         run.status = RunStatus.RUNNING
         run.started_at = datetime.now()
@@ -194,12 +199,26 @@ class PipelineRunnerService:
             source_table = source_options.get("table_name") or source_options.get("table") or ""
             destination_table = destination_options.get("table_name") or destination_options.get("table") or source_table or "etl_output"
 
+            # Build transformation objects
+            built_transformers = []
+            if transformations:
+                import app.transformations  # noqa: F401
+                from app.transformations.base import TransformerConfig
+                from app.transformations.registry import TransformationRegistry
+                for t_spec in transformations:
+                    t_type = t_spec.get("type")
+                    if t_type:
+                        t_cfg = TransformerConfig(type=t_type, params=t_spec.get("params", {}))
+                        built_transformers.append(TransformationRegistry.create(t_cfg))
+                        logger.info("Attached transformer '%s' to pipeline '%s'", t_type, run.pipeline_name)
+
             pipeline = Pipeline(
                 name=run.pipeline_name,
                 source=source,
                 destination=destination,
                 source_table=source_table,
                 destination_table=destination_table,
+                transformations=built_transformers,
             )
             context = pipeline.run(progress_callback=_progress)
 

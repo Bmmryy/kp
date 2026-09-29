@@ -40,6 +40,7 @@ from app.core.exceptions import (
 )
 from app.schema.models import ColumnDefinition, Dataset, DataType, TableSchema
 from app.schema.type_registry import TypeRegistry
+from app.schema.evolution import SchemaEvolutionVerifier
 from app.utils.logging import get_logger
 
 logger = get_logger("flowetl.connectors.sql_base")
@@ -353,6 +354,23 @@ class SQLBaseDestination(DestinationConnector):
                         conn.execute(text(f"DELETE FROM {qt}"))
                         return
                     elif if_exists == "append":
+                        # Verified Schema Evolution: check for drift & auto-alter target
+                        existing_cols = [c["name"] for c in insp.get_columns(schema.name)]
+                        evo = SchemaEvolutionVerifier.verify_and_plan(
+                            dialect=self.dialect,
+                            table_name=schema.name,
+                            existing_column_names=existing_cols,
+                            incoming_schema=schema,
+                            quote_fn=self._quote_identifier,
+                        )
+                        if evo.has_drift:
+                            for ddl_stmt in evo.ddl_statements:
+                                logger.info(
+                                    "Executing Verified Schema Evolution on %s:\n%s",
+                                    self.dialect,
+                                    ddl_stmt,
+                                )
+                                conn.execute(text(ddl_stmt))
                         return
 
                 if not table_exists:

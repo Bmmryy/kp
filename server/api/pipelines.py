@@ -24,6 +24,7 @@ class RunPipelineRequest(BaseModel):
     source_options: Dict[str, Any] = Field(default_factory=dict)
     destination_type: str = Field(..., description="Jenis destination connector")
     destination_options: Dict[str, Any] = Field(default_factory=dict)
+    transformations: List[Dict[str, Any]] = Field(default_factory=list, description="Daftar transformasi (trim, capitalize, ...)")
 
 
 class RunPipelineResponse(BaseModel):
@@ -52,6 +53,7 @@ async def run_pipeline(request: Request, body: RunPipelineRequest) -> RunPipelin
         destination_type=body.destination_type,
         destination_options=body.destination_options,
         loop=loop,
+        transformations=body.transformations,
     )
     return RunPipelineResponse(run_id=run_id, message=f"Pipeline '{body.pipeline_name}' dikirim. run_id={run_id}")
 

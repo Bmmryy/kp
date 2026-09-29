@@ -235,12 +235,51 @@ function initBuilder() {
   if (runBtn) runBtn.addEventListener("click", handleRunPipeline);
 }
 
+function updateTransformBadge() {
+  const badge = $("#transform-mode-badge");
+  if (!badge) return;
+  const count = [
+    $("#transform-trim")?.checked,
+    $("#transform-capitalize")?.checked,
+    $("#transform-fill-null")?.checked,
+    $("#transform-mask")?.checked,
+  ].filter(Boolean).length;
+
+  if (count === 0) {
+    badge.className = "pill pill-pending";
+    badge.textContent = "Pass-Through";
+  } else {
+    badge.className = "pill pill-success";
+    badge.textContent = `${count} Transformasi Aktif`;
+  }
+}
+
+function collectTransformations() {
+  const transforms = [];
+  if ($("#transform-trim")?.checked) {
+    transforms.push({ type: "trim", params: {} });
+  }
+  if ($("#transform-capitalize")?.checked) {
+    transforms.push({ type: "capitalize", params: { mode: "title" } });
+  }
+  if ($("#transform-fill-null")?.checked) {
+    const val = $("#transform-fill-null-val")?.value || "N/A";
+    transforms.push({ type: "fill_null", params: { default_value: val } });
+  }
+  if ($("#transform-mask")?.checked) {
+    const cols = ($("#transform-mask-cols")?.value || "").split(",").map(c => c.trim()).filter(Boolean);
+    transforms.push({ type: "mask", params: { columns: cols, mask_char: "*", keep_start: 3, keep_end: 3 } });
+  }
+  return transforms;
+}
+
 async function handleRunPipeline() {
   if (!state.selectedSource) { toast("Pilih Source connector terlebih dahulu.", "error"); return; }
   if (!state.selectedDestination) { toast("Pilih Destination connector terlebih dahulu.", "error"); return; }
 
   const srcOpts = collectOptions("source-fields", state.selectedSource);
   const dstOpts = collectOptions("dest-fields", state.selectedDestination);
+  const transforms = collectTransformations();
 
   // Basic validation
   const srcFields = CONNECTOR_FIELDS[state.selectedSource] || [];
@@ -270,6 +309,7 @@ async function handleRunPipeline() {
         source_options: srcOpts,
         destination_type: state.selectedDestination,
         destination_options: dstOpts,
+        transformations: transforms,
       }),
     });
 
