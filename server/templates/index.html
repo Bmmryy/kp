@@ -7,7 +7,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <title>FlowETL — Visual Data Integration</title>
-  <link rel="stylesheet" href="/static/app.css?v=20260929_sched1">
+  <link rel="stylesheet" href="/static/app.css?v=20260930_case1">
 </head>
 <body>
 
@@ -513,7 +513,25 @@
                 </div>
               </label>
 
-              <!-- Option 3: Fill Null -->
+              <!-- Option 3: UPPERCASE -->
+              <label class="transform-card" style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;cursor:pointer;background:var(--bg-canvas);transition:all 0.2s">
+                <input type="checkbox" id="transform-uppercase" style="margin-top:3px;accent-color:var(--accent)" onchange="updateTransformBadge()">
+                <div style="flex:1">
+                  <div style="font-size:13px;font-weight:600;color:var(--text)">UPPERCASE</div>
+                  <div style="font-size:11.5px;color:var(--text-secondary)">Ubah semua huruf menjadi kapital ("jakarta" → "JAKARTA")</div>
+                </div>
+              </label>
+
+              <!-- Option 4: lowercase -->
+              <label class="transform-card" style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;cursor:pointer;background:var(--bg-canvas);transition:all 0.2s">
+                <input type="checkbox" id="transform-lowercase" style="margin-top:3px;accent-color:var(--accent)" onchange="updateTransformBadge()">
+                <div style="flex:1">
+                  <div style="font-size:13px;font-weight:600;color:var(--text)">lowercase</div>
+                  <div style="font-size:11.5px;color:var(--text-secondary)">Ubah semua huruf menjadi kecil ("JAKARTA" → "jakarta")</div>
+                </div>
+              </label>
+
+              <!-- Option 5: Fill Null -->
               <label class="transform-card" style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;cursor:pointer;background:var(--bg-canvas);transition:all 0.2s">
                 <input type="checkbox" id="transform-fill-null" style="margin-top:3px;accent-color:var(--accent)" onchange="updateTransformBadge()">
                 <div style="flex:1">
@@ -763,7 +781,7 @@
   </div>
 </div>
 
-<script src="/static/app.js?v=20260929_sched1"></script>
+<script src="/static/app.js?v=20260930_case1"></script>
 <script>
 // ─── Quick-start presets ───────────────────────────────────────────────────
 

@@ -108,3 +108,16 @@ class CaseTransformer(Transformer):
 TransformationRegistry.register("trim", TrimTransformer)
 TransformationRegistry.register("capitalize", CapitalizeTransformer)
 TransformationRegistry.register("case", CaseTransformer)
+# Convenience aliases — pre-fills mode param automatically
+class _UpperCaseTransformer(CaseTransformer):
+    def transform(self, dataset):
+        self.config.params.setdefault("mode", "upper")
+        return super().transform(dataset)
+
+class _LowerCaseTransformer(CaseTransformer):
+    def transform(self, dataset):
+        self.config.params.setdefault("mode", "lower")
+        return super().transform(dataset)
+
+TransformationRegistry.register("uppercase", _UpperCaseTransformer)
+TransformationRegistry.register("lowercase", _LowerCaseTransformer)

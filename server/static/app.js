@@ -247,6 +247,8 @@ function updateTransformBadge() {
   const count = [
     $("#transform-trim")?.checked,
     $("#transform-capitalize")?.checked,
+    $("#transform-uppercase")?.checked,
+    $("#transform-lowercase")?.checked,
     $("#transform-fill-null")?.checked,
     $("#transform-mask")?.checked,
   ].filter(Boolean).length;
@@ -267,6 +269,12 @@ function collectTransformations() {
   }
   if ($("#transform-capitalize")?.checked) {
     transforms.push({ type: "capitalize", params: { mode: "title" } });
+  }
+  if ($("#transform-uppercase")?.checked) {
+    transforms.push({ type: "uppercase", params: {} });
+  }
+  if ($("#transform-lowercase")?.checked) {
+    transforms.push({ type: "lowercase", params: {} });
   }
   if ($("#transform-fill-null")?.checked) {
     const val = $("#transform-fill-null-val")?.value || "N/A";

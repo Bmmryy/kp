@@ -93,3 +93,29 @@ def test_masking_transformer(sample_dataset):
     # "081234567890" -> start 4 ("0812"), end 3 ("890"), middle masked (5 stars)
     assert result.rows[0]["phone"] == "0812*****890"
     assert result.rows[1]["phone"] == "0819*****321"
+
+
+def test_uppercase_transformer(sample_dataset):
+    """UPPERCASE: semua huruf diubah menjadi kapital."""
+    cfg = TransformerConfig(type="uppercase", params={})
+    transformer = TransformationRegistry.create(cfg)
+    result = transformer.transform(sample_dataset)
+
+    # Fixture: "  budi santoso  " -> "  BUDI SANTOSO  "
+    assert result.rows[0]["full_name"] == "  BUDI SANTOSO  "
+    assert result.rows[0]["city"] == "JAKARTA SELATAN"
+    assert result.rows[1]["full_name"] == "SITI AMINAH "
+    assert result.rows[1]["city"] == " BANDUNG "
+
+
+def test_lowercase_transformer(sample_dataset):
+    """lowercase: semua huruf diubah menjadi kecil."""
+    cfg = TransformerConfig(type="lowercase", params={})
+    transformer = TransformationRegistry.create(cfg)
+    result = transformer.transform(sample_dataset)
+
+    # Fixture: "  budi santoso  " -> "  budi santoso  " (already lower)
+    assert result.rows[0]["full_name"] == "  budi santoso  "
+    assert result.rows[0]["city"] == "jakarta selatan"
+    assert result.rows[1]["full_name"] == "siti aminah "
+    assert result.rows[1]["city"] == " bandung "
