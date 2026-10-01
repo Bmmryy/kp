@@ -10,6 +10,7 @@ from fastapi.staticfiles import StaticFiles
 
 from server.api.pipelines import router as pipeline_router
 from server.api.schedules import router as schedules_router
+from server.api.connector_helper import router as connector_router
 from server.pipeline_runner import runner
 from app.services.scheduler import scheduler
 
@@ -38,6 +39,7 @@ app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="stat
 # API routes
 app.include_router(pipeline_router)
 app.include_router(schedules_router)
+app.include_router(connector_router)
 
 
 @app.on_event("startup")

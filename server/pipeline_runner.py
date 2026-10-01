@@ -46,6 +46,7 @@ class PipelineRun:
     error_message: Optional[str] = None
     metrics: Dict[str, Any] = field(default_factory=dict)
     log_lines: List[str] = field(default_factory=list)
+    output_files: List[str] = field(default_factory=list)
     # Per-run SSE queue (asyncio-safe, set before thread starts)
     _event_queue: Optional[asyncio.Queue] = field(default=None, repr=False)
     _loop: Optional[asyncio.AbstractEventLoop] = field(default=None, repr=False)
@@ -151,6 +152,50 @@ class PipelineRunnerService:
         )
         return run_id
 
+    def submit_multi(
+        self,
+        pipeline_name: str,
+        sources: List[Dict[str, Any]],
+        destination_type: str,
+        destination_options: Dict[str, Any],
+        loop: asyncio.AbstractEventLoop,
+        transformations: Optional[List[Dict[str, Any]]] = None,
+    ) -> str:
+        """Submit pipeline multi-source. Jalankan satu pipeline per source, gabungkan ke satu destination.
+
+        Untuk file destination (csv/json/jsonl/sqlite):
+          - Semua baris dari semua source digabung ke satu output file (append mode).
+        Untuk SQL destination (mysql/postgresql):
+          - Setiap source dikirim ke tabel yang sama di destination (append mode).
+        """
+        run_id = str(uuid.uuid4())[:8]
+        # Gunakan source_type gabungan untuk representasi di history
+        combined_src_type = "+".join(s["type"] for s in sources[:2])
+        if len(sources) > 2:
+            combined_src_type += f"+{len(sources)-2}more"
+
+        run = PipelineRun(
+            run_id=run_id,
+            pipeline_name=pipeline_name,
+            source_type=combined_src_type,
+            destination_type=destination_type,
+            destination_options=destination_options,
+            transformations=transformations or [],
+        )
+        run._loop = loop
+        run._event_queue = asyncio.Queue()
+        self._runs[run_id] = run
+
+        self._executor.submit(
+            self._execute_multi,
+            run,
+            sources,
+            destination_type,
+            destination_options,
+            transformations or [],
+        )
+        return run_id
+
     # ------------------------------------------------------------------ #
     # Internal execution (runs in worker thread)                           #
     # ------------------------------------------------------------------ #
@@ -247,6 +292,126 @@ class PipelineRunnerService:
 
         finally:
             # Sentinel: tells SSE consumer the stream is done
+            if run._loop and run._event_queue:
+                run._loop.call_soon_threadsafe(run._event_queue.put_nowait, None)
+
+    def _execute_multi(
+        self,
+        run: PipelineRun,
+        sources: List[Dict[str, Any]],
+        destination_type: str,
+        destination_options: Dict[str, Any],
+        transformations: Optional[List[Dict[str, Any]]] = None,
+    ) -> None:
+        """Jalankan banyak source secara sequential dan gabungkan ke satu destination."""
+        run.status = RunStatus.RUNNING
+        run.started_at = datetime.now()
+        run.push_event("status", {"status": RunStatus.RUNNING.value, "message": f"Multi-source pipeline dimulai ({len(sources)} sumber)..."})
+
+        total_extracted = 0
+        total_loaded = 0
+
+        def _progress(step: str, pct: float, prefix: str = "") -> None:
+            pct_int = int(pct * 100)
+            line = f"[{pct_int:3d}%] {prefix}{step}"
+            run.log_lines.append(line)
+            run.push_event("progress", {"step": step, "percent": pct_int, "message": step, "log": line})
+
+        try:
+            import app.transformations  # noqa: F401
+            from app.transformations.base import TransformerConfig
+            from app.transformations.registry import TransformationRegistry
+
+            built_transformers = []
+            for t_spec in (transformations or []):
+                t_type = t_spec.get("type")
+                if t_type:
+                    t_cfg = TransformerConfig(type=t_type, params=t_spec.get("params", {}))
+                    built_transformers.append(TransformationRegistry.create(t_cfg))
+
+            dst_cfg = ConnectorConfig(
+                name=f"dst_{destination_type}",
+                connector_type=destination_type,
+                options=destination_options,
+            )
+            destination = ConnectorRegistry.create_destination(dst_cfg)
+
+            dest_table = (
+                destination_options.get("table_name")
+                or destination_options.get("table")
+                or "etl_output"
+            )
+
+            is_file_dest = destination_type in ("csv", "json", "jsonl", "sqlite")
+
+            for i, src_spec in enumerate(sources):
+                src_type = src_spec["type"]
+                src_opts = src_spec["options"]
+                src_label = f"[Source {i+1}/{len(sources)}: {src_type}] "
+
+                _progress("CONNECTING_SOURCE", (i / len(sources)) * 0.1, src_label)
+
+                src_cfg = ConnectorConfig(
+                    name=f"src_{src_type}_{i}",
+                    connector_type=src_type,
+                    options=src_opts,
+                )
+                source = ConnectorRegistry.create_source(src_cfg)
+                source.connect()
+
+                src_table = src_opts.get("table_name") or src_opts.get("table") or ""
+
+                # Untuk file destination: pakai append setelah source pertama
+                effective_dest_opts = dict(destination_options)
+                mode = "append" if i > 0 and is_file_dest else "append"
+
+                pipeline = Pipeline(
+                    name=f"{run.pipeline_name} [{i+1}]",
+                    source=source,
+                    destination=destination,
+                    source_table=src_table,
+                    destination_table=dest_table,
+                    transformations=built_transformers,
+                )
+
+                def _sub_progress(step: str, pct: float, _label=src_label, _i=i, _n=len(sources)):
+                    overall_pct = (_i / _n) + (pct / _n)
+                    _progress(step, overall_pct, _label)
+
+                context = pipeline.run(progress_callback=_sub_progress)
+
+                if context.status.value == "SUCCESS":
+                    total_extracted += context.metrics.rows_extracted
+                    total_loaded += context.metrics.rows_loaded
+                    _progress("SOURCE_DONE", (i + 1) / len(sources), src_label)
+                else:
+                    err_msg = "; ".join(e.get("message", "") for e in context.errors) or f"Source {i+1} gagal."
+                    raise RuntimeError(err_msg)
+
+            run.status = RunStatus.SUCCESS
+            run.finished_at = datetime.now()
+            run.metrics = {
+                "rows_extracted": total_extracted,
+                "rows_transformed": total_loaded,
+                "rows_loaded": total_loaded,
+                "duration_seconds": round((run.finished_at - run.started_at).total_seconds(), 4),
+                "sources_processed": len(sources),
+            }
+            # Track output file if file destination
+            if is_file_dest and destination_options.get("path"):
+                run.output_files = [destination_options["path"]]
+
+            run.push_event("done", {"status": "success", "metrics": run.metrics})
+
+        except Exception as exc:
+            run.status = RunStatus.ERROR
+            run.finished_at = datetime.now()
+            run.error_message = str(exc)
+            run.log_lines.append(f"[ERROR] {exc}")
+            run.push_event("done", {"status": "error", "error": str(exc)})
+            logger.exception("Multi-source pipeline run %s failed", run.run_id)
+
+        finally:
             if run._loop and run._event_queue:
                 run._loop.call_soon_threadsafe(run._event_queue.put_nowait, None)
 

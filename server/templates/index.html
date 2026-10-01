@@ -7,7 +7,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <title>FlowETL — Visual Data Integration</title>
-  <link rel="stylesheet" href="/static/app.css?v=20260930_case1">
+  <link rel="stylesheet" href="/static/app.css?v=20261001_v2">
 </head>
 <body>
 
@@ -429,48 +429,87 @@
         <!-- 3-Panel Builder -->
         <div class="pipeline-builder">
 
-          <!-- Source Panel -->
+          <!-- ══ Source Panel ══════════════════════════════════════ -->
           <div class="pipeline-panel">
             <div class="pipeline-panel-header">
               <span class="panel-badge badge-source">Source</span>
               <span style="font-size:13px;font-weight:600;color:var(--text)">Sumber Data</span>
             </div>
             <div class="pipeline-panel-body">
+
+              <!-- Source Type Selector (File / SQL) -->
               <div class="form-group">
-                <label class="form-label">Tipe Connector</label>
-                <div class="connector-grid" id="source-chips">
-                  <span style="color:var(--text-tertiary);font-size:12px">Memuat...</span>
-                </div>
-              </div>
-              <div class="divider"></div>
-              <div id="source-fields">
-                <div class="empty-desc" style="font-size:12px;color:var(--text-tertiary)">
-                  Pilih connector di atas untuk melengkapi konfigurasi.
+                <label class="form-label">Kategori Sumber</label>
+                <div style="display:flex;gap:8px;margin-bottom:10px">
+                  <button class="dest-format-btn selected" id="src-cat-file" onclick="setSrcCategory('file')">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                    Upload File
+                  </button>
+                  <button class="dest-format-btn" id="src-cat-sql" onclick="setSrcCategory('sql')">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
+                    Database SQL
+                  </button>
                 </div>
               </div>
 
-              <!-- Custom SQL / Multi-table Toggle -->
-              <div class="divider" style="margin-top:12px"></div>
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px;margin-bottom:8px">
-                <div>
-                  <span style="font-size:12px;font-weight:600;color:var(--text)">Custom SQL Query</span>
-                  <div style="font-size:11px;color:var(--text-tertiary);margin-top:2px">Gabung beberapa tabel dengan SQL (JOIN, UNION, dll.)</div>
+              <!-- ── FILE SOURCE PANEL ── -->
+              <div id="src-panel-file">
+                <div class="form-group">
+                  <label class="form-label">Format File</label>
+                  <div class="dest-format-group" id="src-file-format-group">
+                    <button class="dest-format-btn selected" data-fmt="csv" onclick="selectSrcFileFormat('csv')">CSV</button>
+                    <button class="dest-format-btn" data-fmt="json" onclick="selectSrcFileFormat('json')">JSON</button>
+                    <button class="dest-format-btn" data-fmt="jsonl" onclick="selectSrcFileFormat('jsonl')">JSONL</button>
+                    <button class="dest-format-btn" data-fmt="sqlite" onclick="selectSrcFileFormat('sqlite')">SQLite</button>
+                  </div>
                 </div>
-                <label class="toggle-switch">
-                  <input type="checkbox" id="toggle-custom-sql" onchange="toggleCustomSQLMode(this.checked)">
-                  <span class="toggle-slider"></span>
-                </label>
-              </div>
-              <div id="source-single-table" style="display:block"></div>
-              <div id="source-custom-sql" style="display:none">
-                <label class="form-label">Query SQL</label>
-                <textarea id="custom-sql-query" class="form-input" rows="5"
-                  style="width:100%;box-sizing:border-box;font-family:var(--mono);font-size:12px;resize:vertical"
-                  placeholder="SELECT p.*, d.DepartmentName&#10;FROM Patient p&#10;JOIN Department d ON p.DepartmentID = d.DepartmentID&#10;LIMIT 1000"></textarea>
-                <div style="font-size:11px;color:var(--text-tertiary);margin-top:6px">
-                  Koneksi diambil dari pengaturan Source connector di atas.
+
+                <div id="src-csv-options" class="form-group" style="margin-top:6px">
+                  <label class="form-label" style="font-size:11px">Delimiter</label>
+                  <input class="form-control" id="src-csv-delimiter" type="text" value="," placeholder="," style="max-width:80px;font-size:12px;padding:4px 8px">
+                </div>
+
+                <div id="src-sqlite-options" class="form-group" style="margin-top:6px;display:none">
+                  <label class="form-label" style="font-size:11px">Nama Tabel (opsional)</label>
+                  <input class="form-control" id="src-sqlite-table" type="text" placeholder="Biarkan kosong untuk semua tabel" style="font-size:12px;padding:4px 8px">
+                </div>
+
+                <!-- Drag & Drop Upload Zone -->
+                <div class="form-group">
+                  <label class="form-label">Upload File</label>
+                  <div class="upload-drop-zone" id="src-drop-zone">
+                    <input type="file" id="src-file-input" multiple accept=".csv,.json,.jsonl,.sqlite,.db"
+                           onchange="handleSrcFileSelect(this.files)">
+                    <div class="drop-icon">
+                      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                    </div>
+                    <div class="drop-title">Drag & Drop file di sini</div>
+                    <div class="drop-sub">atau klik untuk memilih (bisa banyak file sekaligus)</div>
+                  </div>
+                  <div class="upload-file-list" id="src-file-list"></div>
                 </div>
               </div>
+
+              <!-- ── SQL SOURCE PANEL ── -->
+              <div id="src-panel-sql" style="display:none">
+                <div class="form-group">
+                  <label class="form-label">Tipe Database</label>
+                  <div class="dest-format-group">
+                    <button class="dest-format-btn selected" data-dbtype="mysql" onclick="selectSrcDbType('mysql')">MySQL</button>
+                    <button class="dest-format-btn" data-dbtype="postgresql" onclick="selectSrcDbType('postgresql')">PostgreSQL</button>
+                  </div>
+                </div>
+
+                <!-- Source DB Cards Container -->
+                <div id="src-db-cards"></div>
+
+                <!-- Add More Database Button -->
+                <button class="add-more-btn" onclick="addSrcDbCard()">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                  Tambah Database
+                </button>
+              </div>
+
             </div>
           </div>
 
@@ -481,7 +520,7 @@
             </svg>
           </div>
 
-          <!-- Transform Panel -->
+          <!-- ══ Transform Panel ════════════════════════════════════ -->
           <div class="pipeline-panel">
             <div class="pipeline-panel-header" style="justify-content:space-between">
               <div style="display:flex;align-items:center;gap:10px">
@@ -500,7 +539,7 @@
                 <input type="checkbox" id="transform-trim" style="margin-top:3px;accent-color:var(--accent)" onchange="updateTransformBadge()">
                 <div style="flex:1">
                   <div style="font-size:13px;font-weight:600;color:var(--text)">Trim Spasi</div>
-                  <div style="font-size:11.5px;color:var(--text-secondary)">Hapus spasi di awal & akhir string (" Budi " → "Budi")</div>
+                  <div style="font-size:11.5px;color:var(--text-secondary)">Hapus spasi di awal &amp; akhir string (" Budi " → "Budi")</div>
                 </div>
               </label>
 
@@ -541,7 +580,7 @@
                 </div>
               </label>
 
-              <!-- Option 4: Masking -->
+              <!-- Option 6: Masking -->
               <label class="transform-card" style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;cursor:pointer;background:var(--bg-canvas);transition:all 0.2s">
                 <input type="checkbox" id="transform-mask" style="margin-top:3px;accent-color:var(--accent)" onchange="updateTransformBadge()">
                 <div style="flex:1">
@@ -560,25 +599,100 @@
             </svg>
           </div>
 
-          <!-- Destination Panel -->
+          <!-- ══ Destination Panel ═══════════════════════════════════ -->
           <div class="pipeline-panel">
             <div class="pipeline-panel-header">
               <span class="panel-badge badge-destination">Destination</span>
               <span style="font-size:13px;font-weight:600;color:var(--text)">Tujuan Data</span>
             </div>
             <div class="pipeline-panel-body">
+
+              <!-- Destination Category Selector -->
               <div class="form-group">
-                <label class="form-label">Tipe Connector</label>
-                <div class="connector-grid" id="dest-chips">
-                  <span style="color:var(--text-tertiary);font-size:12px">Memuat...</span>
+                <label class="form-label">Kategori Tujuan</label>
+                <div style="display:flex;gap:8px;margin-bottom:10px">
+                  <button class="dest-format-btn selected" id="dst-cat-file" onclick="setDstCategory('file')">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                    Output File
+                  </button>
+                  <button class="dest-format-btn" id="dst-cat-sql" onclick="setDstCategory('sql')">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
+                    Database SQL
+                  </button>
                 </div>
               </div>
-              <div class="divider"></div>
-              <div id="dest-fields">
-                <div class="empty-desc" style="font-size:12px;color:var(--text-tertiary)">
-                  Pilih connector di atas untuk melengkapi konfigurasi.
+
+              <!-- ── FILE DESTINATION PANEL ── -->
+              <div id="dst-panel-file">
+                <div class="form-group">
+                  <label class="form-label">Format Output</label>
+                  <div class="dest-format-group" id="dst-file-format-group">
+                    <button class="dest-format-btn selected" data-fmt="csv" onclick="selectDstFileFormat('csv')">CSV</button>
+                    <button class="dest-format-btn" data-fmt="json" onclick="selectDstFileFormat('json')">JSON</button>
+                    <button class="dest-format-btn" data-fmt="jsonl" onclick="selectDstFileFormat('jsonl')">JSONL</button>
+                    <button class="dest-format-btn" data-fmt="sqlite" onclick="selectDstFileFormat('sqlite')">SQLite</button>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Nama File Output</label>
+                  <div style="display:flex;align-items:center;gap:6px">
+                    <input class="form-control" id="dst-file-name" type="text" placeholder="output" value="output" style="max-width:180px">
+                    <span id="dst-file-ext" style="font-size:13px;color:var(--text-secondary);font-weight:500">.csv</span>
+                  </div>
+                  <div style="font-size:11px;color:var(--text-tertiary);margin-top:4px">
+                    File akan disimpan di folder <code>output/</code>
+                  </div>
+                </div>
+                <div id="dst-sqlite-table-group" class="form-group" style="display:none">
+                  <label class="form-label">Nama Tabel (untuk SQLite)</label>
+                  <input class="form-control" id="dst-sqlite-table" type="text" placeholder="etl_output" value="etl_output">
                 </div>
               </div>
+
+              <!-- ── SQL DESTINATION PANEL ── -->
+              <div id="dst-panel-sql" style="display:none">
+                <div class="form-group">
+                  <label class="form-label">Tipe Database</label>
+                  <div class="dest-format-group">
+                    <button class="dest-format-btn selected" data-dbtype="mysql" onclick="selectDstDbType('mysql')">MySQL</button>
+                    <button class="dest-format-btn" data-dbtype="postgresql" onclick="selectDstDbType('postgresql')">PostgreSQL</button>
+                  </div>
+                </div>
+
+                <!-- Koneksi destination -->
+                <div class="form-group">
+                  <label class="form-label">Koneksi Database Tujuan</label>
+                  <div style="display:grid;grid-template-columns:1fr 80px;gap:8px;margin-bottom:8px">
+                    <input class="form-control" id="dst-host" type="text" placeholder="localhost">
+                    <input class="form-control" id="dst-port" type="number" placeholder="3306">
+                  </div>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+                    <input class="form-control" id="dst-user" type="text" placeholder="root">
+                    <input class="form-control" id="dst-password" type="password" placeholder="password (kosongkan jika tidak ada)">
+                  </div>
+                  <button class="verify-btn" id="dst-verify-btn" onclick="verifyDstConnection()">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                    Verifikasi Koneksi
+                  </button>
+                  <div id="dst-verify-status" style="margin-top:6px;font-size:11.5px;color:var(--text-tertiary)"></div>
+                </div>
+
+                <div id="dst-db-select-group" class="form-group" style="display:none">
+                  <label class="form-label">Database Tujuan</label>
+                  <select class="form-select" id="dst-db-dropdown">
+                    <option value="">— Pilih database —</option>
+                  </select>
+                </div>
+
+                <div id="dst-table-name-group" class="form-group" style="display:none">
+                  <label class="form-label">Nama Tabel Baru</label>
+                  <input class="form-control" id="dst-table-name" type="text" placeholder="etl_output_merged">
+                  <div style="font-size:11px;color:var(--text-tertiary);margin-top:4px">
+                    Tabel akan dibuat otomatis jika belum ada.
+                  </div>
+                </div>
+              </div>
+
             </div>
           </div>
 
@@ -781,7 +895,7 @@
   </div>
 </div>
 
-<script src="/static/app.js?v=20260930_case1"></script>
+<script src="/static/app.js?v=20261001_v2"></script>
 <script>
 // ─── Quick-start presets ───────────────────────────────────────────────────
 

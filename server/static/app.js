@@ -8,11 +8,17 @@
 const API = {
   connectors:       "/api/connectors",
   run:              "/api/pipeline/run",
+  multiRun:         "/api/pipeline/multi-run",
+  upload:           "/api/upload",
+  verifyConn:       "/api/connector/verify",
+  listDatabases:    "/api/connector/databases",
+  listTables:       "/api/connector/tables",
   status:           (id) => `/api/pipeline/status/${id}`,
   history:          "/api/pipeline/history",
   stream:           (id) => `/stream/${id}`,
   files:            "/api/files",
   download:         (path) => `/api/files/download?path=${encodeURIComponent(path)}`,
+  downloadZip:      (id) => `/api/pipeline/download-zip/${id}`,
   installDb:        "/api/database/install-sql",
   schedules:        "/api/schedules",
   schedulesToggle:  (id) => `/api/schedules/${id}/toggle`,
@@ -85,6 +91,20 @@ const state = {
   pipelineName: "My Pipeline",
   activeView: "dashboard",
   stats: { total: 0, success: 0, error: 0, lastDuration: null },
+
+  // Builder v2 state
+  srcCategory: "file",        // "file" | "sql"
+  srcFileFormat: "csv",       // "csv" | "json" | "jsonl" | "sqlite"
+  srcDbType: "mysql",         // "mysql" | "postgresql"
+  srcUploadedFiles: [],       // [{file_id, original_name, saved_name, path, size_formatted}]
+  srcDbCards: [],             // [{id, verified, host, port, user, password, database, tables:[]}]
+  srcDbCardCounter: 0,
+
+  dstCategory: "file",        // "file" | "sql"
+  dstFileFormat: "csv",       // "csv" | "json" | "jsonl" | "sqlite"
+  dstDbType: "mysql",
+  dstVerified: false,
+  dstDatabases: [],
 };
 
 // ─── Utility ─────────────────────────────────────────────────────────────────
@@ -225,10 +245,6 @@ function collectOptions(containerId, connectorType) {
 // ─── Pipeline Builder ─────────────────────────────────────────────────────────
 
 function initBuilder() {
-  // Render source chips
-  renderConnectorChips("source", "source-chips", "source-fields");
-  renderConnectorChips("destination", "dest-chips", "dest-fields");
-
   // Pipeline name
   const nameInput = $("#pipeline-name-input");
   if (nameInput) {
@@ -239,6 +255,9 @@ function initBuilder() {
   // Run button
   const runBtn = $("#run-pipeline-btn");
   if (runBtn) runBtn.addEventListener("click", handleRunPipeline);
+
+  // Init upload drop zone
+  initDropZone();
 }
 
 function updateTransformBadge() {
@@ -288,53 +307,47 @@ function collectTransformations() {
 }
 
 async function handleRunPipeline() {
-  if (!state.selectedSource) { toast("Pilih Source connector terlebih dahulu.", "error"); return; }
-  if (!state.selectedDestination) { toast("Pilih Destination connector terlebih dahulu.", "error"); return; }
+  // Collect sources & destination from new UI
+  const sources = collectSources();
+  const dest    = collectDestination();
 
-  const srcOpts = collectOptions("source-fields", state.selectedSource);
-  const dstOpts = collectOptions("dest-fields", state.selectedDestination);
+  if (!sources || sources.length === 0) {
+    if (state.srcCategory === "file") {
+      toast("Upload minimal 1 file terlebih dahulu.", "error");
+    } else {
+      toast("Verifikasi koneksi, pilih database & tabel terlebih dahulu.", "error");
+    }
+    return;
+  }
+  if (!dest) {
+    if (state.dstCategory === "sql") {
+      toast("Verifikasi koneksi destination, pilih database & nama tabel baru.", "error");
+    } else {
+      toast("Lengkapi konfigurasi destination terlebih dahulu.", "error");
+    }
+    return;
+  }
+
   const transforms = collectTransformations();
-
-  // Inject custom SQL query if mode is active
-  const customSQLActive = $("#toggle-custom-sql")?.checked;
-  if (customSQLActive) {
-    const sql = $("#custom-sql-query")?.value?.trim();
-    if (!sql) { toast("Tulis SQL Query terlebih dahulu.", "error"); return; }
-    srcOpts.query = sql;
-  }
-
-  // Basic validation
-  const srcFields = CONNECTOR_FIELDS[state.selectedSource] || [];
-  for (const f of srcFields) {
-    if (f.required && !srcOpts[f.key]) {
-      toast(`Source: field "${f.label}" wajib diisi.`, "error"); return;
-    }
-  }
-  const dstFields = CONNECTOR_FIELDS[state.selectedDestination] || [];
-  for (const f of dstFields) {
-    if (f.required && !dstOpts[f.key]) {
-      toast(`Destination: field "${f.label}" wajib diisi.`, "error"); return;
-    }
-  }
+  const name       = state.pipelineName || "My Pipeline";
 
   const runBtn = $("#run-pipeline-btn");
-  runBtn.disabled = true;
-  runBtn.innerHTML = `<div class="spinner"></div> Memulai...`;
+  if (runBtn) { runBtn.disabled = true; runBtn.innerHTML = `<div class="spinner"></div> Memulai...`; }
 
   try {
-    const res = await fetch(API.run, {
+    const body = {
+      pipeline_name: name,
+      sources,
+      destination_type: dest.type,
+      destination_options: dest.options,
+      transformations: transforms,
+    };
+
+    const res = await fetch(API.multiRun, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        pipeline_name: state.pipelineName,
-        source_type: state.selectedSource,
-        source_options: srcOpts,
-        destination_type: state.selectedDestination,
-        destination_options: dstOpts,
-        transformations: transforms,
-      }),
+      body: JSON.stringify(body),
     });
-
     const data = await res.json();
     if (!res.ok) {
       toast(data.detail || "Terjadi kesalahan.", "error");
@@ -342,15 +355,17 @@ async function handleRunPipeline() {
     }
 
     state.currentRunId = data.run_id;
-    toast(`Pipeline dikirim! run_id: ${data.run_id}`, "info");
+    toast(`Pipeline dikirim! ${sources.length} sumber → ${dest.type}. run_id: ${data.run_id}`, "info");
     openProgressDrawer(data.run_id);
     startSSEStream(data.run_id);
 
   } catch (err) {
     toast(`Error: ${err.message}`, "error");
   } finally {
-    runBtn.disabled = false;
-    runBtn.innerHTML = `▶ Jalankan Pipeline`;
+    if (runBtn) {
+      runBtn.disabled = false;
+      runBtn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> Jalankan Pipeline`;
+    }
   }
 }
 
@@ -671,6 +686,13 @@ function showCreateScheduleModal() {
     `<option value="${v}">${l}</option>`
   ).join("");
 
+  const srcTypeOptions = ["mysql", "postgresql", "csv", "json", "jsonl", "sqlite"].map(t =>
+    `<option value="${t}">${t.toUpperCase()}</option>`
+  ).join("");
+  const dstTypeOptions = ["csv", "json", "jsonl", "sqlite", "mysql", "postgresql"].map(t =>
+    `<option value="${t}">${t.toUpperCase()}</option>`
+  ).join("");
+
   const modal = document.createElement("div");
   modal.id = "modal-create-schedule";
   modal.style.cssText = `
@@ -678,7 +700,7 @@ function showCreateScheduleModal() {
     background:rgba(0,0,0,0.35);backdrop-filter:blur(6px);
   `;
   modal.innerHTML = `
-    <div style="background:#fff;border-radius:18px;padding:32px;width:520px;max-width:95vw;box-shadow:0 24px 64px rgba(0,0,0,0.18);animation:fadeInUp .22s ease">
+    <div style="background:#fff;border-radius:18px;padding:32px;width:580px;max-width:96vw;max-height:90vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,0.18);animation:fadeInUp .22s ease">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
         <h2 style="font-size:17px;font-weight:700;margin:0">Tambah Jadwal ETL</h2>
         <button onclick="document.getElementById('modal-create-schedule').remove()" style="background:none;border:none;cursor:pointer;padding:4px">
@@ -686,36 +708,70 @@ function showCreateScheduleModal() {
         </button>
       </div>
 
-      <div style="display:grid;gap:14px">
-        <div class="form-group" style="margin:0">
+      <div class="sc-modal-grid">
+        <div class="form-group full-width" style="margin:0">
           <label class="form-label">Nama Jadwal</label>
-          <input class="form-input" id="sc-name" placeholder="Sinkronisasi Harian Pasien" style="width:100%;box-sizing:border-box">
+          <input class="form-control" id="sc-name" placeholder="Sinkronisasi Harian Pasien" style="width:100%;box-sizing:border-box">
         </div>
-        <div class="form-group" style="margin:0">
+        <div class="form-group full-width" style="margin:0">
           <label class="form-label">Nama Pipeline</label>
-          <input class="form-input" id="sc-pipeline" placeholder="daily_sync" style="width:100%;box-sizing:border-box">
+          <input class="form-control" id="sc-pipeline" placeholder="daily_sync" style="width:100%;box-sizing:border-box">
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-          <div class="form-group" style="margin:0">
-            <label class="form-label">Tipe Source</label>
-            <input class="form-input" id="sc-src-type" placeholder="mysql" style="width:100%;box-sizing:border-box">
+
+        <div class="form-group" style="margin:0">
+          <label class="form-label">Tipe Source</label>
+          <select class="form-select" id="sc-src-type" onchange="onScSrcTypeChange(this.value)">${srcTypeOptions}</select>
+        </div>
+        <div class="form-group" style="margin:0">
+          <label class="form-label">Tipe Destination</label>
+          <select class="form-select" id="sc-dst-type" onchange="onScDstTypeChange(this.value)">${dstTypeOptions}</select>
+        </div>
+
+        <!-- Source SQL fields (shown when SQL type selected) -->
+        <div id="sc-src-sql-fields" class="form-group full-width" style="margin:0;display:none">
+          <label class="form-label">Koneksi Source Database</label>
+          <div style="display:grid;grid-template-columns:1fr 80px;gap:8px;margin-bottom:6px">
+            <input class="form-control" id="sc-src-host" type="text" placeholder="localhost">
+            <input class="form-control" id="sc-src-port" type="number" placeholder="3306">
           </div>
-          <div class="form-group" style="margin:0">
-            <label class="form-label">Tipe Destination</label>
-            <input class="form-input" id="sc-dst-type" placeholder="csv" style="width:100%;box-sizing:border-box">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+            <input class="form-control" id="sc-src-user" type="text" placeholder="root">
+            <input class="form-control" id="sc-src-pass" type="password" placeholder="password">
           </div>
+          <input class="form-control" id="sc-src-database" type="text" placeholder="Nama database (contoh: HospitalManagementSystem)" style="margin-bottom:6px;width:100%;box-sizing:border-box">
+          <input class="form-control" id="sc-src-table" type="text" placeholder="Nama tabel (contoh: Patients)" style="width:100%;box-sizing:border-box">
         </div>
-        <div class="form-group" style="margin:0">
-          <label class="form-label">Source Options (JSON)</label>
-          <textarea class="form-input" id="sc-src-opts" rows="3" style="width:100%;box-sizing:border-box;font-family:var(--mono);font-size:12px;resize:vertical" placeholder='{"host":"localhost","user":"root","password":"","database":"MyDB","table":"patients"}'></textarea>
+
+        <!-- Source File fields (shown when file type selected) -->
+        <div id="sc-src-file-fields" class="form-group full-width" style="margin:0">
+          <label class="form-label">Path File Source</label>
+          <input class="form-control" id="sc-src-path" type="text" placeholder="data/patients.csv" style="width:100%;box-sizing:border-box">
         </div>
-        <div class="form-group" style="margin:0">
-          <label class="form-label">Destination Options (JSON)</label>
-          <textarea class="form-input" id="sc-dst-opts" rows="2" style="width:100%;box-sizing:border-box;font-family:var(--mono);font-size:12px;resize:vertical" placeholder='{"path":"output/patients_daily.csv"}'></textarea>
+
+        <!-- Destination SQL fields -->
+        <div id="sc-dst-sql-fields" class="form-group full-width" style="margin:0;display:none">
+          <label class="form-label">Koneksi Destination Database</label>
+          <div style="display:grid;grid-template-columns:1fr 80px;gap:8px;margin-bottom:6px">
+            <input class="form-control" id="sc-dst-host" type="text" placeholder="localhost">
+            <input class="form-control" id="sc-dst-port" type="number" placeholder="3306">
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+            <input class="form-control" id="sc-dst-user" type="text" placeholder="root">
+            <input class="form-control" id="sc-dst-pass" type="password" placeholder="password">
+          </div>
+          <input class="form-control" id="sc-dst-database" type="text" placeholder="Nama database tujuan" style="margin-bottom:6px;width:100%;box-sizing:border-box">
+          <input class="form-control" id="sc-dst-table" type="text" placeholder="Nama tabel tujuan" style="width:100%;box-sizing:border-box">
         </div>
-        <div class="form-group" style="margin:0">
-          <label class="form-label">Frekuensi</label>
-          <select class="form-input" id="sc-freq" style="width:100%;box-sizing:border-box">${freqOptions}</select>
+
+        <!-- Destination File fields -->
+        <div id="sc-dst-file-fields" class="form-group full-width" style="margin:0">
+          <label class="form-label">Path File Output</label>
+          <input class="form-control" id="sc-dst-path" type="text" placeholder="output/patients_daily.csv" style="width:100%;box-sizing:border-box">
+        </div>
+
+        <div class="form-group full-width" style="margin:0">
+          <label class="form-label">Frekuensi Jadwal</label>
+          <select class="form-select" id="sc-freq">${freqOptions}</select>
         </div>
       </div>
 
@@ -733,22 +789,75 @@ function showCreateScheduleModal() {
   setTimeout(() => document.getElementById("sc-name")?.focus(), 50);
 }
 
+function onScSrcTypeChange(val) {
+  const isSql  = ["mysql","postgresql","postgres"].includes(val);
+  const sqlFld = $("#sc-src-sql-fields");
+  const filFld = $("#sc-src-file-fields");
+  if (sqlFld)  sqlFld.style.display = isSql ? "" : "none";
+  if (filFld)  filFld.style.display = isSql ? "none" : "";
+  // Update port placeholder
+  const portInp = $("#sc-src-port");
+  if (portInp) portInp.placeholder = val === "mysql" ? "3306" : "5432";
+}
+
+function onScDstTypeChange(val) {
+  const isSql  = ["mysql","postgresql","postgres"].includes(val);
+  const sqlFld = $("#sc-dst-sql-fields");
+  const filFld = $("#sc-dst-file-fields");
+  if (sqlFld)  sqlFld.style.display = isSql ? "" : "none";
+  if (filFld)  filFld.style.display = isSql ? "none" : "";
+  const portInp = $("#sc-dst-port");
+  if (portInp) portInp.placeholder = val === "mysql" ? "3306" : "5432";
+}
+
 async function submitCreateSchedule() {
   const name     = $("#sc-name")?.value.trim();
   const pipeline = $("#sc-pipeline")?.value.trim();
-  const srcType  = $("#sc-src-type")?.value.trim();
-  const dstType  = $("#sc-dst-type")?.value.trim();
+  const srcType  = $("#sc-src-type")?.value;
+  const dstType  = $("#sc-dst-type")?.value;
   const freq     = $("#sc-freq")?.value;
-  let srcOpts, dstOpts;
 
   if (!name || !pipeline || !srcType || !dstType) {
     toast("Lengkapi semua field yang wajib diisi.", "error"); return;
   }
 
-  try { srcOpts = JSON.parse($("#sc-src-opts")?.value || "{}"); }
-  catch (_) { toast("Source Options bukan JSON valid.", "error"); return; }
-  try { dstOpts = JSON.parse($("#sc-dst-opts")?.value || "{}"); }
-  catch (_) { toast("Destination Options bukan JSON valid.", "error"); return; }
+  // Build source options based on type
+  let srcOpts = {};
+  const isSrcSql = ["mysql","postgresql","postgres"].includes(srcType);
+  if (isSrcSql) {
+    srcOpts = {
+      host:     $("#sc-src-host")?.value.trim() || "localhost",
+      port:     parseInt($("#sc-src-port")?.value) || (srcType === "mysql" ? 3306 : 5432),
+      user:     $("#sc-src-user")?.value.trim() || "root",
+      password: $("#sc-src-pass")?.value || "",
+      database: $("#sc-src-database")?.value.trim(),
+      table_name: $("#sc-src-table")?.value.trim(),
+    };
+    if (!srcOpts.database) { toast("Database source wajib diisi.", "error"); return; }
+    if (!srcOpts.table_name) { toast("Tabel source wajib diisi.", "error"); return; }
+  } else {
+    srcOpts = { path: $("#sc-src-path")?.value.trim() };
+    if (!srcOpts.path) { toast("Path file source wajib diisi.", "error"); return; }
+  }
+
+  // Build destination options based on type
+  let dstOpts = {};
+  const isDstSql = ["mysql","postgresql","postgres"].includes(dstType);
+  if (isDstSql) {
+    dstOpts = {
+      host:     $("#sc-dst-host")?.value.trim() || "localhost",
+      port:     parseInt($("#sc-dst-port")?.value) || (dstType === "mysql" ? 3306 : 5432),
+      user:     $("#sc-dst-user")?.value.trim() || "root",
+      password: $("#sc-dst-pass")?.value || "",
+      database: $("#sc-dst-database")?.value.trim(),
+      table_name: $("#sc-dst-table")?.value.trim(),
+    };
+    if (!dstOpts.database) { toast("Database destination wajib diisi.", "error"); return; }
+    if (!dstOpts.table_name) { toast("Tabel destination wajib diisi.", "error"); return; }
+  } else {
+    dstOpts = { path: $("#sc-dst-path")?.value.trim() };
+    if (!dstOpts.path) { toast("Path file destination wajib diisi.", "error"); return; }
+  }
 
   try {
     const res = await fetch(API.schedules, {
@@ -777,6 +886,467 @@ function toggleCustomSQLMode(enabled) {
   const sqlBlock    = $("#source-custom-sql");
   if (singleBlock) singleBlock.style.display = enabled ? "none" : "";
   if (sqlBlock)    sqlBlock.style.display    = enabled ? "" : "none";
+}
+
+
+
+// ─── Pipeline Builder v2 ─────────────────────────────────────────────────────
+
+// ── SOURCE: Category switch (File / SQL) ────────────────────────────────────
+function setSrcCategory(cat) {
+  state.srcCategory = cat;
+  $("#src-cat-file")?.classList.toggle("selected", cat === "file");
+  $("#src-cat-sql")?.classList.toggle("selected", cat === "sql");
+  $("#src-panel-file").style.display = cat === "file" ? "" : "none";
+  $("#src-panel-sql").style.display  = cat === "sql"  ? "" : "none";
+  // Auto-add first DB card when switching to SQL
+  if (cat === "sql" && state.srcDbCards.length === 0) {
+    addSrcDbCard();
+  }
+}
+
+function selectSrcFileFormat(fmt) {
+  state.srcFileFormat = fmt;
+  $$("[data-fmt]", $("#src-file-format-group")).forEach(btn => {
+    btn.classList.toggle("selected", btn.dataset.fmt === fmt);
+  });
+  // Show/hide format-specific options
+  const csvOpts    = $("#src-csv-options");
+  const sqliteOpts = $("#src-sqlite-options");
+  const fileInput  = $("#src-file-input");
+  if (csvOpts)    csvOpts.style.display    = fmt === "csv"    ? "" : "none";
+  if (sqliteOpts) sqliteOpts.style.display = fmt === "sqlite" ? "" : "none";
+  // Update accepted file types
+  const acceptMap = { csv: ".csv", json: ".json", jsonl: ".jsonl", sqlite: ".sqlite,.db" };
+  if (fileInput) fileInput.accept = acceptMap[fmt] || "";
+}
+
+function selectSrcDbType(dbtype) {
+  state.srcDbType = dbtype;
+  $$("[data-dbtype]", $("#src-panel-sql")).forEach(btn => {
+    btn.classList.toggle("selected", btn.dataset.dbtype === dbtype);
+  });
+  // Update default port hints for existing cards
+  $$(".src-db-port-input").forEach(inp => {
+    inp.placeholder = dbtype === "mysql" ? "3306" : "5432";
+  });
+}
+
+// ── SOURCE: File Upload ─────────────────────────────────────────────────────
+function handleSrcFileSelect(files) {
+  if (!files || files.length === 0) return;
+  const zone  = $("#src-drop-zone");
+  const list  = $("#src-file-list");
+  if (zone)  zone.classList.add("dragover");
+  uploadFilesToServer(Array.from(files)).then(uploaded => {
+    uploaded.forEach(f => { state.srcUploadedFiles.push(f); });
+    renderUploadedFiles();
+    if (zone) zone.classList.remove("dragover");
+    toast(`${uploaded.length} file berhasil diupload.`, "success");
+  }).catch(err => {
+    toast(`Upload gagal: ${err.message}`, "error");
+    if (zone) zone.classList.remove("dragover");
+  });
+}
+
+async function uploadFilesToServer(files) {
+  const formData = new FormData();
+  files.forEach(f => formData.append("files", f));
+  const res = await fetch(API.upload, { method: "POST", body: formData });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: "Upload error" }));
+    throw new Error(err.detail || "Upload gagal");
+  }
+  return res.json();
+}
+
+function renderUploadedFiles() {
+  const list = $("#src-file-list");
+  if (!list) return;
+  if (state.srcUploadedFiles.length === 0) {
+    list.innerHTML = "";
+    return;
+  }
+  list.innerHTML = state.srcUploadedFiles.map((f, i) => `
+    <div class="upload-file-item">
+      <span class="file-icon">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+      </span>
+      <span class="file-name">${f.original_name}</span>
+      <span class="file-size">${f.size_formatted}</span>
+      <button class="file-remove" onclick="removeSrcFile(${i})" title="Hapus">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+    </div>
+  `).join("");
+}
+
+function removeSrcFile(index) {
+  state.srcUploadedFiles.splice(index, 1);
+  renderUploadedFiles();
+}
+
+// ── SOURCE: SQL DB Cards ────────────────────────────────────────────────────
+function addSrcDbCard() {
+  const id = ++state.srcDbCardCounter;
+  const card = { id, verified: false, host: "", port: "", user: "", password: "", database: "", tables: [] };
+  state.srcDbCards.push(card);
+  renderSrcDbCards();
+}
+
+function removeSrcDbCard(id) {
+  state.srcDbCards = state.srcDbCards.filter(c => c.id !== id);
+  renderSrcDbCards();
+}
+
+function renderSrcDbCards() {
+  const container = $("#src-db-cards");
+  if (!container) return;
+  container.innerHTML = "";
+  state.srcDbCards.forEach(card => {
+    const defaultPort = state.srcDbType === "mysql" ? "3306" : "5432";
+    const div = document.createElement("div");
+    div.className = "source-card";
+    div.id = `src-card-${card.id}`;
+    div.innerHTML = `
+      <div class="source-card-header">
+        <div class="source-card-title">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
+          Database #${card.id}
+        </div>
+        ${state.srcDbCards.length > 1 ? `
+          <button class="source-card-remove" onclick="removeSrcDbCard(${card.id})" title="Hapus">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+        ` : ""}
+      </div>
+
+      <!-- Step indicator -->
+      <div class="step-indicator">
+        <div class="step-dot ${card.verified ? 'done' : 'active'}">1</div>
+        <div class="step-line ${card.verified ? 'done' : ''}"></div>
+        <div class="step-dot ${card.database ? 'active' : ''}">2</div>
+        <div class="step-line ${card.tables.length > 0 ? 'done' : ''}"></div>
+        <div class="step-dot ${card.tables.length > 0 ? 'active' : ''}">3</div>
+      </div>
+
+      <!-- Step 1: Connection -->
+      <div style="display:grid;grid-template-columns:1fr 80px;gap:8px;margin-bottom:8px">
+        <input class="form-control" id="src-host-${card.id}" type="text" placeholder="localhost" value="${card.host}" oninput="updateSrcCardField(${card.id},'host',this.value)">
+        <input class="form-control src-db-port-input" id="src-port-${card.id}" type="number" placeholder="${defaultPort}" value="${card.port}" oninput="updateSrcCardField(${card.id},'port',this.value)">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+        <input class="form-control" id="src-user-${card.id}" type="text" placeholder="root" value="${card.user}" oninput="updateSrcCardField(${card.id},'user',this.value)">
+        <input class="form-control" id="src-pass-${card.id}" type="password" placeholder="password" value="${card.password}" oninput="updateSrcCardField(${card.id},'password',this.value)">
+      </div>
+      <button class="verify-btn ${card.verified ? 'verified' : ''}" id="src-verify-btn-${card.id}" onclick="verifySrcCard(${card.id})">
+        ${card.verified
+          ? `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg> Terverifikasi`
+          : `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg> Verifikasi Koneksi`}
+      </button>
+      <div id="src-verify-msg-${card.id}" style="font-size:11.5px;margin-top:5px;color:var(--text-tertiary)"></div>
+
+      <!-- Step 2: Database dropdown (after verify) -->
+      <div id="src-db-group-${card.id}" style="display:${card.verified ? '' : 'none'};margin-top:10px">
+        <label class="form-label">Pilih Database</label>
+        <select class="form-select" id="src-db-sel-${card.id}" onchange="onSrcDbSelected(${card.id}, this.value)">
+          <option value="">— Pilih database —</option>
+          ${(card._databases || []).map(db => `<option value="${db}" ${db === card.database ? 'selected' : ''}>${db}</option>`).join("")}
+        </select>
+      </div>
+
+      <!-- Step 3: Table multi-select (after database selected) -->
+      <div id="src-table-group-${card.id}" style="display:${card.database ? '' : 'none'};margin-top:10px">
+        <label class="form-label">Pilih Tabel (klik untuk memilih, bisa lebih dari 1)</label>
+        <div class="table-chips-container" id="src-table-chips-${card.id}">
+          ${(card._availableTables || []).map(t => `
+            <span class="table-chip-selectable ${card.tables.includes(t) ? 'selected' : ''}"
+                  onclick="toggleSrcTable(${card.id}, '${t}')">
+              <svg class="chip-check" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              ${t}
+            </span>
+          `).join("")}
+          ${!(card._availableTables || []).length ? '<span style="font-size:11.5px;color:var(--text-tertiary)">Pilih database terlebih dahulu</span>' : ''}
+        </div>
+        <div style="font-size:11px;color:var(--text-tertiary);margin-top:4px">
+          ${card.tables.length > 0 ? `<span class="verified-badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> ${card.tables.length} tabel dipilih</span>` : "Klik chip tabel untuk memilih"}
+        </div>
+      </div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+function updateSrcCardField(id, field, value) {
+  const card = state.srcDbCards.find(c => c.id === id);
+  if (card) {
+    card[field] = value;
+    // Reset verification if connection fields change
+    if (["host", "port", "user", "password"].includes(field) && card.verified) {
+      card.verified = false;
+      card.database = "";
+      card.tables = [];
+      renderSrcDbCards();
+    }
+  }
+}
+
+async function verifySrcCard(id) {
+  const card = state.srcDbCards.find(c => c.id === id);
+  if (!card) return;
+
+  const host     = $(`#src-host-${id}`)?.value.trim();
+  const port     = parseInt($(`#src-port-${id}`)?.value) || (state.srcDbType === "mysql" ? 3306 : 5432);
+  const user     = $(`#src-user-${id}`)?.value.trim();
+  const password = $(`#src-pass-${id}`)?.value;
+
+  if (!host || !user) { toast("Host dan User wajib diisi.", "error"); return; }
+
+  const btn = $(`#src-verify-btn-${id}`);
+  const msg = $(`#src-verify-msg-${id}`);
+  if (btn) { btn.classList.add("loading"); btn.disabled = true; }
+  if (msg) msg.textContent = "Menghubungkan...";
+
+  try {
+    const res = await fetch(API.verifyConn, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: state.srcDbType, host, port, user, password }),
+    });
+    const data = await res.json();
+
+    if (data.ok) {
+      card.verified  = true;
+      card.host      = host;
+      card.port      = String(port);
+      card.user      = user;
+      card.password  = password;
+      // Load databases
+      const dbRes  = await fetch(`${API.listDatabases}?type=${state.srcDbType}&host=${host}&port=${port}&user=${user}&password=${encodeURIComponent(password)}`);
+      const dbData = await dbRes.json();
+      card._databases = dbData.databases || [];
+      toast("Koneksi berhasil!", "success");
+    } else {
+      card.verified = false;
+      if (msg) msg.textContent = `✕ ${data.error || "Koneksi gagal"}`;
+    }
+  } catch (e) {
+    card.verified = false;
+    if (msg) msg.textContent = `✕ ${e.message}`;
+  } finally {
+    if (btn) { btn.classList.remove("loading"); btn.disabled = false; }
+    renderSrcDbCards();
+  }
+}
+
+async function onSrcDbSelected(id, database) {
+  const card = state.srcDbCards.find(c => c.id === id);
+  if (!card) return;
+  card.database = database;
+  card.tables   = [];
+  card._availableTables = [];
+
+  if (!database) { renderSrcDbCards(); return; }
+
+  // Load tables for selected database
+  try {
+    const q   = `type=${state.srcDbType}&host=${card.host}&port=${card.port}&user=${card.user}&password=${encodeURIComponent(card.password)}&database=${database}`;
+    const res = await fetch(`${API.listTables}?${q}`);
+    const data = await res.json();
+    card._availableTables = data.tables || [];
+  } catch (e) {
+    toast("Gagal memuat tabel: " + e.message, "error");
+  }
+  renderSrcDbCards();
+}
+
+function toggleSrcTable(cardId, tableName) {
+  const card = state.srcDbCards.find(c => c.id === cardId);
+  if (!card) return;
+  const idx = card.tables.indexOf(tableName);
+  if (idx === -1) card.tables.push(tableName);
+  else            card.tables.splice(idx, 1);
+  renderSrcDbCards();
+}
+
+// ── DESTINATION: Category switch ────────────────────────────────────────────
+function setDstCategory(cat) {
+  state.dstCategory = cat;
+  $("#dst-cat-file")?.classList.toggle("selected", cat === "file");
+  $("#dst-cat-sql")?.classList.toggle("selected", cat === "sql");
+  $("#dst-panel-file").style.display = cat === "file" ? "" : "none";
+  $("#dst-panel-sql").style.display  = cat === "sql"  ? "" : "none";
+}
+
+function selectDstFileFormat(fmt) {
+  state.dstFileFormat = fmt;
+  $$("[data-fmt]", $("#dst-file-format-group")).forEach(btn => {
+    btn.classList.toggle("selected", btn.dataset.fmt === fmt);
+  });
+  const extSpan = $("#dst-file-ext");
+  if (extSpan) extSpan.textContent = `.${fmt}`;
+  // Show table name field for SQLite
+  const sqliteGroup = $("#dst-sqlite-table-group");
+  if (sqliteGroup) sqliteGroup.style.display = fmt === "sqlite" ? "" : "none";
+}
+
+function selectDstDbType(dbtype) {
+  state.dstDbType = dbtype;
+  $$("[data-dbtype]", $("#dst-panel-sql")).forEach(btn => {
+    btn.classList.toggle("selected", btn.dataset.dbtype === dbtype);
+  });
+  // Update default port placeholder
+  const portInput = $("#dst-port");
+  if (portInput) portInput.placeholder = dbtype === "mysql" ? "3306" : "5432";
+  // Reset verification
+  state.dstVerified = false;
+  state.dstDatabases = [];
+  const dbGroup   = $("#dst-db-select-group");
+  const tblGroup  = $("#dst-table-name-group");
+  if (dbGroup)  dbGroup.style.display  = "none";
+  if (tblGroup) tblGroup.style.display = "none";
+  const status = $("#dst-verify-status");
+  if (status)  status.textContent = "";
+  const btn = $("#dst-verify-btn");
+  if (btn) { btn.className = "verify-btn"; btn.textContent = "Verifikasi Koneksi"; }
+}
+
+async function verifyDstConnection() {
+  const host     = $("#dst-host")?.value.trim();
+  const port     = parseInt($("#dst-port")?.value) || (state.dstDbType === "mysql" ? 3306 : 5432);
+  const user     = $("#dst-user")?.value.trim();
+  const password = $("#dst-password")?.value || "";
+
+  if (!host || !user) { toast("Host dan User wajib diisi.", "error"); return; }
+
+  const btn    = $("#dst-verify-btn");
+  const status = $("#dst-verify-status");
+  if (btn) { btn.classList.add("loading"); btn.disabled = true; }
+  if (status) status.textContent = "Menghubungkan...";
+
+  try {
+    const res  = await fetch(API.verifyConn, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: state.dstDbType, host, port, user, password }),
+    });
+    const data = await res.json();
+
+    if (data.ok) {
+      state.dstVerified = true;
+      if (btn) { btn.className = "verify-btn verified"; btn.innerHTML = `✓ Terverifikasi`; }
+      if (status) status.innerHTML = `<span class="verified-badge">✓ Koneksi berhasil!</span>`;
+
+      // Load databases
+      const dbRes  = await fetch(`${API.listDatabases}?type=${state.dstDbType}&host=${host}&port=${port}&user=${user}&password=${encodeURIComponent(password)}`);
+      const dbData = await dbRes.json();
+      const dbs    = dbData.databases || [];
+      state.dstDatabases = dbs;
+
+      const sel = $("#dst-db-dropdown");
+      if (sel) {
+        sel.innerHTML = `<option value="">— Pilih database —</option>` +
+          dbs.map(db => `<option value="${db}">${db}</option>`).join("");
+        sel.onchange = () => {
+          const tblGroup = $("#dst-table-name-group");
+          if (tblGroup) tblGroup.style.display = sel.value ? "" : "none";
+        };
+      }
+      const dbGroup = $("#dst-db-select-group");
+      if (dbGroup) dbGroup.style.display = "";
+    } else {
+      state.dstVerified = false;
+      if (btn) { btn.className = "verify-btn failed"; }
+      if (status) status.textContent = `✕ ${data.error || "Koneksi gagal"}`;
+    }
+  } catch (e) {
+    state.dstVerified = false;
+    if (status) status.textContent = `✕ ${e.message}`;
+  } finally {
+    if (btn) { btn.classList.remove("loading"); btn.disabled = false; }
+  }
+}
+
+// ── Drag & Drop for upload zone ─────────────────────────────────────────────
+function initDropZone() {
+  const zone = $("#src-drop-zone");
+  if (!zone) return;
+  zone.addEventListener("dragover", e => { e.preventDefault(); zone.classList.add("dragover"); });
+  zone.addEventListener("dragleave", () => zone.classList.remove("dragover"));
+  zone.addEventListener("drop", e => {
+    e.preventDefault();
+    zone.classList.remove("dragover");
+    const files = e.dataTransfer?.files;
+    if (files && files.length) handleSrcFileSelect(files);
+  });
+}
+
+// ── Collect sources for pipeline run ────────────────────────────────────────
+function collectSources() {
+  if (state.srcCategory === "file") {
+    if (state.srcUploadedFiles.length === 0) return null;
+    return state.srcUploadedFiles.map(f => {
+      const opts = { path: f.path };
+      if (state.srcFileFormat === "csv" && $("#src-csv-delimiter")?.value) {
+        opts.delimiter = $("#src-csv-delimiter").value;
+      }
+      if (state.srcFileFormat === "sqlite") {
+        const tbl = $("#src-sqlite-table")?.value.trim();
+        if (tbl) opts.table_name = tbl;
+      }
+      return { type: state.srcFileFormat, options: opts };
+    });
+  } else {
+    // SQL source: collect all verified cards with selected tables
+    const sources = [];
+    for (const card of state.srcDbCards) {
+      if (!card.verified || !card.database) continue;
+      const tables = card.tables.length > 0 ? card.tables : (card._availableTables || []);
+      for (const tbl of tables) {
+        sources.push({
+          type: state.srcDbType,
+          options: {
+            host: card.host,
+            port: parseInt(card.port),
+            user: card.user,
+            password: card.password,
+            database: card.database,
+            table_name: tbl,
+          },
+        });
+      }
+    }
+    return sources.length > 0 ? sources : null;
+  }
+}
+
+function collectDestination() {
+  if (state.dstCategory === "file") {
+    const name = $("#dst-file-name")?.value.trim() || "output";
+    const fmt  = state.dstFileFormat;
+    const path = `output/${name}.${fmt}`;
+    const opts = { path };
+    if (fmt === "sqlite") {
+      opts.table_name = $("#dst-sqlite-table")?.value.trim() || "etl_output";
+    }
+    return { type: fmt, options: opts };
+  } else {
+    if (!state.dstVerified) return null;
+    const database = $("#dst-db-dropdown")?.value;
+    const tableName = $("#dst-table-name")?.value.trim();
+    if (!database || !tableName) return null;
+    return {
+      type: state.dstDbType,
+      options: {
+        host: $("#dst-host")?.value.trim(),
+        port: parseInt($("#dst-port")?.value) || (state.dstDbType === "mysql" ? 3306 : 5432),
+        user: $("#dst-user")?.value.trim(),
+        password: $("#dst-password")?.value || "",
+        database,
+        table_name: tableName,
+      },
+    };
+  }
 }
 
 

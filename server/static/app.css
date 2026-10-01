@@ -1104,3 +1104,367 @@ table tr:hover td {
   from { opacity: 0; transform: translateY(16px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+
+/* ===================================================================
+   Pipeline Builder v2 — File Upload, SQL Source, Multi-DB Cards
+   =================================================================== */
+
+/* ── Upload Drop Zone ─────────────────────────────────────────────── */
+.upload-drop-zone {
+  border: 2px dashed var(--border-strong);
+  border-radius: var(--radius-card);
+  background: var(--bg-canvas);
+  padding: 28px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  position: relative;
+}
+.upload-drop-zone:hover,
+.upload-drop-zone.dragover {
+  border-color: var(--accent);
+  background: var(--accent-tint);
+}
+.upload-drop-zone input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+}
+.upload-drop-zone .drop-icon {
+  color: var(--text-tertiary);
+  margin-bottom: 8px;
+}
+.upload-drop-zone .drop-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.upload-drop-zone .drop-sub {
+  font-size: 11.5px;
+  color: var(--text-tertiary);
+}
+
+/* ── Upload File List ─────────────────────────────────────────────── */
+.upload-file-list {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.upload-file-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 7px 10px;
+  font-size: 12.5px;
+}
+.upload-file-item .file-icon {
+  color: var(--accent);
+  flex-shrink: 0;
+}
+.upload-file-item .file-name {
+  flex: 1;
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.upload-file-item .file-size {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+.upload-file-item .file-remove {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-tertiary);
+  padding: 2px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+.upload-file-item .file-remove:hover {
+  color: var(--red);
+  background: var(--red-tint);
+}
+
+/* ── Source Card (multi-DB) ───────────────────────────────────────── */
+.source-card {
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-card);
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  position: relative;
+  animation: fadeInUp 0.2s ease;
+}
+.source-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.source-card-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.source-card-remove {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-tertiary);
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+}
+.source-card-remove:hover {
+  color: var(--red);
+  background: var(--red-tint);
+}
+
+/* ── Step Indicator (1 → 2 → 3) ──────────────────────────────────── */
+.step-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-bottom: 12px;
+}
+.step-dot {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--bg-canvas);
+  border: 2px solid var(--border-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+.step-dot.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.step-dot.done {
+  background: var(--green);
+  border-color: var(--green);
+  color: #fff;
+}
+.step-line {
+  flex: 1;
+  height: 2px;
+  background: var(--border-strong);
+  margin: 0 4px;
+}
+.step-line.done {
+  background: var(--green);
+}
+.step-label {
+  font-size: 10.5px;
+  color: var(--text-tertiary);
+  margin-left: 6px;
+  font-weight: 500;
+}
+
+/* ── Verify Button ────────────────────────────────────────────────── */
+.verify-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+  border: 1.5px solid var(--border-strong);
+  background: var(--surface);
+  cursor: pointer;
+  color: var(--text);
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.verify-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-tint);
+}
+.verify-btn.loading {
+  opacity: 0.7;
+  cursor: wait;
+}
+.verify-btn.verified {
+  border-color: var(--green);
+  color: var(--green-text);
+  background: var(--green-tint);
+}
+.verify-btn.failed {
+  border-color: var(--red);
+  color: var(--red-text);
+  background: var(--red-tint);
+}
+
+/* ── Table Chips Multi-Select ─────────────────────────────────────── */
+.table-chips-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px;
+  background: var(--bg-canvas);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  min-height: 48px;
+  max-height: 160px;
+  overflow-y: auto;
+}
+.table-chip-selectable {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  border: 1.5px solid var(--border-strong);
+  background: var(--surface);
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.table-chip-selectable:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-tint);
+}
+.table-chip-selectable.selected {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
+.table-chip-selectable .chip-check {
+  display: none;
+}
+.table-chip-selectable.selected .chip-check {
+  display: block;
+}
+
+/* ── Destination Format Dropdown ──────────────────────────────────── */
+.dest-format-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.dest-format-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border-strong);
+  background: var(--surface);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.dest-format-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.dest-format-btn.selected {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
+
+/* ── Add More Button ──────────────────────────────────────────────── */
+.add-more-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 9px 14px;
+  border-radius: var(--radius-sm);
+  border: 1.5px dashed var(--border-strong);
+  background: transparent;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  justify-content: center;
+  transition: all 0.2s;
+  margin-top: 4px;
+}
+.add-more-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-tint);
+}
+
+/* ── Scheduler Modal — dropdown style override ────────────────────── */
+.sc-modal-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.sc-modal-grid .full-width {
+  grid-column: 1 / -1;
+}
+.form-select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1.5px solid var(--border-strong);
+  border-radius: var(--radius-input);
+  font-family: var(--font);
+  font-size: 13px;
+  color: var(--text);
+  background: var(--surface);
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2386868B' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 30px;
+  cursor: pointer;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+.form-select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-tint);
+}
+
+/* ── Verified Badge ───────────────────────────────────────────────── */
+.verified-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--green-text);
+  background: var(--green-tint);
+  padding: 3px 9px;
+  border-radius: var(--radius-pill);
+}

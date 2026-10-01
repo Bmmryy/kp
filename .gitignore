@@ -47,3 +47,10 @@ htmlcov/
 .DS_Store
 .idea/
 .vscode/
+
+# Local ETL Output & Uploads
+output/
+uploads/
+hasil/
+hasil*/
+data/hasil.csv

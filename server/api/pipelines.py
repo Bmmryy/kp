@@ -2,10 +2,15 @@
 from __future__ import annotations
 
 import asyncio
+import io
+import shutil
+import tempfile
+import zipfile
 from datetime import datetime
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, File, HTTPException, Request, UploadFile
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
@@ -32,6 +37,24 @@ class RunPipelineResponse(BaseModel):
     message: str
 
 
+class SourceSpec(BaseModel):
+    type: str
+    options: Dict[str, Any] = Field(default_factory=dict)
+
+
+class MultiRunRequest(BaseModel):
+    pipeline_name: str = Field(default="Unnamed Pipeline")
+    sources: List[SourceSpec] = Field(..., description="Daftar source (file atau DB+tabel)")
+    destination_type: str = Field(..., description="Jenis destination connector")
+    destination_options: Dict[str, Any] = Field(default_factory=dict)
+    transformations: List[Dict[str, Any]] = Field(default_factory=list)
+
+
+# Upload directory
+UPLOAD_DIR = Path("uploads")
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
+
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
@@ -56,6 +79,113 @@ async def run_pipeline(request: Request, body: RunPipelineRequest) -> RunPipelin
         transformations=body.transformations,
     )
     return RunPipelineResponse(run_id=run_id, message=f"Pipeline '{body.pipeline_name}' dikirim. run_id={run_id}")
+
+
+@router.post("/upload")
+async def upload_files(files: List[UploadFile] = File(...)) -> List[Dict[str, Any]]:
+    """Upload satu atau lebih file (CSV, JSON, JSONL, SQLite) ke direktori uploads/.
+
+    Returns daftar {file_id, name, path, size} untuk dipakai sebagai source path.
+    """
+    results = []
+    for f in files:
+        suffix = Path(f.filename or "upload").suffix or ".tmp"
+        # Buat nama unik dengan timestamp
+        import uuid as _uuid
+        uid = _uuid.uuid4().hex[:8]
+        dest_name = f"{uid}_{f.filename}"
+        dest_path = UPLOAD_DIR / dest_name
+
+        content = await f.read()
+        dest_path.write_bytes(content)
+
+        results.append({
+            "file_id": uid,
+            "original_name": f.filename,
+            "saved_name": dest_name,
+            "path": str(dest_path),
+            "size_bytes": len(content),
+            "size_formatted": f"{len(content)/1024:.1f} KB" if len(content) >= 1024 else f"{len(content)} B",
+        })
+    return results
+
+
+@router.post("/pipeline/multi-run", response_model=RunPipelineResponse)
+async def run_multi_pipeline(request: Request, body: MultiRunRequest) -> RunPipelineResponse:
+    """Submit pipeline multi-source — banyak file atau banyak DB tabel ke satu destination.
+
+    Backend akan menjalankan satu pipeline per source dan menggabungkan hasilnya.
+    Untuk file destination: semua data digabung ke satu output file.
+    Untuk SQL destination: semua data dimasukkan ke satu tabel tujuan (mode append).
+    """
+    loop = asyncio.get_event_loop()
+
+    if not body.sources:
+        raise HTTPException(status_code=400, detail="Setidaknya satu source diperlukan.")
+
+    if len(body.sources) == 1:
+        # Hanya satu source — pakai submit() biasa
+        src = body.sources[0]
+        run_id = runner.submit(
+            pipeline_name=body.pipeline_name,
+            source_type=src.type,
+            source_options=src.options,
+            destination_type=body.destination_type,
+            destination_options=body.destination_options,
+            loop=loop,
+            transformations=body.transformations,
+        )
+        return RunPipelineResponse(
+            run_id=run_id,
+            message=f"Pipeline '{body.pipeline_name}' dikirim (single source). run_id={run_id}"
+        )
+
+    # Banyak source — gunakan submit_multi
+    run_id = runner.submit_multi(
+        pipeline_name=body.pipeline_name,
+        sources=[{"type": s.type, "options": s.options} for s in body.sources],
+        destination_type=body.destination_type,
+        destination_options=body.destination_options,
+        loop=loop,
+        transformations=body.transformations,
+    )
+    return RunPipelineResponse(
+        run_id=run_id,
+        message=f"Pipeline '{body.pipeline_name}' multi-source dikirim. run_id={run_id}"
+    )
+
+
+@router.get("/pipeline/download-zip/{run_id}")
+def download_zip(run_id: str):
+    """Download semua file output dari satu multi-run sebagai ZIP."""
+    run = runner.get_run(run_id)
+    if not run:
+        raise HTTPException(status_code=404, detail=f"Run ID '{run_id}' tidak ditemukan.")
+
+    # Kumpulkan semua file output yang terkait dengan run ini
+    output_files = []
+    if hasattr(run, "output_files") and run.output_files:
+        output_files = [Path(p) for p in run.output_files if Path(p).exists()]
+    elif run.destination_options.get("path"):
+        p = Path(run.destination_options["path"])
+        if p.exists():
+            output_files = [p]
+
+    if not output_files:
+        raise HTTPException(status_code=404, detail="Tidak ada file output untuk run ini.")
+
+    # Buat ZIP dalam memory
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        for fpath in output_files:
+            zf.write(fpath, fpath.name)
+    buf.seek(0)
+
+    return StreamingResponse(
+        buf,
+        media_type="application/zip",
+        headers={"Content-Disposition": f"attachment; filename=flowetl_{run_id}.zip"},
+    )
 
 
 @router.get("/pipeline/status/{run_id}")
