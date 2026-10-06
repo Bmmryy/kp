@@ -1629,3 +1629,106 @@ table tr:hover td {
   border-radius: 6px;
 }
 
+/* ── Column Transformation Rules (Transform Panel) ─────────────────── */
+.transform-tabs-bar {
+  display: flex;
+  gap: 6px;
+  background: var(--bg-canvas);
+  padding: 4px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  margin-bottom: 12px;
+}
+.transform-tab-btn {
+  flex: 1;
+  padding: 5px 10px;
+  font-size: 11.5px;
+  font-weight: 500;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: center;
+}
+.transform-tab-btn:hover {
+  color: var(--text);
+}
+.transform-tab-btn.selected {
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.transform-rule-item {
+  background: var(--bg-canvas);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin-bottom: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: all 0.2s;
+}
+.transform-rule-item:hover {
+  border-color: var(--border-strong);
+}
+.transform-rule-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.transform-rule-col-select,
+.transform-rule-type-select {
+  font-size: 12px;
+  padding: 5px 8px;
+  border-radius: 6px;
+}
+.transform-rule-col-select {
+  flex: 1.1;
+  font-weight: 500;
+}
+.transform-rule-type-select {
+  flex: 1.3;
+}
+.transform-rule-arrow {
+  color: var(--text-tertiary);
+  font-size: 12px;
+  flex-shrink: 0;
+}
+.transform-rule-remove-btn {
+  background: none;
+  border: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s, background 0.15s;
+  flex-shrink: 0;
+}
+.transform-rule-remove-btn:hover {
+  color: var(--danger);
+  background: rgba(255, 59, 48, 0.08);
+}
+.transform-rule-extra {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  padding: 4px 6px;
+  background: var(--surface);
+  border-radius: 6px;
+  border: 1px dashed var(--border);
+}
+.transform-rule-extra input {
+  font-size: 11px;
+  padding: 3px 6px;
+}
+

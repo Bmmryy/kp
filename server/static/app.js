@@ -116,6 +116,11 @@ const state = {
   dstSelectedTable: "",       // target table name
   dstColumns: [],             // columns of target table
   columnMapping: {},          // { [source_col]: target_col }
+
+  // Per-column transformation rules
+  columnTransformRules: [],   // [{ id, column, type, params: {} }]
+  ruleCounter: 0,
+  transformTab: "rules",      // "rules" | "global"
 };
 
 // ─── Utility ─────────────────────────────────────────────────────────────────
@@ -269,12 +274,139 @@ function initBuilder() {
 
   // Init upload drop zone
   initDropZone();
+
+  // Render initial transform rules (empty state)
+  renderColumnTransformRules();
+}
+
+function setTransformTab(tab) {
+  state.transformTab = tab;
+  $("#transform-tab-rules")?.classList.toggle("selected", tab === "rules");
+  $("#transform-tab-global")?.classList.toggle("selected", tab === "global");
+  const rSec = $("#transform-rules-section");
+  const gSec = $("#transform-global-section");
+  if (rSec) rSec.style.display = tab === "rules" ? "" : "none";
+  if (gSec) gSec.style.display = tab === "global" ? "" : "none";
+}
+
+function addColumnTransformRule() {
+  const availableCols = state.srcSelectedColumns.length
+    ? state.srcSelectedColumns
+    : state.srcColumns.map(c => c.name);
+
+  const defaultCol = availableCols[0] || "";
+  const ruleId = ++state.ruleCounter;
+  state.columnTransformRules.push({
+    id: ruleId,
+    column: defaultCol,
+    type: "uppercase",
+    params: {
+      fill_null_val: "N/A",
+      mask_char: "*",
+      keep_start: 2,
+      keep_end: 2,
+    }
+  });
+
+  renderColumnTransformRules();
+  updateTransformBadge();
+}
+
+function removeColumnTransformRule(id) {
+  state.columnTransformRules = state.columnTransformRules.filter(r => r.id !== id);
+  renderColumnTransformRules();
+  updateTransformBadge();
+}
+
+function updateColumnTransformRule(id, field, value) {
+  const rule = state.columnTransformRules.find(r => r.id === id);
+  if (!rule) return;
+  rule[field] = value;
+  renderColumnTransformRules();
+  updateTransformBadge();
+}
+
+function updateRuleParam(id, paramKey, paramVal) {
+  const rule = state.columnTransformRules.find(r => r.id === id);
+  if (!rule) return;
+  if (!rule.params) rule.params = {};
+  rule.params[paramKey] = paramVal;
+}
+
+function renderColumnTransformRules() {
+  const container = $("#column-transform-rules-list");
+  if (!container) return;
+
+  const availableCols = state.srcSelectedColumns.length
+    ? state.srcSelectedColumns
+    : state.srcColumns.map(c => c.name);
+
+  if (!state.columnTransformRules.length) {
+    container.innerHTML = `
+      <div style="font-size:11.5px;color:var(--text-tertiary);padding:14px;background:var(--bg-canvas);border-radius:8px;text-align:center;border:1px dashed var(--border)">
+        Belum ada aturan transformasi per kolom.<br>
+        <span style="font-size:10.5px">Klik <strong>+ Tambah Aturan</strong> di atas untuk menentukan kolom &amp; jenis transformasinya.</span>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = state.columnTransformRules.map(rule => {
+    if (!rule.column && availableCols.length) {
+      rule.column = availableCols[0];
+    }
+
+    const isFillNull = rule.type === "fill_null";
+    const isMask = rule.type === "mask";
+
+    return `
+      <div class="transform-rule-item" id="rule-item-${rule.id}">
+        <div class="transform-rule-row">
+          <select class="form-select transform-rule-col-select" onchange="updateColumnTransformRule(${rule.id}, 'column', this.value)">
+            ${availableCols.length ? availableCols.map(c => `
+              <option value="${c}" ${c === rule.column ? 'selected' : ''}>${c}</option>
+            `).join("") : `<option value="">(Pilih tabel sumber dulu)</option>`}
+          </select>
+          <span class="transform-rule-arrow">──►</span>
+          <select class="form-select transform-rule-type-select" onchange="updateColumnTransformRule(${rule.id}, 'type', this.value)">
+            <option value="uppercase" ${rule.type === 'uppercase' ? 'selected' : ''}>UPPERCASE (Kapital)</option>
+            <option value="lowercase" ${rule.type === 'lowercase' ? 'selected' : ''}>lowercase (Kecil)</option>
+            <option value="capitalize" ${rule.type === 'capitalize' ? 'selected' : ''}>Capitalize (Title Case)</option>
+            <option value="trim" ${rule.type === 'trim' ? 'selected' : ''}>Trim (Hapus Spasi)</option>
+            <option value="fill_null" ${rule.type === 'fill_null' ? 'selected' : ''}>Fill Null (Isi Kosong)</option>
+            <option value="mask" ${rule.type === 'mask' ? 'selected' : ''}>Sensor (Masking)</option>
+          </select>
+          <button type="button" class="transform-rule-remove-btn" onclick="removeColumnTransformRule(${rule.id})" title="Hapus aturan ini">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+        </div>
+
+        ${isFillNull ? `
+          <div class="transform-rule-extra">
+            <span>Nilai default:</span>
+            <input type="text" class="form-control" style="flex:1" value="${rule.params?.fill_null_val || 'N/A'}" oninput="updateRuleParam(${rule.id}, 'fill_null_val', this.value)">
+          </div>
+        ` : ""}
+
+        ${isMask ? `
+          <div class="transform-rule-extra" style="flex-wrap:wrap">
+            <span>Karakter:</span>
+            <input type="text" class="form-control" style="width:36px;text-align:center" value="${rule.params?.mask_char || '*'}" oninput="updateRuleParam(${rule.id}, 'mask_char', this.value)">
+            <span>Depan:</span>
+            <input type="number" class="form-control" style="width:48px;text-align:center" value="${rule.params?.keep_start ?? 2}" oninput="updateRuleParam(${rule.id}, 'keep_start', this.value)">
+            <span>Belakang:</span>
+            <input type="number" class="form-control" style="width:48px;text-align:center" value="${rule.params?.keep_end ?? 2}" oninput="updateRuleParam(${rule.id}, 'keep_end', this.value)">
+          </div>
+        ` : ""}
+      </div>
+    `;
+  }).join("");
 }
 
 function updateTransformBadge() {
   const badge = $("#transform-mode-badge");
   if (!badge) return;
-  const count = [
+  const globalCount = [
     $("#transform-trim")?.checked,
     $("#transform-capitalize")?.checked,
     $("#transform-uppercase")?.checked,
@@ -283,17 +415,49 @@ function updateTransformBadge() {
     $("#transform-mask")?.checked,
   ].filter(Boolean).length;
 
-  if (count === 0) {
+  const ruleCount = (state.columnTransformRules || []).length;
+  const totalCount = globalCount + ruleCount;
+
+  if (totalCount === 0) {
     badge.className = "pill pill-pending";
     badge.textContent = "Pass-Through";
   } else {
     badge.className = "pill pill-success";
-    badge.textContent = `${count} Transformasi Aktif`;
+    badge.textContent = `${totalCount} Operasi Aktif`;
   }
 }
 
 function collectTransformations() {
   const transforms = [];
+
+  // 1. Per-column transformation rules
+  for (const rule of (state.columnTransformRules || [])) {
+    if (!rule.column) continue;
+    if (rule.type === "uppercase") {
+      transforms.push({ type: "uppercase", params: { columns: [rule.column] } });
+    } else if (rule.type === "lowercase") {
+      transforms.push({ type: "lowercase", params: { columns: [rule.column] } });
+    } else if (rule.type === "capitalize") {
+      transforms.push({ type: "capitalize", params: { mode: "title", columns: [rule.column] } });
+    } else if (rule.type === "trim") {
+      transforms.push({ type: "trim", params: { columns: [rule.column] } });
+    } else if (rule.type === "fill_null") {
+      const val = rule.params?.fill_null_val || "N/A";
+      transforms.push({ type: "fill_null", params: { default_value: val, columns: [rule.column] } });
+    } else if (rule.type === "mask") {
+      transforms.push({
+        type: "mask",
+        params: {
+          columns: [rule.column],
+          mask_char: rule.params?.mask_char || "*",
+          keep_start: parseInt(rule.params?.keep_start ?? 2),
+          keep_end: parseInt(rule.params?.keep_end ?? 2),
+        }
+      });
+    }
+  }
+
+  // 2. Global transformations
   if ($("#transform-trim")?.checked) {
     transforms.push({ type: "trim", params: {} });
   }
@@ -1239,6 +1403,7 @@ async function selectSingleSrcTable(cardId, tableName) {
     state.srcSelectedColumns = [];
     renderSrcDbCards();
     renderColumnMapping();
+    renderColumnTransformRules();
     return;
   }
 
@@ -1258,12 +1423,14 @@ async function selectSingleSrcTable(cardId, tableName) {
 
   renderSrcDbCards();
   renderColumnMapping();
+  renderColumnTransformRules();
 }
 
 function toggleAllSourceCols(selectAll) {
   state.srcSelectedColumns = selectAll ? state.srcColumns.map(c => c.name) : [];
   renderSrcDbCards();
   renderColumnMapping();
+  renderColumnTransformRules();
 }
 
 function toggleSourceColumn(colName, isChecked) {
@@ -1274,6 +1441,7 @@ function toggleSourceColumn(colName, isChecked) {
   }
   renderSrcDbCards();
   renderColumnMapping();
+  renderColumnTransformRules();
 }
 
 // ── DESTINATION: Category switch ────────────────────────────────────────────
@@ -1516,12 +1684,15 @@ function resetTaskBuilder() {
   state.srcSelectedTable = "";
   state.dstColumns = [];
   state.columnMapping = {};
+  state.columnTransformRules = [];
+  state.ruleCounter = 0;
 
   ["trim", "capitalize", "uppercase", "lowercase", "fill-null", "mask"].forEach(t => {
     const cb = $(`#transform-${t}`);
     if (cb) cb.checked = false;
   });
   updateTransformBadge();
+  renderColumnTransformRules();
 
   const mapCont = $("#dst-column-mapping-container");
   if (mapCont) { mapCont.style.display = "none"; mapCont.innerHTML = ""; }

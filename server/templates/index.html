@@ -7,7 +7,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <title>FlowETL — Visual Data Integration</title>
-  <link rel="stylesheet" href="/static/app.css?v=20261006_v7">
+  <link rel="stylesheet" href="/static/app.css?v=20261006_v8">
 </head>
 <body>
 
@@ -536,65 +536,96 @@
               <span id="transform-mode-badge" class="pill pill-pending" style="font-size:10.5px">Pass-Through</span>
             </div>
             <div class="pipeline-panel-body" style="padding:14px">
-              <div style="font-size:11.5px;color:var(--text-tertiary);margin-bottom:12px">
-                Pilih operasi transformasi data (bisa kombinasi):
+              <!-- Mode Tabs / Switcher -->
+              <div class="transform-tabs-bar">
+                <button type="button" class="transform-tab-btn selected" id="transform-tab-rules" onclick="setTransformTab('rules')">
+                  Aturan per Kolom
+                </button>
+                <button type="button" class="transform-tab-btn" id="transform-tab-global" onclick="setTransformTab('global')">
+                  Opsi Global
+                </button>
               </div>
 
-              <!-- Option 1: Trim -->
-              <label class="transform-card" style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;cursor:pointer;background:var(--bg-canvas);transition:all 0.2s">
-                <input type="checkbox" id="transform-trim" style="margin-top:3px;accent-color:var(--accent)" onchange="updateTransformBadge()">
-                <div style="flex:1">
-                  <div style="font-size:13px;font-weight:600;color:var(--text)">Trim Spasi</div>
-                  <div style="font-size:11.5px;color:var(--text-secondary)">Hapus spasi di awal &amp; akhir string (" Budi " → "Budi")</div>
+              <!-- Section: Aturan per Kolom -->
+              <div id="transform-rules-section">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+                  <span style="font-size:11.5px;color:var(--text-secondary);font-weight:500">Transformasi per Kolom:</span>
+                  <button type="button" class="btn btn-primary btn-sm" onclick="addColumnTransformRule()" style="font-size:11px;padding:3px 10px;display:flex;align-items:center;gap:4px">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    Tambah Aturan
+                  </button>
                 </div>
-              </label>
 
-              <!-- Option 2: Capitalize -->
-              <label class="transform-card" style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;cursor:pointer;background:var(--bg-canvas);transition:all 0.2s">
-                <input type="checkbox" id="transform-capitalize" style="margin-top:3px;accent-color:var(--accent)" onchange="updateTransformBadge()">
-                <div style="flex:1">
-                  <div style="font-size:13px;font-weight:600;color:var(--text)">Capitalize (Title Case)</div>
-                  <div style="font-size:11.5px;color:var(--text-secondary)">Kapitalisasi huruf awal setiap kata ("jakarta" → "Jakarta")</div>
-                </div>
-              </label>
+                <!-- Rules list container -->
+                <div id="column-transform-rules-list"></div>
 
-              <!-- Option 3: UPPERCASE -->
-              <label class="transform-card" style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;cursor:pointer;background:var(--bg-canvas);transition:all 0.2s">
-                <input type="checkbox" id="transform-uppercase" style="margin-top:3px;accent-color:var(--accent)" onchange="updateTransformBadge()">
-                <div style="flex:1">
-                  <div style="font-size:13px;font-weight:600;color:var(--text)">UPPERCASE</div>
-                  <div style="font-size:11.5px;color:var(--text-secondary)">Ubah semua huruf menjadi kapital ("jakarta" → "JAKARTA")</div>
+                <div style="font-size:11px;color:var(--text-tertiary);margin-top:8px">
+                  Pilih kolom sumber dan transformasi khusus yang ingin diterapkan pada kolom tersebut.
                 </div>
-              </label>
+              </div>
 
-              <!-- Option 4: lowercase -->
-              <label class="transform-card" style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;cursor:pointer;background:var(--bg-canvas);transition:all 0.2s">
-                <input type="checkbox" id="transform-lowercase" style="margin-top:3px;accent-color:var(--accent)" onchange="updateTransformBadge()">
-                <div style="flex:1">
-                  <div style="font-size:13px;font-weight:600;color:var(--text)">lowercase</div>
-                  <div style="font-size:11.5px;color:var(--text-secondary)">Ubah semua huruf menjadi kecil ("JAKARTA" → "jakarta")</div>
+              <!-- Section: Opsi Global -->
+              <div id="transform-global-section" style="display:none">
+                <div style="font-size:11.5px;color:var(--text-tertiary);margin-bottom:10px">
+                  Transformasi berikut berlaku untuk semua kolom yang relevan:
                 </div>
-              </label>
 
-              <!-- Option 5: Fill Null -->
-              <label class="transform-card" style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;cursor:pointer;background:var(--bg-canvas);transition:all 0.2s">
-                <input type="checkbox" id="transform-fill-null" style="margin-top:3px;accent-color:var(--accent)" onchange="updateTransformBadge()">
-                <div style="flex:1">
-                  <div style="font-size:13px;font-weight:600;color:var(--text)">Isi Kolom Kosong (Fill Null)</div>
-                  <div style="font-size:11.5px;color:var(--text-secondary)">Ganti nilai null/kosong dengan nilai pengganti default</div>
-                  <input type="text" id="transform-fill-null-val" class="form-control" placeholder="Nilai pengganti (contoh: N/A)" value="N/A" style="margin-top:6px;font-size:11.5px;padding:4px 8px" onclick="event.stopPropagation()">
-                </div>
-              </label>
+                <!-- Option 1: Trim -->
+                <label class="transform-card" style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;cursor:pointer;background:var(--bg-canvas);transition:all 0.2s">
+                  <input type="checkbox" id="transform-trim" style="margin-top:3px;accent-color:var(--accent)" onchange="updateTransformBadge()">
+                  <div style="flex:1">
+                    <div style="font-size:13px;font-weight:600;color:var(--text)">Trim Spasi</div>
+                    <div style="font-size:11.5px;color:var(--text-secondary)">Hapus spasi di awal &amp; akhir string (" Budi " → "Budi")</div>
+                  </div>
+                </label>
 
-              <!-- Option 6: Masking -->
-              <label class="transform-card" style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;cursor:pointer;background:var(--bg-canvas);transition:all 0.2s">
-                <input type="checkbox" id="transform-mask" style="margin-top:3px;accent-color:var(--accent)" onchange="updateTransformBadge()">
-                <div style="flex:1">
-                  <div style="font-size:13px;font-weight:600;color:var(--text)">Sensor Data Sensitif (Masking)</div>
-                  <div style="font-size:11.5px;color:var(--text-secondary)">Sensor karakter tengah data pribadi (0812****789)</div>
-                  <input type="text" id="transform-mask-cols" class="form-control" placeholder="Nama kolom (contoh: phone, nik)" value="phone" style="margin-top:6px;font-size:11.5px;padding:4px 8px" onclick="event.stopPropagation()">
-                </div>
-              </label>
+                <!-- Option 2: Capitalize -->
+                <label class="transform-card" style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;cursor:pointer;background:var(--bg-canvas);transition:all 0.2s">
+                  <input type="checkbox" id="transform-capitalize" style="margin-top:3px;accent-color:var(--accent)" onchange="updateTransformBadge()">
+                  <div style="flex:1">
+                    <div style="font-size:13px;font-weight:600;color:var(--text)">Capitalize (Title Case)</div>
+                    <div style="font-size:11.5px;color:var(--text-secondary)">Kapitalisasi huruf awal setiap kata ("jakarta" → "Jakarta")</div>
+                  </div>
+                </label>
+
+                <!-- Option 3: UPPERCASE -->
+                <label class="transform-card" style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;cursor:pointer;background:var(--bg-canvas);transition:all 0.2s">
+                  <input type="checkbox" id="transform-uppercase" style="margin-top:3px;accent-color:var(--accent)" onchange="updateTransformBadge()">
+                  <div style="flex:1">
+                    <div style="font-size:13px;font-weight:600;color:var(--text)">UPPERCASE</div>
+                    <div style="font-size:11.5px;color:var(--text-secondary)">Ubah semua huruf menjadi kapital ("jakarta" → "JAKARTA")</div>
+                  </div>
+                </label>
+
+                <!-- Option 4: lowercase -->
+                <label class="transform-card" style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;cursor:pointer;background:var(--bg-canvas);transition:all 0.2s">
+                  <input type="checkbox" id="transform-lowercase" style="margin-top:3px;accent-color:var(--accent)" onchange="updateTransformBadge()">
+                  <div style="flex:1">
+                    <div style="font-size:13px;font-weight:600;color:var(--text)">lowercase</div>
+                    <div style="font-size:11.5px;color:var(--text-secondary)">Ubah semua huruf menjadi kecil ("JAKARTA" → "jakarta")</div>
+                  </div>
+                </label>
+
+                <!-- Option 5: Fill Null -->
+                <label class="transform-card" style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;cursor:pointer;background:var(--bg-canvas);transition:all 0.2s">
+                  <input type="checkbox" id="transform-fill-null" style="margin-top:3px;accent-color:var(--accent)" onchange="updateTransformBadge()">
+                  <div style="flex:1">
+                    <div style="font-size:13px;font-weight:600;color:var(--text)">Isi Kolom Kosong (Fill Null)</div>
+                    <div style="font-size:11.5px;color:var(--text-secondary)">Ganti nilai null/kosong dengan nilai pengganti default</div>
+                    <input type="text" id="transform-fill-null-val" class="form-control" placeholder="Nilai pengganti (contoh: N/A)" value="N/A" style="margin-top:6px;font-size:11.5px;padding:4px 8px" onclick="event.stopPropagation()">
+                  </div>
+                </label>
+
+                <!-- Option 6: Masking -->
+                <label class="transform-card" style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;cursor:pointer;background:var(--bg-canvas);transition:all 0.2s">
+                  <input type="checkbox" id="transform-mask" style="margin-top:3px;accent-color:var(--accent)" onchange="updateTransformBadge()">
+                  <div style="flex:1">
+                    <div style="font-size:13px;font-weight:600;color:var(--text)">Sensor Data Sensitif (Masking)</div>
+                    <div style="font-size:11.5px;color:var(--text-secondary)">Sensor karakter tengah data pribadi (0812****789)</div>
+                    <input type="text" id="transform-mask-cols" class="form-control" placeholder="Nama kolom (contoh: phone, nik)" value="phone" style="margin-top:6px;font-size:11.5px;padding:4px 8px" onclick="event.stopPropagation()">
+                  </div>
+                </label>
+              </div>
             </div>
           </div>
 
@@ -922,7 +953,7 @@
   </div>
 </div>
 
-<script src="/static/app.js?v=20261006_v7"></script>
+<script src="/static/app.js?v=20261006_v8"></script>
 <script>
 // ─── Quick-start presets ───────────────────────────────────────────────────
 
