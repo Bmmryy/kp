@@ -121,8 +121,12 @@ class Pipeline:
             # Ensure destination target schema is prepared if we have at least one batch
             if transformed_datasets:
                 first_batch = transformed_datasets[0]
+                dest_schema = first_batch.schema_def
+                if self.destination_table and dest_schema.name != self.destination_table:
+                    dest_schema = dest_schema.model_copy(update={"name": self.destination_table})
+
                 self.destination.create_schema(
-                    schema=first_batch.schema_def,
+                    schema=dest_schema,
                     if_exists=self.load_mode,
                 )
 
