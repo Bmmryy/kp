@@ -29,10 +29,10 @@ def format_user_error(error: Any) -> str:
         return f"Tipe Data Tidak Cocok: Nilai '{val}' bukan angka yang valid untuk kolom database tujuan."
 
     # 2. Duplicate Primary Key / Unique Constraint (MySQL 1062, Postgres 23505, SQLite 19)
-    m = re.search(r"Duplicate entry\s*('?[^']+?'?|\S+)\s*for key\s*([^\s]+)", msg, re.IGNORECASE)
+    m = re.search(r"Duplicate entry\s*('?[^']+?'?|\S+)\s*for key\s*([^\s)]+)", msg, re.IGNORECASE)
     if m:
         val = m.group(1).strip("'\"`")
-        key = m.group(2).strip("'\"`")
+        key = m.group(2).strip("'\"`)\\")
         return f"Data Duplikat (Primary Key): Nilai '{val}' sudah ada pada tabel tujuan (kunci: '{key}'). Kosongkan tabel atau gunakan tabel baru."
 
     m = re.search(r"duplicate key value violates unique constraint\s*([^\s]+)", msg, re.IGNORECASE)

@@ -121,6 +121,8 @@ const state = {
   columnTransformRules: [],   // [{ id, column, type, params: {} }]
   ruleCounter: 0,
   transformTab: "rules",      // "rules" | "global"
+
+  dstLoadMode: "append",      // "append" | "truncate"
 };
 
 // ─── Utility ─────────────────────────────────────────────────────────────────
@@ -1571,6 +1573,10 @@ function setDstTableMode(mode) {
   }
 }
 
+function setDstLoadMode(mode) {
+  state.dstLoadMode = mode;
+}
+
 async function onDstDbSelected(database) {
   const tableGroup = $("#dst-table-select-group");
   const mapBox = $("#dst-column-mapping-container");
@@ -1604,11 +1610,15 @@ async function onDstDbSelected(database) {
 
 async function onDstTableSelected(tableName) {
   state.dstSelectedTable = tableName;
+  const loadModeGroup = $("#dst-load-mode-group");
   if (!tableName) {
     const mapBox = $("#dst-column-mapping-container");
     if (mapBox) mapBox.style.display = "none";
+    if (loadModeGroup) loadModeGroup.style.display = "none";
     return;
   }
+
+  if (loadModeGroup) loadModeGroup.style.display = "";
 
   const host     = $("#dst-host")?.value.trim() || "localhost";
   const port     = parseInt($("#dst-port")?.value) || (state.dstDbType === "mysql" ? 3306 : 5432);
@@ -1789,7 +1799,7 @@ function collectDestination() {
         password: $("#dst-password")?.value || "",
         database,
         table_name: tableName,
-        if_exists: "append",
+        if_exists: state.dstLoadMode || "append",
       },
     };
   }

@@ -265,6 +265,7 @@ class PipelineRunnerService:
                 source_table=source_table,
                 destination_table=destination_table,
                 transformations=built_transformers,
+                load_mode=destination_options.get("if_exists", "append"),
             )
             context = pipeline.run(progress_callback=_progress)
 
@@ -365,7 +366,8 @@ class PipelineRunnerService:
 
                 # Untuk file destination: pakai append setelah source pertama
                 effective_dest_opts = dict(destination_options)
-                mode = "append" if i > 0 and is_file_dest else "append"
+                user_mode = destination_options.get("if_exists", "append")
+                mode = user_mode if i == 0 else "append"
 
                 pipeline = Pipeline(
                     name=f"{run.pipeline_name} [{i+1}]",
@@ -374,6 +376,7 @@ class PipelineRunnerService:
                     source_table=src_table,
                     destination_table=dest_table,
                     transformations=built_transformers,
+                    load_mode=mode,
                 )
 
                 def _sub_progress(step: str, pct: float, _label=src_label, _i=i, _n=len(sources)):

@@ -7,7 +7,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <title>FlowETL — Visual Data Integration</title>
-  <link rel="stylesheet" href="/static/app.css?v=20261006_v9">
+  <link rel="stylesheet" href="/static/app.css?v=20261006_v10">
 </head>
 <body>
 
@@ -747,6 +747,21 @@
                   </div>
                 </div>
 
+                <!-- Load Mode Selector -->
+                <div id="dst-load-mode-group" class="form-group" style="display:none;margin-top:10px">
+                  <label class="form-label" style="margin-bottom:6px">Mode Pengisian Tabel</label>
+                  <div style="display:flex;gap:10px;flex-wrap:wrap">
+                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px">
+                      <input type="radio" name="dst-load-mode" value="append" id="dst-mode-append" onchange="setDstLoadMode('append')" checked>
+                      <span><strong>Append</strong> — tambah ke data yang ada</span>
+                    </label>
+                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px">
+                      <input type="radio" name="dst-load-mode" value="truncate" id="dst-mode-truncate" onchange="setDstLoadMode('truncate')">
+                      <span><strong>Truncate</strong> — kosongkan dulu, lalu isi</span>
+                    </label>
+                  </div>
+                </div>
+
                 <!-- Column Mapping Section -->
                 <div id="dst-column-mapping-container" style="display:none"></div>
               </div>
@@ -953,7 +968,7 @@
   </div>
 </div>
 
-<script src="/static/app.js?v=20261006_v9"></script>
+<script src="/static/app.js?v=20261006_v10"></script>
 <script>
 // ─── Quick-start presets ───────────────────────────────────────────────────
 
