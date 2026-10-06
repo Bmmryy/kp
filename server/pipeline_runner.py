@@ -20,6 +20,7 @@ import app.connectors  # noqa: F401
 from app.connectors.base import ConnectorConfig
 from app.connectors.registry import ConnectorRegistry
 from app.core.pipeline import Pipeline
+from app.utils.error_formatter import format_user_error
 from app.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -283,12 +284,13 @@ class PipelineRunnerService:
                 raise RuntimeError(err_msg)
 
         except Exception as exc:
+            user_msg = format_user_error(exc)
             run.status = RunStatus.ERROR
             run.finished_at = datetime.now()
-            run.error_message = str(exc)
-            run.log_lines.append(f"[ERROR] {exc}")
-            run.push_event("done", {"status": "error", "error": str(exc)})
-            logger.exception("Pipeline run %s failed", run.run_id)
+            run.error_message = user_msg
+            run.log_lines.append(f"[ERROR] {user_msg}")
+            run.push_event("done", {"status": "error", "error": user_msg})
+            logger.exception("Pipeline run %s failed: %s", run.run_id, exc)
 
         finally:
             # Sentinel: tells SSE consumer the stream is done
@@ -404,12 +406,13 @@ class PipelineRunnerService:
             run.push_event("done", {"status": "success", "metrics": run.metrics})
 
         except Exception as exc:
+            user_msg = format_user_error(exc)
             run.status = RunStatus.ERROR
             run.finished_at = datetime.now()
-            run.error_message = str(exc)
-            run.log_lines.append(f"[ERROR] {exc}")
-            run.push_event("done", {"status": "error", "error": str(exc)})
-            logger.exception("Multi-source pipeline run %s failed", run.run_id)
+            run.error_message = user_msg
+            run.log_lines.append(f"[ERROR] {user_msg}")
+            run.push_event("done", {"status": "error", "error": user_msg})
+            logger.exception("Multi-source pipeline run %s failed: %s", run.run_id, exc)
 
         finally:
             if run._loop and run._event_queue:

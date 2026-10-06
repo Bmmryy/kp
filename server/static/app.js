@@ -603,6 +603,19 @@ function appendLog(line, type = "info") {
   console_.scrollTop = console_.scrollHeight;
 }
 
+function formatDisplayError(msg) {
+  if (!msg) return "Terjadi kesalahan pada pipeline.";
+  let str = String(msg);
+  // Strip raw SQL and bound parameter dumps
+  str = str.replace(/\[SQL:[\s\S]*?\]/g, "");
+  str = str.replace(/\[parameters:[\s\S]*?\]/g, "");
+  str = str.replace(/\(Background on this error at:[\s\S]*?\)/g, "");
+  str = str.replace(/\(pymysql\.err\.\w+\)/g, "");
+  str = str.replace(/\(psycopg2\.\w+\)/g, "");
+  str = str.replace(/\(sqlite3\.\w+\)/g, "");
+  return str.trim();
+}
+
 let activeEventSource = null;
 
 function startSSEStream(runId) {
@@ -639,8 +652,9 @@ function startSSEStream(runId) {
       }).catch(() => {});
     } else {
       updateDrawerStatus("error");
-      toast(`Pipeline gagal: ${data.error}`, "error");
-      appendLog(`✕ Error: ${data.error}`, "error");
+      const cleanErr = formatDisplayError(data.error);
+      toast(`Pipeline gagal: ${cleanErr}`, "error");
+      appendLog(`✕ Error: ${cleanErr}`, "error");
     }
 
     // Refresh stats
@@ -668,9 +682,10 @@ function startSSEStream(runId) {
           appendLog("✓ Pipeline selesai dengan sukses.", "success");
         } else if (data.status === "error") {
           updateDrawerStatus("error");
-          toast(`Pipeline gagal: ${data.error_message}`, "error");
+          const cleanErr = formatDisplayError(data.error_message);
+          toast(`Pipeline gagal: ${cleanErr}`, "error");
           if ($("#log-console").children.length === 0 && data.log_lines) {
-            data.log_lines.forEach(l => appendLog(l, "error"));
+            data.log_lines.forEach(l => appendLog(formatDisplayError(l), "error"));
           }
         }
         updateDashboardStats();
