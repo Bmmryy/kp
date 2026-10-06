@@ -105,8 +105,21 @@ def list_databases(type: str, host: str, port: int, user: str, password: str = "
 
 
 @router.get("/tables")
-def list_tables(type: str, host: str, port: int, user: str, password: str = "", database: str = "") -> Dict[str, List[str]]:
-    """List semua tabel di satu database."""
+def list_tables(type: str, host: str = "localhost", port: int = 3306, user: str = "root", password: str = "", database: str = "", path: str = "") -> Dict[str, List[str]]:
+    """List semua tabel di satu database (SQL atau SQLite)."""
+    if type == "sqlite":
+        db_path = path or database
+        if not db_path:
+            raise HTTPException(status_code=400, detail="Path file SQLite wajib diisi.")
+        try:
+            engine = sa.create_engine(f"sqlite:///{db_path}")
+            insp = sa_inspect(engine)
+            tables = insp.get_table_names()
+            engine.dispose()
+            return {"tables": tables}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
     if not database:
         raise HTTPException(status_code=400, detail="Parameter 'database' wajib diisi.")
     try:
@@ -119,3 +132,110 @@ def list_tables(type: str, host: str, port: int, user: str, password: str = "", 
         raise HTTPException(status_code=503, detail=f"Koneksi gagal: {e.orig or e}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/columns")
+def list_columns(
+    type: str,
+    host: str = "localhost",
+    port: int = 3306,
+    user: str = "root",
+    password: str = "",
+    database: str = "",
+    table: str = "",
+    path: str = "",
+) -> Dict[str, Any]:
+    """List semua kolom beserta tipe data untuk satu tabel atau file."""
+    # 1. SQLite File
+    if type == "sqlite":
+        db_path = path or database
+        if not db_path:
+            raise HTTPException(status_code=400, detail="Path SQLite wajib diisi.")
+        if not table:
+            raise HTTPException(status_code=400, detail="Nama tabel wajib diisi.")
+        try:
+            engine = sa.create_engine(f"sqlite:///{db_path}")
+            insp = sa_inspect(engine)
+            col_infos = insp.get_columns(table)
+            engine.dispose()
+            return {
+                "table": table,
+                "columns": [
+                    {
+                        "name": c["name"],
+                        "type": str(c["type"]),
+                        "nullable": bool(c.get("nullable", True)),
+                        "primary_key": bool(c.get("primary_key", False)),
+                    }
+                    for c in col_infos
+                ],
+            }
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    # 2. CSV File
+    if type == "csv":
+        import csv as _csv
+        from pathlib import Path as _Path
+        fpath = _Path(path)
+        if not fpath.exists():
+            raise HTTPException(status_code=404, detail=f"File '{path}' tidak ditemukan.")
+        try:
+            with open(fpath, "r", encoding="utf-8-sig", errors="replace") as f:
+                reader = _csv.reader(f)
+                header = next(reader, [])
+            return {
+                "table": fpath.stem,
+                "columns": [{"name": h.strip(), "type": "VARCHAR(255)", "nullable": True, "primary_key": False} for h in header if h.strip()],
+            }
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    # 3. JSON File
+    if type in ("json", "jsonl"):
+        import json as _json
+        from pathlib import Path as _Path
+        fpath = _Path(path)
+        if not fpath.exists():
+            raise HTTPException(status_code=404, detail=f"File '{path}' tidak ditemukan.")
+        try:
+            with open(fpath, "r", encoding="utf-8", errors="replace") as f:
+                if type == "jsonl":
+                    first_line = f.readline()
+                    sample = _json.loads(first_line) if first_line else {}
+                else:
+                    data = _json.load(f)
+                    sample = data[0] if isinstance(data, list) and data else (data if isinstance(data, dict) else {})
+            keys = list(sample.keys()) if isinstance(sample, dict) else []
+            return {
+                "table": fpath.stem,
+                "columns": [{"name": k, "type": "VARCHAR(255)", "nullable": True, "primary_key": False} for k in keys],
+            }
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    # 4. Relational SQL (MySQL / PostgreSQL)
+    if not database or not table:
+        raise HTTPException(status_code=400, detail="Parameter 'database' dan 'table' wajib diisi.")
+    try:
+        engine = _get_engine(type, host, port, user, password, database)
+        insp = sa_inspect(engine)
+        col_infos = insp.get_columns(table)
+        engine.dispose()
+        return {
+            "table": table,
+            "columns": [
+                {
+                    "name": c["name"],
+                    "type": str(c["type"]),
+                    "nullable": bool(c.get("nullable", True)),
+                    "primary_key": bool(c.get("primary_key", False)),
+                }
+                for c in col_infos
+            ],
+        }
+    except OperationalError as e:
+        raise HTTPException(status_code=503, detail=f"Koneksi gagal: {e.orig or e}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+

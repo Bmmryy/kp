@@ -13,6 +13,7 @@ const API = {
   verifyConn:       "/api/connector/verify",
   listDatabases:    "/api/connector/databases",
   listTables:       "/api/connector/tables",
+  listColumns:      "/api/connector/columns",
   status:           (id) => `/api/pipeline/status/${id}`,
   history:          "/api/pipeline/history",
   stream:           (id) => `/stream/${id}`,
@@ -105,6 +106,16 @@ const state = {
   dstDbType: "mysql",
   dstVerified: false,
   dstDatabases: [],
+
+  // Column Selection & Mapping State (Single DB / Table focus)
+  srcColumns: [],             // [{name, type, nullable, primary_key}]
+  srcSelectedColumns: [],     // ["colA", "colB"]
+  srcSelectedTable: "",       // table name selected
+  dstTableMode: "existing",   // "existing" | "new"
+  dstAvailableTables: [],     // existing tables in target DB
+  dstSelectedTable: "",       // target table name
+  dstColumns: [],             // columns of target table
+  columnMapping: {},          // { [source_col]: target_col }
 };
 
 // ─── Utility ─────────────────────────────────────────────────────────────────
@@ -330,6 +341,34 @@ async function handleRunPipeline() {
 
   const transforms = collectTransformations();
   const name       = state.pipelineName || "My Pipeline";
+
+  // Attach Column Selection or Column Mapping
+  if (state.dstTableMode === "existing" && state.dstSelectedTable && state.dstColumns.length > 0) {
+    const activeMapping = {};
+    for (const srcCol of state.srcSelectedColumns) {
+      const dstCol = state.columnMapping[srcCol];
+      if (dstCol && dstCol !== "__ignore__") {
+        activeMapping[srcCol] = dstCol;
+      }
+    }
+    if (Object.keys(activeMapping).length > 0) {
+      transforms.push({
+        type: "column_mapping",
+        params: {
+          mapping: activeMapping,
+          drop_unmapped: true,
+          target_table: state.dstSelectedTable,
+        },
+      });
+    }
+  } else if (state.srcSelectedColumns.length > 0 && state.srcColumns.length > 0 && state.srcSelectedColumns.length < state.srcColumns.length) {
+    transforms.push({
+      type: "select_columns",
+      params: {
+        columns: state.srcSelectedColumns,
+      },
+    });
+  }
 
   const runBtn = $("#run-pipeline-btn");
   if (runBtn) { runBtn.disabled = true; runBtn.innerHTML = `<div class="spinner"></div> Memulai...`; }
@@ -1055,13 +1094,13 @@ function renderSrcDbCards() {
         </select>
       </div>
 
-      <!-- Step 3: Table multi-select (after database selected) -->
+      <!-- Step 3: Table select (1 table focus) -->
       <div id="src-table-group-${card.id}" style="display:${card.database ? '' : 'none'};margin-top:10px">
-        <label class="form-label">Pilih Tabel (klik untuk memilih, bisa lebih dari 1)</label>
+        <label class="form-label">Pilih 1 Tabel Sumber</label>
         <div class="table-chips-container" id="src-table-chips-${card.id}">
           ${(card._availableTables || []).map(t => `
             <span class="table-chip-selectable ${card.tables.includes(t) ? 'selected' : ''}"
-                  onclick="toggleSrcTable(${card.id}, '${t}')">
+                  onclick="selectSingleSrcTable(${card.id}, '${t}')">
               <svg class="chip-check" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
               ${t}
             </span>
@@ -1069,104 +1108,95 @@ function renderSrcDbCards() {
           ${!(card._availableTables || []).length ? '<span style="font-size:11.5px;color:var(--text-tertiary)">Pilih database terlebih dahulu</span>' : ''}
         </div>
         <div style="font-size:11px;color:var(--text-tertiary);margin-top:4px">
-          ${card.tables.length > 0 ? `<span class="verified-badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> ${card.tables.length} tabel dipilih</span>` : "Klik chip tabel untuk memilih"}
+          ${card.tables.length > 0 ? `<span class="verified-badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Tabel <strong>${card.tables[0]}</strong> dipilih</span>` : "Pilih 1 tabel sumber untuk melihat kolom"}
         </div>
+
+        <!-- Step 4: Column Selection Checklist -->
+        ${renderSrcColumnChecklist(card)}
       </div>
     `;
     container.appendChild(div);
   });
 }
 
-function updateSrcCardField(id, field, value) {
-  const card = state.srcDbCards.find(c => c.id === id);
-  if (card) {
-    card[field] = value;
-    // Reset verification if connection fields change
-    if (["host", "port", "user", "password"].includes(field) && card.verified) {
-      card.verified = false;
-      card.database = "";
-      card.tables = [];
-      renderSrcDbCards();
-    }
-  }
+function renderSrcColumnChecklist(card) {
+  if (!card.tables.length || !state.srcColumns.length) return "";
+  return `
+    <div class="column-checklist-box">
+      <div class="column-checklist-header">
+        <div class="column-checklist-title">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          Pilih Kolom Sumber (${state.srcSelectedColumns.length}/${state.srcColumns.length} dipilih)
+        </div>
+        <div style="display:flex;gap:6px">
+          <button type="button" class="btn btn-secondary btn-sm" style="padding:2px 8px;font-size:10.5px" onclick="toggleAllSourceCols(true)">Pilih Semua</button>
+          <button type="button" class="btn btn-secondary btn-sm" style="padding:2px 8px;font-size:10.5px" onclick="toggleAllSourceCols(false)">Kosongkan</button>
+        </div>
+      </div>
+      <div class="column-checklist-grid">
+        ${state.srcColumns.map(col => `
+          <label class="column-check-item">
+            <div style="display:flex;align-items:center">
+              <input type="checkbox" value="${col.name}" ${state.srcSelectedColumns.includes(col.name) ? 'checked' : ''} onchange="toggleSourceColumn('${col.name}', this.checked)">
+              <span style="font-weight:500">${col.name}</span>
+            </div>
+            <span class="column-type-badge">${col.type}</span>
+          </label>
+        `).join("")}
+      </div>
+      <div style="font-size:11px;color:var(--text-tertiary);margin-top:6px">
+        Kolom yang dicentang akan ditransformasikan dan dikirim ke tabel target.
+      </div>
+    </div>
+  `;
 }
 
-async function verifySrcCard(id) {
-  const card = state.srcDbCards.find(c => c.id === id);
-  if (!card) return;
-
-  const host     = $(`#src-host-${id}`)?.value.trim();
-  const port     = parseInt($(`#src-port-${id}`)?.value) || (state.srcDbType === "mysql" ? 3306 : 5432);
-  const user     = $(`#src-user-${id}`)?.value.trim();
-  const password = $(`#src-pass-${id}`)?.value;
-
-  if (!host || !user) { toast("Host dan User wajib diisi.", "error"); return; }
-
-  const btn = $(`#src-verify-btn-${id}`);
-  const msg = $(`#src-verify-msg-${id}`);
-  if (btn) { btn.classList.add("loading"); btn.disabled = true; }
-  if (msg) msg.textContent = "Menghubungkan...";
-
-  try {
-    const res = await fetch(API.verifyConn, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ type: state.srcDbType, host, port, user, password }),
-    });
-    const data = await res.json();
-
-    if (data.ok) {
-      card.verified  = true;
-      card.host      = host;
-      card.port      = String(port);
-      card.user      = user;
-      card.password  = password;
-      // Load databases
-      const dbRes  = await fetch(`${API.listDatabases}?type=${state.srcDbType}&host=${host}&port=${port}&user=${user}&password=${encodeURIComponent(password)}`);
-      const dbData = await dbRes.json();
-      card._databases = dbData.databases || [];
-      toast("Koneksi berhasil!", "success");
-    } else {
-      card.verified = false;
-      if (msg) msg.textContent = `✕ ${data.error || "Koneksi gagal"}`;
-    }
-  } catch (e) {
-    card.verified = false;
-    if (msg) msg.textContent = `✕ ${e.message}`;
-  } finally {
-    if (btn) { btn.classList.remove("loading"); btn.disabled = false; }
-    renderSrcDbCards();
-  }
-}
-
-async function onSrcDbSelected(id, database) {
-  const card = state.srcDbCards.find(c => c.id === id);
-  if (!card) return;
-  card.database = database;
-  card.tables   = [];
-  card._availableTables = [];
-
-  if (!database) { renderSrcDbCards(); return; }
-
-  // Load tables for selected database
-  try {
-    const q   = `type=${state.srcDbType}&host=${card.host}&port=${card.port}&user=${card.user}&password=${encodeURIComponent(card.password)}&database=${database}`;
-    const res = await fetch(`${API.listTables}?${q}`);
-    const data = await res.json();
-    card._availableTables = data.tables || [];
-  } catch (e) {
-    toast("Gagal memuat tabel: " + e.message, "error");
-  }
-  renderSrcDbCards();
-}
-
-function toggleSrcTable(cardId, tableName) {
+async function selectSingleSrcTable(cardId, tableName) {
   const card = state.srcDbCards.find(c => c.id === cardId);
   if (!card) return;
-  const idx = card.tables.indexOf(tableName);
-  if (idx === -1) card.tables.push(tableName);
-  else            card.tables.splice(idx, 1);
+
+  if (card.tables.includes(tableName)) {
+    card.tables = [];
+    state.srcSelectedTable = "";
+    state.srcColumns = [];
+    state.srcSelectedColumns = [];
+    renderSrcDbCards();
+    renderColumnMapping();
+    return;
+  }
+
+  card.tables = [tableName];
+  state.srcSelectedTable = tableName;
+  toast(`Memuat kolom tabel '${tableName}'...`, "info", 2000);
+
+  try {
+    const q = `type=${state.srcDbType}&host=${card.host}&port=${card.port}&user=${card.user}&password=${encodeURIComponent(card.password)}&database=${card.database}&table=${tableName}`;
+    const res = await fetch(`${API.listColumns}?${q}`);
+    const data = await res.json();
+    state.srcColumns = data.columns || [];
+    state.srcSelectedColumns = state.srcColumns.map(c => c.name);
+  } catch (e) {
+    toast("Gagal memuat kolom tabel: " + e.message, "error");
+  }
+
   renderSrcDbCards();
+  renderColumnMapping();
+}
+
+function toggleAllSourceCols(selectAll) {
+  state.srcSelectedColumns = selectAll ? state.srcColumns.map(c => c.name) : [];
+  renderSrcDbCards();
+  renderColumnMapping();
+}
+
+function toggleSourceColumn(colName, isChecked) {
+  if (isChecked) {
+    if (!state.srcSelectedColumns.includes(colName)) state.srcSelectedColumns.push(colName);
+  } else {
+    state.srcSelectedColumns = state.srcSelectedColumns.filter(c => c !== colName);
+  }
+  renderSrcDbCards();
+  renderColumnMapping();
 }
 
 // ── DESTINATION: Category switch ────────────────────────────────────────────
@@ -1202,7 +1232,7 @@ function selectDstDbType(dbtype) {
   state.dstVerified = false;
   state.dstDatabases = [];
   const dbGroup   = $("#dst-db-select-group");
-  const tblGroup  = $("#dst-table-name-group");
+  const tblGroup  = $("#dst-table-select-group");
   if (dbGroup)  dbGroup.style.display  = "none";
   if (tblGroup) tblGroup.style.display = "none";
   const status = $("#dst-verify-status");
@@ -1247,10 +1277,7 @@ async function verifyDstConnection() {
       if (sel) {
         sel.innerHTML = `<option value="">— Pilih database —</option>` +
           dbs.map(db => `<option value="${db}">${db}</option>`).join("");
-        sel.onchange = () => {
-          const tblGroup = $("#dst-table-name-group");
-          if (tblGroup) tblGroup.style.display = sel.value ? "" : "none";
-        };
+        sel.onchange = () => onDstDbSelected(sel.value);
       }
       const dbGroup = $("#dst-db-select-group");
       if (dbGroup) dbGroup.style.display = "";
@@ -1265,6 +1292,165 @@ async function verifyDstConnection() {
   } finally {
     if (btn) { btn.classList.remove("loading"); btn.disabled = false; }
   }
+}
+
+function setDstTableMode(mode) {
+  state.dstTableMode = mode;
+  $("#dst-mode-existing-btn")?.classList.toggle("selected", mode === "existing");
+  $("#dst-mode-new-btn")?.classList.toggle("selected", mode === "new");
+  const existCont = $("#dst-table-existing-container");
+  const newCont   = $("#dst-table-new-container");
+  if (existCont) existCont.style.display = mode === "existing" ? "" : "none";
+  if (newCont)   newCont.style.display   = mode === "new" ? "" : "none";
+
+  if (mode === "existing" && state.dstSelectedTable) {
+    renderColumnMapping();
+  } else {
+    const mapBox = $("#dst-column-mapping-container");
+    if (mapBox) mapBox.style.display = "none";
+  }
+}
+
+async function onDstDbSelected(database) {
+  const tableGroup = $("#dst-table-select-group");
+  const mapBox = $("#dst-column-mapping-container");
+  if (!database) {
+    if (tableGroup) tableGroup.style.display = "none";
+    if (mapBox) mapBox.style.display = "none";
+    return;
+  }
+
+  const host     = $("#dst-host")?.value.trim() || "localhost";
+  const port     = parseInt($("#dst-port")?.value) || (state.dstDbType === "mysql" ? 3306 : 5432);
+  const user     = $("#dst-user")?.value.trim() || "root";
+  const password = $("#dst-password")?.value || "";
+
+  try {
+    const q   = `type=${state.dstDbType}&host=${host}&port=${port}&user=${user}&password=${encodeURIComponent(password)}&database=${database}`;
+    const res = await fetch(`${API.listTables}?${q}`);
+    const data = await res.json();
+    state.dstAvailableTables = data.tables || [];
+
+    const sel = $("#dst-table-dropdown");
+    if (sel) {
+      sel.innerHTML = `<option value="">— Pilih tabel tujuan yang sudah ada —</option>` +
+        state.dstAvailableTables.map(t => `<option value="${t}" ${t === state.dstSelectedTable ? 'selected' : ''}>${t}</option>`).join("");
+    }
+    if (tableGroup) tableGroup.style.display = "";
+  } catch (e) {
+    toast("Gagal memuat tabel destination: " + e.message, "error");
+  }
+}
+
+async function onDstTableSelected(tableName) {
+  state.dstSelectedTable = tableName;
+  if (!tableName) {
+    const mapBox = $("#dst-column-mapping-container");
+    if (mapBox) mapBox.style.display = "none";
+    return;
+  }
+
+  const host     = $("#dst-host")?.value.trim() || "localhost";
+  const port     = parseInt($("#dst-port")?.value) || (state.dstDbType === "mysql" ? 3306 : 5432);
+  const user     = $("#dst-user")?.value.trim() || "root";
+  const password = $("#dst-password")?.value || "";
+  const database = $("#dst-db-dropdown")?.value;
+
+  try {
+    const q   = `type=${state.dstDbType}&host=${host}&port=${port}&user=${user}&password=${encodeURIComponent(password)}&database=${database}&table=${tableName}`;
+    const res = await fetch(`${API.listColumns}?${q}`);
+    const data = await res.json();
+    state.dstColumns = data.columns || [];
+    renderColumnMapping();
+  } catch (e) {
+    toast("Gagal memuat kolom tabel target: " + e.message, "error");
+  }
+}
+
+function renderColumnMapping() {
+  const container = $("#dst-column-mapping-container");
+  if (!container) return;
+
+  if (state.dstTableMode !== "existing" || !state.dstSelectedTable || !state.srcSelectedColumns.length || !state.dstColumns.length) {
+    container.style.display = "none";
+    return;
+  }
+
+  container.style.display = "";
+  container.innerHTML = `
+    <div class="column-mapping-box">
+      <div class="column-mapping-header">
+        <h4>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>
+          Pemetaan Kolom (Sumber ──► Tabel Target: ${state.dstSelectedTable})
+        </h4>
+        <span style="font-size:11px;color:var(--text-tertiary)">Pilih kolom target yang diisi</span>
+      </div>
+      <div class="column-mapping-table">
+        ${state.srcSelectedColumns.map(srcName => {
+          const srcCol = state.srcColumns.find(c => c.name === srcName);
+          const srcType = srcCol ? srcCol.type : "";
+
+          // Auto-match if not yet mapped
+          if (!state.columnMapping[srcName]) {
+            const match = state.dstColumns.find(d => d.name.toLowerCase() === srcName.toLowerCase());
+            state.columnMapping[srcName] = match ? match.name : (state.dstColumns[0]?.name || "__ignore__");
+          }
+          const currentDst = state.columnMapping[srcName];
+
+          return `
+            <div class="column-mapping-row">
+              <div class="mapping-src-col" title="${srcName}">
+                <span>${srcName}</span>
+                ${srcType ? `<span class="column-type-badge">${srcType}</span>` : ""}
+              </div>
+              <span class="mapping-arrow">──►</span>
+              <select class="form-select mapping-dst-select" onchange="updateColumnMapping('${srcName}', this.value)">
+                <option value="__ignore__" ${currentDst === '__ignore__' ? 'selected' : ''}>— Abaikan / Jangan Isi —</option>
+                ${state.dstColumns.map(dc => `
+                  <option value="${dc.name}" ${currentDst === dc.name ? 'selected' : ''}>
+                    ${dc.name} (${dc.type})
+                  </option>
+                `).join("")}
+              </select>
+            </div>
+          `;
+        }).join("")}
+      </div>
+      <div style="font-size:11px;color:var(--text-tertiary);margin-top:8px">
+        ✓ Data hasil transformasi akan otomatis mengisi kolom-kolom tabel target yang Anda pilih di atas.
+      </div>
+    </div>
+  `;
+}
+
+function updateColumnMapping(srcCol, dstCol) {
+  state.columnMapping[srcCol] = dstCol;
+}
+
+function resetTaskBuilder() {
+  state.taskCounter = (state.taskCounter || 1) + 1;
+  state.pipelineName = `Task ${state.taskCounter}: Sinkronisasi Data`;
+  const nameInput = $("#pipeline-name-input");
+  if (nameInput) nameInput.value = state.pipelineName;
+
+  state.srcColumns = [];
+  state.srcSelectedColumns = [];
+  state.srcSelectedTable = "";
+  state.dstColumns = [];
+  state.columnMapping = {};
+
+  ["trim", "capitalize", "uppercase", "lowercase", "fill-null", "mask"].forEach(t => {
+    const cb = $(`#transform-${t}`);
+    if (cb) cb.checked = false;
+  });
+  updateTransformBadge();
+
+  const mapCont = $("#dst-column-mapping-container");
+  if (mapCont) { mapCont.style.display = "none"; mapCont.innerHTML = ""; }
+
+  renderSrcDbCards();
+  toast(`Task baru siap dikonfigurasi: ${state.pipelineName}`, "info");
 }
 
 // ── Drag & Drop for upload zone ─────────────────────────────────────────────
@@ -1297,26 +1483,20 @@ function collectSources() {
       return { type: state.srcFileFormat, options: opts };
     });
   } else {
-    // SQL source: collect all verified cards with selected tables
-    const sources = [];
-    for (const card of state.srcDbCards) {
-      if (!card.verified || !card.database) continue;
-      const tables = card.tables.length > 0 ? card.tables : (card._availableTables || []);
-      for (const tbl of tables) {
-        sources.push({
-          type: state.srcDbType,
-          options: {
-            host: card.host,
-            port: parseInt(card.port),
-            user: card.user,
-            password: card.password,
-            database: card.database,
-            table_name: tbl,
-          },
-        });
-      }
-    }
-    return sources.length > 0 ? sources : null;
+    // Single DB & Single Table focus
+    const card = state.srcDbCards.find(c => c.verified && c.database && c.tables.length > 0);
+    if (!card) return null;
+    return [{
+      type: state.srcDbType,
+      options: {
+        host: card.host,
+        port: parseInt(card.port) || (state.srcDbType === "mysql" ? 3306 : 5432),
+        user: card.user,
+        password: card.password,
+        database: card.database,
+        table_name: card.tables[0],
+      },
+    }];
   }
 }
 
@@ -1333,17 +1513,20 @@ function collectDestination() {
   } else {
     if (!state.dstVerified) return null;
     const database = $("#dst-db-dropdown")?.value;
-    const tableName = $("#dst-table-name")?.value.trim();
+    const tableName = state.dstTableMode === "existing"
+      ? state.dstSelectedTable
+      : $("#dst-table-name")?.value.trim();
     if (!database || !tableName) return null;
     return {
       type: state.dstDbType,
       options: {
-        host: $("#dst-host")?.value.trim(),
+        host: $("#dst-host")?.value.trim() || "localhost",
         port: parseInt($("#dst-port")?.value) || (state.dstDbType === "mysql" ? 3306 : 5432),
-        user: $("#dst-user")?.value.trim(),
+        user: $("#dst-user")?.value.trim() || "root",
         password: $("#dst-password")?.value || "",
         database,
         table_name: tableName,
+        if_exists: "append",
       },
     };
   }

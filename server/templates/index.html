@@ -417,13 +417,24 @@
           <h1 class="section-title">Pipeline Builder</h1>
         </div>
 
-        <!-- Pipeline Name -->
-        <div style="margin-bottom:20px">
-          <div class="form-group" style="max-width:340px">
-            <label class="form-label">Nama Pipeline</label>
-            <input id="pipeline-name-input" class="form-control" type="text"
-                   placeholder="My Pipeline" value="My Pipeline">
+        <!-- Task / Project Header Bar -->
+        <div class="task-header-bar">
+          <div class="task-header-info">
+            <span class="task-badge">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+              ETL Task
+            </span>
+            <div style="flex:1;max-width:440px">
+              <input id="pipeline-name-input" class="form-control" type="text"
+                     placeholder="Nama Task / Project (contoh: Task 1: Sinkronisasi Pasien)"
+                     value="Task 1: Sinkronisasi Pasien"
+                     style="font-weight:600;font-size:13.5px">
+            </div>
           </div>
+          <button class="btn btn-secondary btn-sm" onclick="resetTaskBuilder()" title="Mulai Task / Project Baru">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            + Buat Task Baru
+          </button>
         </div>
 
         <!-- 3-Panel Builder -->
@@ -679,18 +690,39 @@
 
                 <div id="dst-db-select-group" class="form-group" style="display:none">
                   <label class="form-label">Database Tujuan</label>
-                  <select class="form-select" id="dst-db-dropdown">
+                  <select class="form-select" id="dst-db-dropdown" onchange="onDstDbSelected(this.value)">
                     <option value="">— Pilih database —</option>
                   </select>
                 </div>
 
-                <div id="dst-table-name-group" class="form-group" style="display:none">
-                  <label class="form-label">Nama Tabel Baru</label>
-                  <input class="form-control" id="dst-table-name" type="text" placeholder="etl_output_merged">
-                  <div style="font-size:11px;color:var(--text-tertiary);margin-top:4px">
-                    Tabel akan dibuat otomatis jika belum ada.
+                <!-- Destination Target Table Selector (Existing vs New) -->
+                <div id="dst-table-select-group" class="form-group" style="display:none">
+                  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+                    <label class="form-label" style="margin:0">Tabel Tujuan</label>
+                    <div style="display:flex;gap:6px;font-size:11px">
+                      <button type="button" class="dest-format-btn selected" id="dst-mode-existing-btn" onclick="setDstTableMode('existing')" style="padding:2px 8px;font-size:11px">Tabel yang Ada</button>
+                      <button type="button" class="dest-format-btn" id="dst-mode-new-btn" onclick="setDstTableMode('new')" style="padding:2px 8px;font-size:11px">Tabel Baru</button>
+                    </div>
+                  </div>
+
+                  <!-- Mode: Existing Table Dropdown -->
+                  <div id="dst-table-existing-container">
+                    <select class="form-select" id="dst-table-dropdown" onchange="onDstTableSelected(this.value)">
+                      <option value="">— Pilih tabel tujuan yang sudah ada —</option>
+                    </select>
+                  </div>
+
+                  <!-- Mode: New Table Input -->
+                  <div id="dst-table-new-container" style="display:none">
+                    <input class="form-control" id="dst-table-name" type="text" placeholder="nama_tabel_baru">
+                    <div style="font-size:11px;color:var(--text-tertiary);margin-top:4px">
+                      Tabel akan dibuat otomatis jika belum ada.
+                    </div>
                   </div>
                 </div>
+
+                <!-- Column Mapping Section -->
+                <div id="dst-column-mapping-container" style="display:none"></div>
               </div>
 
             </div>

@@ -5,6 +5,7 @@ from app.transformations.registry import TransformationRegistry
 import app.transformations.text  # triggers auto-registration
 import app.transformations.cleansing  # triggers auto-registration
 import app.transformations.join  # triggers auto-registration
+import app.transformations.column_mapping  # triggers auto-registration
 
 __all__ = [
     "Transformer",
