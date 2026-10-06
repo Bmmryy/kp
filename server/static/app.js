@@ -1026,9 +1026,86 @@ function removeSrcFile(index) {
 }
 
 // ── SOURCE: SQL DB Cards ────────────────────────────────────────────────────
+
+async function verifySrcCard(id) {
+  const card = state.srcDbCards.find(c => c.id === id);
+  if (!card) return;
+
+  const host     = $(`#src-host-${id}`)?.value.trim() || "";
+  const port     = parseInt($(`#src-port-${id}`)?.value) || (state.srcDbType === "mysql" ? 3306 : 5432);
+  const user     = $(`#src-user-${id}`)?.value.trim() || "";
+  const password = $(`#src-pass-${id}`)?.value || "";
+
+  if (!host || !user) { toast("Host dan User wajib diisi.", "error"); return; }
+
+  card.host = host; card.port = port; card.user = user; card.password = password;
+
+  const btn   = $(`#src-verify-btn-${id}`);
+  const msgEl = $(`#src-verify-msg-${id}`);
+  if (btn)   { btn.classList.add("loading"); btn.disabled = true; }
+  if (msgEl) msgEl.textContent = "Menghubungkan...";
+
+  try {
+    // 1. Verify — POST body flat (sesuai ConnectParams)
+    const vRes = await fetch(API.verifyConn, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: state.srcDbType, host, port, user, password }),
+    });
+    const vData = await vRes.json();
+    if (!vData.ok) throw new Error(vData.error || "Koneksi gagal");
+
+    // 2. List databases — GET dengan query params
+    const params = new URLSearchParams({ type: state.srcDbType, host, port, user, password });
+    const dbRes  = await fetch(`${API.listDatabases}?${params}`);
+    if (!dbRes.ok) { const e = await dbRes.json(); throw new Error(e.detail || "Gagal load database"); }
+    const dbData = await dbRes.json();
+
+    card._databases = dbData.databases || [];
+    card.verified   = true;
+    card._connOpts  = { host, port, user, password };
+
+    if (btn)   { btn.classList.remove("loading"); btn.classList.add("verified"); btn.disabled = false; btn.innerHTML = "✓ Terverifikasi"; }
+    if (msgEl) { msgEl.style.color = "var(--success)"; msgEl.textContent = `${card._databases.length} database ditemukan`; }
+    renderSrcDbCards();
+  } catch (err) {
+    card.verified = false;
+    if (btn)   { btn.classList.remove("loading"); btn.classList.add("failed"); btn.disabled = false; btn.innerHTML = "✗ Gagal"; }
+    if (msgEl) { msgEl.style.color = "var(--danger)"; msgEl.textContent = `Gagal: ${err.message}`; }
+    toast(`Verifikasi gagal: ${err.message}`, "error");
+  }
+}
+
+async function onSrcDbSelected(cardId, dbName) {
+  const card = state.srcDbCards.find(c => c.id === cardId);
+  if (!card) return;
+
+  card.database = dbName;
+  card.tables   = [];
+  card._availableTables = [];
+  state.srcColumns         = [];
+  state.srcSelectedColumns = [];
+  state.srcSelectedTable   = "";
+  renderSrcDbCards();
+
+  if (!dbName) return;
+
+  try {
+    const { host, port, user, password } = card._connOpts || card;
+    const q = new URLSearchParams({ type: state.srcDbType, host, port, user, password, database: dbName });
+    const res = await fetch(`${API.listTables}?${q}`);
+    if (!res.ok) throw new Error("Gagal load tabel");
+    const data = await res.json();
+    card._availableTables = data.tables || [];
+    renderSrcDbCards();
+  } catch (e) {
+    toast(`Gagal load tabel: ${e.message}`, "error");
+  }
+}
+
 function addSrcDbCard() {
   const id = ++state.srcDbCardCounter;
-  const card = { id, verified: false, host: "", port: "", user: "", password: "", database: "", tables: [] };
+  const card = { id, verified: false, host: "", port: "", user: "", password: "", database: "", tables: [], _databases: [], _availableTables: [], _connOpts: null };
   state.srcDbCards.push(card);
   renderSrcDbCards();
 }
