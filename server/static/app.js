@@ -848,9 +848,25 @@ function renderSchedules(jobs) {
     </td></tr>`;
     return;
   }
-  tbody.innerHTML = jobs.map(j => `
+  tbody.innerHTML = jobs.map(j => {
+    const dstOpts = j.destination_options || j.dest_options || {};
+    const mode = dstOpts.if_exists || "sync";
+    const modeLabel = {
+      sync: "⚡ Auto-Sync (Mirror)",
+      append: "➕ Append Data",
+      truncate: "🔄 Truncate & Reload",
+    }[mode] || mode;
+
+    return `
     <tr>
-      <td style="font-weight:600">${j.name}</td>
+      <td style="font-weight:600">
+        <div>${j.name}</div>
+        <div style="margin-top:4px">
+          <span class="pill ${mode === 'sync' ? 'pill-success' : 'pill-pending'}" style="font-size:10.5px;padding:2px 7px" title="Mode Sinkronisasi: ${modeLabel}">
+            ${modeLabel}
+          </span>
+        </div>
+      </td>
       <td style="color:var(--text-secondary)">${j.pipeline_name}</td>
       <td>
         <span class="connector-chip" style="display:inline-flex;align-items:center;gap:5px;font-size:11px">
@@ -881,7 +897,8 @@ function renderSchedules(jobs) {
         </button>
       </td>
     </tr>
-  `).join("");
+    `;
+  }).join("");
 }
 
 async function toggleSchedule(id, checkbox) {
@@ -1030,16 +1047,30 @@ function showCreateScheduleModal(prefillRun = null, editJob = null) {
           <select class="form-select" id="sc-freq">${freqOptions}</select>
         </div>
 
-        <div class="form-group full-width" style="margin:0">
-          <label class="form-label">Mode Sinkronisasi &amp; Schema Evolution</label>
-          <select class="form-select" id="sc-load-mode">
-            <option value="sync">Sync / Mirror (Selalu sinkron data &amp; struktur kolom terbaru)</option>
-            <option value="append">Append (Tambah data baru + otomatis tambah kolom baru)</option>
-            <option value="truncate">Truncate (Kosongkan lalu isi ulang data)</option>
-          </select>
-          <div style="font-size:11px;color:var(--text-tertiary);margin-top:3px">
-            ✓ Auto Schema Evolution: jika kolom bertambah di sumber, tujuan otomatis menyesuaikan via ALTER TABLE.
+        <!-- Pilihan Khusus Sinkronisasi & Auto Schema Evolution -->
+        <div class="form-group full-width" style="margin:0;background:#F8FAFC;border:1.5px solid #DCE3E8;padding:14px;border-radius:12px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <label style="font-size:12.5px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:6px;margin:0">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--primary,#0071E3)" stroke-width="2.5"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+              Pilihan Khusus Sinkronisasi &amp; Schema Evolution
+            </label>
+            <span class="pill pill-success" style="font-size:10px;padding:2px 8px">Bisa Diedit Bebas</span>
           </div>
+
+          <div style="font-size:11.5px;color:var(--text-secondary);margin-bottom:8px">
+            Atur bagaimana database tujuan merespons setiap kali ada update data atau perubahan kolom di tabel sumber (misal update via phpMyAdmin):
+          </div>
+
+          <select class="form-select" id="sc-load-mode" style="font-size:12.5px;font-weight:600;background:#fff;margin-bottom:8px">
+            <option value="sync">⚡ Sync / Mirror — Selalu Sinkron Otomatis (Data &amp; Struktur Kolom Mengikuti Sumber)</option>
+            <option value="append">➕ Append — Tambah Data Baru (Otomatis Tambah Kolom Baru)</option>
+            <option value="truncate">🔄 Truncate &amp; Reload — Kosongkan lalu Muat Ulang Data Terbaru</option>
+          </select>
+
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--text)">
+            <input type="checkbox" id="sc-auto-evolution" checked style="accent-color:var(--accent,#0071E3)">
+            <span><strong>Auto-Alter Struktur:</strong> Otomatis buat tabel baru &amp; tambah kolom baru (<code>ALTER TABLE</code>) jika ada update di sumber.</span>
+          </label>
         </div>
       </div>
 
@@ -1168,6 +1199,9 @@ function applyRunToScheduleForm(run) {
     if (dstOpts.if_exists && $("#sc-load-mode")) {
       $("#sc-load-mode").value = dstOpts.if_exists;
     }
+    if ($("#sc-auto-evolution")) {
+      $("#sc-auto-evolution").checked = (dstOpts.auto_schema_evolution !== false);
+    }
   }
 
   toast(`Form terisi otomatis dari riwayat task: "${run.pipeline_name}"`, "info");
@@ -1228,6 +1262,10 @@ function applyJobToScheduleForm(job) {
   const loadModeEl = $("#sc-load-mode");
   const jobLoadMode = (job.destination_options && job.destination_options.if_exists) || "sync";
   if (loadModeEl) loadModeEl.value = jobLoadMode;
+  const autoEvoEl = $("#sc-auto-evolution");
+  if (autoEvoEl) {
+    autoEvoEl.checked = (job.destination_options && job.destination_options.auto_schema_evolution !== false);
+  }
 }
 
 function onScSrcTypeChange(val) {
@@ -1301,6 +1339,7 @@ function getScheduleFormData() {
   }
 
   dstOpts.if_exists = $("#sc-load-mode")?.value || "sync";
+  dstOpts.auto_schema_evolution = $("#sc-auto-evolution")?.checked !== false;
 
   return {
     name,
@@ -1446,6 +1485,9 @@ function scheduleCurrentTask() {
         if ($("#sc-dst-table")) $("#sc-dst-table").value = dest.options.table_name || dest.options.table || "";
       } else {
         if ($("#sc-dst-path")) $("#sc-dst-path").value = dest.options.path || "";
+      }
+      if ($("#sc-load-mode")) {
+        $("#sc-load-mode").value = dest.options.if_exists || state.dstLoadMode || "sync";
       }
     }
 
