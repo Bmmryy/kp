@@ -7,7 +7,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <title>FlowETL — Visual Data Integration</title>
-  <link rel="stylesheet" href="/static/app.css?v=20261007_v2">
+  <link rel="stylesheet" href="/static/app.css?v=20261007_v3">
 </head>
 <body>
 
@@ -422,10 +422,21 @@
                      style="font-weight:600;font-size:13.5px">
             </div>
           </div>
-          <button class="btn btn-secondary btn-sm" onclick="resetTaskBuilder()" title="Mulai Task / Project Baru">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-            + Buat Task Baru
-          </button>
+          <div style="display:flex;gap:8px;align-items:center">
+            <button class="btn btn-secondary btn-sm" onclick="scheduleCurrentTask()" title="Jadwalkan Task ini secara otomatis">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+              </svg>
+              Jadwalkan Task Ini
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="resetTaskBuilder()" title="Mulai Task / Project Baru">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              + Buat Task Baru
+            </button>
+          </div>
         </div>
 
         <!-- 3-Panel Builder -->
@@ -762,13 +773,22 @@
 
         </div>
 
-        <!-- Run Action Button -->
-        <div style="display:flex;justify-content:center;margin-top:12px">
+        <!-- Run Action Button & Schedule Shortcut -->
+        <div style="display:flex;justify-content:center;gap:12px;margin-top:12px">
           <button id="run-pipeline-btn" class="btn btn-primary" style="padding:11px 32px;font-size:14.5px;font-weight:600">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" stroke="none">
               <polygon points="5 3 19 12 5 21 5 3"></polygon>
             </svg>
             Jalankan Pipeline
+          </button>
+          <button type="button" class="btn btn-secondary" onclick="scheduleCurrentTask()" style="padding:11px 22px;font-size:14.5px;font-weight:600">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            Jadwalkan Task
           </button>
         </div>
 
@@ -959,7 +979,7 @@
   </div>
 </div>
 
-<script src="/static/app.js?v=20261007_v2"></script>
+<script src="/static/app.js?v=20261007_v3"></script>
 <script>
 // ─── Quick-start presets ───────────────────────────────────────────────────
 

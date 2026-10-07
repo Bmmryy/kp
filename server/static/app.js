@@ -1111,6 +1111,75 @@ async function submitCreateSchedule() {
   }
 }
 
+// ─── Schedule Current Task (Pre-fills from active Task Builder) ───────────────
+
+function scheduleCurrentTask() {
+  const sources = collectSources();
+  const dest    = collectDestination();
+  const taskName = $("#pipeline-name-input")?.value.trim() || state.pipelineName || "Task Baru";
+
+  if (!sources || sources.length === 0) {
+    toast("Pilih sumber data terlebih dahulu sebelum menjadwalkan task.", "error");
+    return;
+  }
+  if (!dest) {
+    toast("Lengkapi konfigurasi tujuan (destination) terlebih dahulu.", "error");
+    return;
+  }
+
+  // Tampilkan modal jadwal
+  showCreateScheduleModal();
+
+  setTimeout(() => {
+    // 1. Isi nama jadwal dan pipeline berdasarkan nama task
+    const nameEl = $("#sc-name");
+    const pipeEl = $("#sc-pipeline");
+    if (nameEl) nameEl.value = `Jadwal: ${taskName}`;
+    if (pipeEl) pipeEl.value = taskName;
+
+    // 2. Pre-fill Source
+    const src = sources[0];
+    const srcTypeSelect = $("#sc-src-type");
+    if (srcTypeSelect && src.type) {
+      srcTypeSelect.value = src.type;
+      onScSrcTypeChange(src.type);
+
+      const isSrcSql = ["mysql", "postgresql", "postgres"].includes(src.type);
+      if (isSrcSql) {
+        if ($("#sc-src-host")) $("#sc-src-host").value = src.options.host || "localhost";
+        if ($("#sc-src-port")) $("#sc-src-port").value = src.options.port || (src.type === "mysql" ? 3306 : 5432);
+        if ($("#sc-src-user")) $("#sc-src-user").value = src.options.user || "root";
+        if ($("#sc-src-pass")) $("#sc-src-pass").value = src.options.password || "";
+        if ($("#sc-src-database")) $("#sc-src-database").value = src.options.database || "";
+        if ($("#sc-src-table")) $("#sc-src-table").value = src.options.table_name || src.options.table || "";
+      } else {
+        if ($("#sc-src-path")) $("#sc-src-path").value = src.options.path || "";
+      }
+    }
+
+    // 3. Pre-fill Destination
+    const dstTypeSelect = $("#sc-dst-type");
+    if (dstTypeSelect && dest.type) {
+      dstTypeSelect.value = dest.type;
+      onScDstTypeChange(dest.type);
+
+      const isDstSql = ["mysql", "postgresql", "postgres"].includes(dest.type);
+      if (isDstSql) {
+        if ($("#sc-dst-host")) $("#sc-dst-host").value = dest.options.host || "localhost";
+        if ($("#sc-dst-port")) $("#sc-dst-port").value = dest.options.port || (dest.type === "mysql" ? 3306 : 5432);
+        if ($("#sc-dst-user")) $("#sc-dst-user").value = dest.options.user || "root";
+        if ($("#sc-dst-pass")) $("#sc-dst-pass").value = dest.options.password || "";
+        if ($("#sc-dst-database")) $("#sc-dst-database").value = dest.options.database || "";
+        if ($("#sc-dst-table")) $("#sc-dst-table").value = dest.options.table_name || dest.options.table || "";
+      } else {
+        if ($("#sc-dst-path")) $("#sc-dst-path").value = dest.options.path || "";
+      }
+    }
+
+    toast(`Form penjadwalan terisi otomatis dari "${taskName}"!`, "info");
+  }, 60);
+}
+
 // ─── Custom SQL Mode Toggle ────────────────────────────────────────────────────
 
 function toggleCustomSQLMode(enabled) {
