@@ -39,6 +39,8 @@ class PipelineRun:
     pipeline_name: str
     source_type: str
     destination_type: str
+    source_options: Dict[str, Any] = field(default_factory=dict)
+    sources: List[Dict[str, Any]] = field(default_factory=list)
     destination_options: Dict[str, Any] = field(default_factory=dict)
     transformations: List[Dict[str, Any]] = field(default_factory=list)
     status: RunStatus = RunStatus.PENDING
@@ -67,8 +69,11 @@ class PipelineRun:
             "run_id": self.run_id,
             "pipeline_name": self.pipeline_name,
             "source_type": self.source_type,
+            "source_options": self.source_options,
+            "sources": self.sources,
             "destination_type": self.destination_type,
             "destination_options": self.destination_options,
+            "transformations": self.transformations,
             "output_file": output_file,
             "status": self.status.value,
             "started_at": self.started_at.isoformat() if self.started_at else None,
@@ -135,6 +140,7 @@ class PipelineRunnerService:
             pipeline_name=pipeline_name,
             source_type=source_type,
             destination_type=destination_type,
+            source_options=source_options or {},
             destination_options=destination_options,
             transformations=transformations or [],
         )
@@ -179,6 +185,7 @@ class PipelineRunnerService:
             run_id=run_id,
             pipeline_name=pipeline_name,
             source_type=combined_src_type,
+            sources=sources or [],
             destination_type=destination_type,
             destination_options=destination_options,
             transformations=transformations or [],

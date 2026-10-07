@@ -910,7 +910,7 @@ async function deleteSchedule(id) {
   }
 }
 
-function showCreateScheduleModal() {
+function showCreateScheduleModal(prefillRun = null) {
   const existing = $("#modal-create-schedule");
   if (existing) { existing.remove(); return; }
 
@@ -933,11 +933,25 @@ function showCreateScheduleModal() {
   `;
   modal.innerHTML = `
     <div style="background:#fff;border-radius:18px;padding:32px;width:580px;max-width:96vw;max-height:90vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,0.18);animation:fadeInUp .22s ease">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
-        <h2 style="font-size:17px;font-weight:700;margin:0">Tambah Jadwal ETL</h2>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+        <div>
+          <h2 style="font-size:17px;font-weight:700;margin:0">Tambah Jadwal ETL</h2>
+          <div style="font-size:12px;color:var(--text-tertiary);margin-top:2px">Jadwalkan task berdasarkan riwayat atau task yang pernah dijalankan</div>
+        </div>
         <button onclick="document.getElementById('modal-create-schedule').remove()" style="background:none;border:none;cursor:pointer;padding:4px">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
+      </div>
+
+      <!-- Pilih dari Riwayat Pipeline / Task -->
+      <div class="form-group full-width" style="margin-bottom:16px;background:#F6F8FA;padding:12px 14px;border-radius:10px;border:1px solid var(--border)">
+        <label class="form-label" style="font-size:12px;font-weight:600;margin-bottom:6px;display:flex;align-items:center;gap:6px">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+          Pilih Task dari Riwayat yang Pernah Dijalankan
+        </label>
+        <select class="form-select" id="sc-history-picker" onchange="onSelectHistoryForSchedule(this.value)" style="font-size:12.5px;background:#fff">
+          <option value="">— Pilih task dari riwayat untuk mengisi otomatis form —</option>
+        </select>
       </div>
 
       <div class="sc-modal-grid">
@@ -1018,7 +1032,105 @@ function showCreateScheduleModal() {
   `;
   document.body.appendChild(modal);
   modal.addEventListener("click", (e) => { if (e.target === modal) modal.remove(); });
+
+  // Load history runs into dropdown
+  populateScheduleHistoryDropdown(prefillRun);
   setTimeout(() => document.getElementById("sc-name")?.focus(), 50);
+}
+
+// Global cache for runs loaded in modal
+let _cachedHistoryRuns = [];
+
+async function populateScheduleHistoryDropdown(prefillRun = null) {
+  const sel = $("#sc-history-picker");
+  if (!sel) return;
+
+  try {
+    const res = await fetch(API.history);
+    const runs = await res.json();
+    _cachedHistoryRuns = runs || [];
+
+    if (!runs || runs.length === 0) {
+      sel.innerHTML = `<option value="">(Belum ada riwayat task/pipeline yang pernah dijalankan)</option>`;
+      return;
+    }
+
+    sel.innerHTML = `<option value="">— Pilih task dari riwayat (${runs.length} riwayat ditemukan) —</option>` +
+      runs.map((r, idx) => {
+        const timeStr = r.started_at ? formatDate(r.started_at) : "";
+        const label = `${r.pipeline_name} [${r.source_type} ──► ${r.destination_type}] (${r.status === 'success' ? 'Sukses' : r.status}) ${timeStr ? '- ' + timeStr : ''}`;
+        return `<option value="${r.run_id}">${label}</option>`;
+      }).join("");
+
+    if (prefillRun) {
+      sel.value = prefillRun.run_id;
+      applyRunToScheduleForm(prefillRun);
+    }
+  } catch (err) {
+    sel.innerHTML = `<option value="">Gagal memuat riwayat: ${err.message}</option>`;
+  }
+}
+
+function onSelectHistoryForSchedule(runId) {
+  if (!runId) return;
+  const run = _cachedHistoryRuns.find(r => r.run_id === runId);
+  if (!run) return;
+  applyRunToScheduleForm(run);
+}
+
+function applyRunToScheduleForm(run) {
+  if (!run) return;
+
+  // 1. Nama Jadwal & Pipeline
+  const nameEl = $("#sc-name");
+  const pipeEl = $("#sc-pipeline");
+  if (nameEl) nameEl.value = `Jadwal: ${run.pipeline_name}`;
+  if (pipeEl) pipeEl.value = run.pipeline_name;
+
+  // 2. Source Configuration
+  const srcTypeSelect = $("#sc-src-type");
+  const rawSrcType = run.source_type || "";
+  const cleanSrcType = rawSrcType.split("+")[0]; // handle multi-source label
+  if (srcTypeSelect && cleanSrcType) {
+    srcTypeSelect.value = cleanSrcType;
+    onScSrcTypeChange(cleanSrcType);
+
+    const isSrcSql = ["mysql", "postgresql", "postgres"].includes(cleanSrcType);
+    const srcOpts = run.source_options || (run.sources && run.sources[0]?.options) || {};
+    if (isSrcSql) {
+      if ($("#sc-src-host")) $("#sc-src-host").value = srcOpts.host || "localhost";
+      if ($("#sc-src-port")) $("#sc-src-port").value = srcOpts.port || (cleanSrcType === "mysql" ? 3306 : 5432);
+      if ($("#sc-src-user")) $("#sc-src-user").value = srcOpts.user || "root";
+      if ($("#sc-src-pass")) $("#sc-src-pass").value = srcOpts.password || "";
+      if ($("#sc-src-database")) $("#sc-src-database").value = srcOpts.database || "";
+      if ($("#sc-src-table")) $("#sc-src-table").value = srcOpts.table_name || srcOpts.table || "";
+    } else {
+      if ($("#sc-src-path")) $("#sc-src-path").value = srcOpts.path || "";
+    }
+  }
+
+  // 3. Destination Configuration
+  const dstTypeSelect = $("#sc-dst-type");
+  const dstType = run.destination_type || "csv";
+  if (dstTypeSelect && dstType) {
+    dstTypeSelect.value = dstType;
+    onScDstTypeChange(dstType);
+
+    const isDstSql = ["mysql", "postgresql", "postgres"].includes(dstType);
+    const dstOpts = run.destination_options || {};
+    if (isDstSql) {
+      if ($("#sc-dst-host")) $("#sc-dst-host").value = dstOpts.host || "localhost";
+      if ($("#sc-dst-port")) $("#sc-dst-port").value = dstOpts.port || (dstType === "mysql" ? 3306 : 5432);
+      if ($("#sc-dst-user")) $("#sc-dst-user").value = dstOpts.user || "root";
+      if ($("#sc-dst-pass")) $("#sc-dst-pass").value = dstOpts.password || "";
+      if ($("#sc-dst-database")) $("#sc-dst-database").value = dstOpts.database || "";
+      if ($("#sc-dst-table")) $("#sc-dst-table").value = dstOpts.table_name || dstOpts.table || "";
+    } else {
+      if ($("#sc-dst-path")) $("#sc-dst-path").value = dstOpts.path || "";
+    }
+  }
+
+  toast(`Form terisi otomatis dari riwayat task: "${run.pipeline_name}"`, "info");
 }
 
 function onScSrcTypeChange(val) {
@@ -1983,20 +2095,42 @@ function renderHistory(runs) {
       <td>${statusPill(r.status)}</td>
       <td style="color:var(--text-secondary)">${r.metrics?.rows_loaded ?? "—"}</td>
       <td style="color:var(--text-tertiary);font-size:12px">${formatDate(r.started_at)}</td>
-      <td>
+      <td style="display:flex;gap:6px;align-items:center;flex-wrap:nowrap">
+        <button class="btn btn-secondary btn-sm" onclick="scheduleFromHistory('${r.run_id}')"
+                title="Jadwalkan task ini secara otomatis"
+                style="padding:4px 9px;font-size:11.5px;display:inline-flex;align-items:center;gap:4px">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+          </svg>
+          Jadwalkan
+        </button>
         ${r.output_file ? `
           <a href="${API.download(r.output_file)}" download class="btn btn-secondary btn-sm"
-             style="padding:4px 10px;font-size:12px;text-decoration:none;display:inline-flex;align-items:center;gap:5px">
+             style="padding:4px 9px;font-size:11.5px;text-decoration:none;display:inline-flex;align-items:center;gap:4px">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
               <polyline points="7 10 12 15 17 10"></polyline>
               <line x1="12" y1="15" x2="12" y2="3"></line>
             </svg>
             Unduh
-          </a>` : '<span style="color:var(--text-tertiary)">—</span>'}
+          </a>` : ''}
       </td>
     </tr>
   `).join("");
+}
+
+function scheduleFromHistory(runId) {
+  showCreateScheduleModal();
+  setTimeout(() => {
+    const sel = $("#sc-history-picker");
+    if (sel) {
+      sel.value = runId;
+      onSelectHistoryForSchedule(runId);
+    }
+  }, 100);
 }
 
 // ─── Dashboard Stats ──────────────────────────────────────────────────────────
