@@ -14,11 +14,21 @@ class CreateScheduleRequest(BaseModel):
     pipeline_name: str = Field(default="Scheduled Pipeline", description="Nama pipeline yang dijalankan")
     source_type: str = Field(..., description="Tipe source (mysql, sqlite, csv, ...)")
     source_options: Dict[str, Any] = Field(default_factory=dict)
-    destination_type: str = Field(..., description="Tipe destination")
+    destination_type: Optional[str] = Field(default=None, description="Tipe destination")
+    dest_type: Optional[str] = Field(default=None, description="Alias untuk destination_type")
     destination_options: Dict[str, Any] = Field(default_factory=dict)
+    dest_options: Dict[str, Any] = Field(default_factory=dict)
     frequency: str = Field(default="hourly", description="'30s', '1m', '5m', 'hourly', 'daily', 'weekly', 'monthly'")
     transformations: List[Dict[str, Any]] = Field(default_factory=list)
     is_enabled: bool = Field(default=True)
+
+    @property
+    def effective_destination_type(self) -> str:
+        return self.destination_type or self.dest_type or "csv"
+
+    @property
+    def effective_destination_options(self) -> Dict[str, Any]:
+        return self.destination_options or self.dest_options or {}
 
 
 class ScheduleResponse(BaseModel):
@@ -40,8 +50,8 @@ def create_schedule(body: CreateScheduleRequest) -> ScheduleResponse:
         pipeline_name=body.pipeline_name,
         source_type=body.source_type,
         source_options=body.source_options,
-        destination_type=body.destination_type,
-        destination_options=body.destination_options,
+        destination_type=body.effective_destination_type,
+        destination_options=body.effective_destination_options,
         frequency=body.frequency,
         transformations=body.transformations,
         is_enabled=body.is_enabled,

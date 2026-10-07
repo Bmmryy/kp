@@ -1208,13 +1208,27 @@ async function submitCreateSchedule() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        name, pipeline_name: pipeline,
-        source_type: srcType, source_options: srcOpts,
-        dest_type: dstType, dest_options: dstOpts,
+        name,
+        pipeline_name: pipeline,
+        source_type: srcType,
+        source_options: srcOpts,
+        destination_type: dstType,
+        destination_options: dstOpts,
         frequency: freq,
       }),
     });
-    if (!res.ok) { const err = await res.json(); throw new Error(err.detail || "Error"); }
+    if (!res.ok) {
+      const err = await res.json();
+      let msg = "Terjadi kesalahan.";
+      if (typeof err.detail === "string") {
+        msg = err.detail;
+      } else if (Array.isArray(err.detail)) {
+        msg = err.detail.map(d => `${d.loc ? d.loc.slice(1).join('.') : ''}: ${d.msg}`).join("; ");
+      } else if (err.message) {
+        msg = err.message;
+      }
+      throw new Error(msg);
+    }
     toast(`Jadwal "${name}" berhasil dibuat!`, "success");
     $("#modal-create-schedule")?.remove();
     loadSchedules();
