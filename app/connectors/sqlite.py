@@ -178,8 +178,22 @@ class SQLiteDestination(DestinationConnector):
                 )
             elif if_exists == "replace":
                 cursor.execute(f"DROP TABLE IF EXISTS {schema.name}")
-            elif if_exists in ("append", "truncate"):
-                if if_exists == "truncate":
+            elif if_exists in ("append", "truncate", "sync", "mirror"):
+                from app.schema.evolution import SchemaEvolutionVerifier
+                cursor.execute(f"PRAGMA table_info({schema.name})")
+                existing_cols = [r[1] for r in cursor.fetchall()]
+                evo = SchemaEvolutionVerifier.verify_and_plan(
+                    dialect="sqlite",
+                    table_name=schema.name,
+                    existing_column_names=existing_cols,
+                    incoming_schema=schema,
+                    quote_fn=lambda n: f'"{n}"',
+                )
+                if evo.has_drift:
+                    for ddl_stmt in evo.ddl_statements:
+                        cursor.execute(ddl_stmt)
+                    self._conn.commit()
+                if if_exists in ("truncate", "sync", "mirror"):
                     cursor.execute(f"DELETE FROM {schema.name}")
                     self._conn.commit()
                 return
