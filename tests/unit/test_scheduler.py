@@ -93,3 +93,37 @@ def test_scheduler_manual_trigger():
     assert len(triggered_runs) == 1
     assert "[Scheduled] My Pipeline" in triggered_runs[0]
     assert job.run_count == 1
+
+
+def test_scheduler_get_and_update():
+    service = SchedulerService()
+    job = service.add_schedule(
+        name="Old Name",
+        pipeline_name="Old Pipe",
+        source_type="csv",
+        source_options={"path": "old.csv"},
+        destination_type="json",
+        destination_options={"path": "old.json"},
+        frequency="daily",
+    )
+    assert service.get_schedule(job.id) is not None
+    assert service.get_schedule("nonexistent") is None
+
+    updated = service.update_schedule(
+        job.id,
+        name="New Name",
+        pipeline_name="New Pipe",
+        frequency="hourly",
+        destination_type="sqlite",
+        destination_options={"path": "new.sqlite", "table_name": "dest"},
+    )
+    assert updated is not None
+    assert updated.name == "New Name"
+    assert updated.pipeline_name == "New Pipe"
+    assert updated.frequency == "hourly"
+    assert updated.destination_type == "sqlite"
+    assert updated.destination_options["table_name"] == "dest"
+
+    # Updating nonexistent job returns None
+    assert service.update_schedule("nonexistent", name="Fail") is None
+

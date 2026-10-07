@@ -140,6 +140,48 @@ class SchedulerService:
     def get_schedule(self, job_id: str) -> Optional[ScheduledJob]:
         return self._jobs.get(job_id)
 
+    def update_schedule(
+        self,
+        job_id: str,
+        name: Optional[str] = None,
+        pipeline_name: Optional[str] = None,
+        source_type: Optional[str] = None,
+        source_options: Optional[Dict[str, Any]] = None,
+        destination_type: Optional[str] = None,
+        destination_options: Optional[Dict[str, Any]] = None,
+        frequency: Optional[str] = None,
+        transformations: Optional[List[Dict[str, Any]]] = None,
+        is_enabled: Optional[bool] = None,
+    ) -> Optional[ScheduledJob]:
+        job = self.get_schedule(job_id)
+        if not job:
+            return None
+        if name is not None:
+            job.name = name
+        if pipeline_name is not None:
+            job.pipeline_name = pipeline_name
+        if source_type is not None:
+            job.source_type = source_type
+        if source_options is not None:
+            job.source_options = source_options
+        if destination_type is not None:
+            job.destination_type = destination_type
+        if destination_options is not None:
+            job.destination_options = destination_options
+        if frequency is not None:
+            job.frequency = frequency
+        if transformations is not None:
+            job.transformations = transformations
+        if is_enabled is not None:
+            job.is_enabled = is_enabled
+
+        if job.is_enabled:
+            job.next_run_at = job.calculate_next_run()
+        else:
+            job.next_run_at = None
+        logger.info("Updated schedule '%s' (%s, next: %s)", job.name, job.frequency, job.next_run_at)
+        return job
+
     def delete_schedule(self, job_id: str) -> bool:
         if job_id in self._jobs:
             del self._jobs[job_id]

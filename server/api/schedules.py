@@ -59,6 +59,35 @@ def create_schedule(body: CreateScheduleRequest) -> ScheduleResponse:
     return ScheduleResponse(id=job.id, message=f"Jadwal '{job.name}' berhasil dibuat ({job.frequency}).")
 
 
+@router.get("/{job_id}")
+def get_schedule(job_id: str) -> Dict[str, Any]:
+    """Ambil detail satu jadwal berdasarkan ID."""
+    job = scheduler.get_schedule(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Jadwal tidak ditemukan.")
+    return job.to_dict()
+
+
+@router.put("/{job_id}")
+def update_schedule(job_id: str, body: CreateScheduleRequest) -> Dict[str, Any]:
+    """Update jadwal yang sudah ada."""
+    job = scheduler.update_schedule(
+        job_id=job_id,
+        name=body.name,
+        pipeline_name=body.pipeline_name,
+        source_type=body.source_type,
+        source_options=body.source_options,
+        destination_type=body.effective_destination_type,
+        destination_options=body.effective_destination_options,
+        frequency=body.frequency,
+        transformations=body.transformations,
+        is_enabled=body.is_enabled,
+    )
+    if not job:
+        raise HTTPException(status_code=404, detail="Jadwal tidak ditemukan.")
+    return job.to_dict()
+
+
 @router.delete("/{job_id}")
 def delete_schedule(job_id: str) -> Dict[str, Any]:
     """Hapus satu jadwal."""

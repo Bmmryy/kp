@@ -22,6 +22,8 @@ const API = {
   downloadZip:      (id) => `/api/pipeline/download-zip/${id}`,
   installDb:        "/api/database/install-sql",
   schedules:        "/api/schedules",
+  schedulesGet:     (id) => `/api/schedules/${id}`,
+  schedulesUpdate:  (id) => `/api/schedules/${id}`,
   schedulesToggle:  (id) => `/api/schedules/${id}/toggle`,
   schedulesTrigger: (id) => `/api/schedules/${id}/trigger`,
   schedulesDelete:  (id) => `/api/schedules/${id}`,
@@ -868,6 +870,12 @@ function renderSchedules(jobs) {
         <button class="btn btn-secondary btn-sm" style="padding:4px 10px;font-size:12px" onclick="triggerScheduleNow('${j.id}')" title="Jalankan Sekarang">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
         </button>
+        <button class="btn btn-secondary btn-sm" style="padding:4px 10px;font-size:12px" onclick="editSchedule('${j.id}')" title="Edit Jadwal">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 20h9"></path>
+            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+          </svg>
+        </button>
         <button class="btn btn-sm" style="padding:4px 10px;font-size:12px;background:var(--red,#FF3B30);color:#fff;border:none;border-radius:8px" onclick="deleteSchedule('${j.id}')" title="Hapus Jadwal">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path></svg>
         </button>
@@ -910,7 +918,7 @@ async function deleteSchedule(id) {
   }
 }
 
-function showCreateScheduleModal(prefillRun = null) {
+function showCreateScheduleModal(prefillRun = null, editJob = null) {
   const existing = $("#modal-create-schedule");
   if (existing) { existing.remove(); return; }
 
@@ -935,16 +943,18 @@ function showCreateScheduleModal(prefillRun = null) {
     <div style="background:#fff;border-radius:18px;padding:32px;width:580px;max-width:96vw;max-height:90vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,0.18);animation:fadeInUp .22s ease">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
         <div>
-          <h2 style="font-size:17px;font-weight:700;margin:0">Tambah Jadwal ETL</h2>
-          <div style="font-size:12px;color:var(--text-tertiary);margin-top:2px">Jadwalkan task berdasarkan riwayat atau task yang pernah dijalankan</div>
+          <h2 style="font-size:17px;font-weight:700;margin:0">${editJob ? "Edit Jadwal ETL" : "Tambah Jadwal ETL"}</h2>
+          <div style="font-size:12px;color:var(--text-tertiary);margin-top:2px">
+            ${editJob ? `Perbarui parameter, koneksi, atau frekuensi jadwal "${editJob.name}"` : "Jadwalkan task berdasarkan riwayat atau task yang pernah dijalankan"}
+          </div>
         </div>
         <button onclick="document.getElementById('modal-create-schedule').remove()" style="background:none;border:none;cursor:pointer;padding:4px">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
       </div>
 
-      <!-- Pilih dari Riwayat Pipeline / Task -->
-      <div class="form-group full-width" style="margin-bottom:16px;background:#F6F8FA;padding:12px 14px;border-radius:10px;border:1px solid var(--border)">
+      <!-- Pilih dari Riwayat Pipeline / Task (hanya jika mode tambah baru) -->
+      <div class="form-group full-width" style="margin-bottom:16px;background:#F6F8FA;padding:12px 14px;border-radius:10px;border:1px solid var(--border);${editJob ? 'display:none;' : ''}">
         <label class="form-label" style="font-size:12px;font-weight:600;margin-bottom:6px;display:flex;align-items:center;gap:6px">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
           Pilih Task dari Riwayat yang Pernah Dijalankan
@@ -1023,18 +1033,33 @@ function showCreateScheduleModal(prefillRun = null) {
 
       <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:24px">
         <button class="btn btn-secondary" onclick="document.getElementById('modal-create-schedule').remove()">Batal</button>
-        <button class="btn btn-primary" onclick="submitCreateSchedule()">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-          Buat Jadwal
-        </button>
+        ${editJob ? `
+          <button class="btn btn-primary" onclick="submitUpdateSchedule('${editJob.id}')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+              <polyline points="17 21 17 13 7 13 7 21"></polyline>
+              <polyline points="7 3 7 8 15 8"></polyline>
+            </svg>
+            Simpan Perubahan
+          </button>
+        ` : `
+          <button class="btn btn-primary" onclick="submitCreateSchedule()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            Buat Jadwal
+          </button>
+        `}
       </div>
     </div>
   `;
   document.body.appendChild(modal);
   modal.addEventListener("click", (e) => { if (e.target === modal) modal.remove(); });
 
-  // Load history runs into dropdown
-  populateScheduleHistoryDropdown(prefillRun);
+  if (editJob) {
+    applyJobToScheduleForm(editJob);
+  } else {
+    // Load history runs into dropdown
+    populateScheduleHistoryDropdown(prefillRun);
+  }
   setTimeout(() => document.getElementById("sc-name")?.focus(), 50);
 }
 
@@ -1133,6 +1158,60 @@ function applyRunToScheduleForm(run) {
   toast(`Form terisi otomatis dari riwayat task: "${run.pipeline_name}"`, "info");
 }
 
+function applyJobToScheduleForm(job) {
+  if (!job) return;
+
+  const nameEl = $("#sc-name");
+  const pipeEl = $("#sc-pipeline");
+  if (nameEl) nameEl.value = job.name || "";
+  if (pipeEl) pipeEl.value = job.pipeline_name || "";
+
+  const srcTypeSelect = $("#sc-src-type");
+  const srcType = job.source_type || "csv";
+  if (srcTypeSelect) {
+    srcTypeSelect.value = srcType;
+    onScSrcTypeChange(srcType);
+
+    const isSrcSql = ["mysql", "postgresql", "postgres"].includes(srcType);
+    const srcOpts = job.source_options || {};
+    if (isSrcSql) {
+      if ($("#sc-src-host")) $("#sc-src-host").value = srcOpts.host || "localhost";
+      if ($("#sc-src-port")) $("#sc-src-port").value = srcOpts.port || (srcType === "mysql" ? 3306 : 5432);
+      if ($("#sc-src-user")) $("#sc-src-user").value = srcOpts.user || "root";
+      if ($("#sc-src-pass")) $("#sc-src-pass").value = srcOpts.password || "";
+      if ($("#sc-src-database")) $("#sc-src-database").value = srcOpts.database || "";
+      if ($("#sc-src-table")) $("#sc-src-table").value = srcOpts.table_name || srcOpts.table || "";
+    } else {
+      if ($("#sc-src-path")) $("#sc-src-path").value = srcOpts.path || "";
+    }
+  }
+
+  const dstTypeSelect = $("#sc-dst-type");
+  const dstType = job.destination_type || job.dest_type || "csv";
+  if (dstTypeSelect) {
+    dstTypeSelect.value = dstType;
+    onScDstTypeChange(dstType);
+
+    const isDstSql = ["mysql", "postgresql", "postgres"].includes(dstType);
+    const dstOpts = job.destination_options || job.dest_options || {};
+    if (isDstSql) {
+      if ($("#sc-dst-host")) $("#sc-dst-host").value = dstOpts.host || "localhost";
+      if ($("#sc-dst-port")) $("#sc-dst-port").value = dstOpts.port || (dstType === "mysql" ? 3306 : 5432);
+      if ($("#sc-dst-user")) $("#sc-dst-user").value = dstOpts.user || "root";
+      if ($("#sc-dst-pass")) $("#sc-dst-pass").value = dstOpts.password || "";
+      if ($("#sc-dst-database")) $("#sc-dst-database").value = dstOpts.database || "";
+      if ($("#sc-dst-table")) $("#sc-dst-table").value = dstOpts.table_name || dstOpts.table || "";
+    } else {
+      if ($("#sc-dst-path")) $("#sc-dst-path").value = dstOpts.path || "";
+    }
+  }
+
+  const freqEl = $("#sc-freq");
+  if (freqEl && job.frequency) {
+    freqEl.value = job.frequency;
+  }
+}
+
 function onScSrcTypeChange(val) {
   const isSql  = ["mysql","postgresql","postgres"].includes(val);
   const sqlFld = $("#sc-src-sql-fields");
@@ -1154,7 +1233,7 @@ function onScDstTypeChange(val) {
   if (portInp) portInp.placeholder = val === "mysql" ? "3306" : "5432";
 }
 
-async function submitCreateSchedule() {
+function getScheduleFormData() {
   const name     = $("#sc-name")?.value.trim();
   const pipeline = $("#sc-pipeline")?.value.trim();
   const srcType  = $("#sc-src-type")?.value;
@@ -1162,7 +1241,7 @@ async function submitCreateSchedule() {
   const freq     = $("#sc-freq")?.value;
 
   if (!name || !pipeline || !srcType || !dstType) {
-    toast("Lengkapi semua field yang wajib diisi.", "error"); return;
+    toast("Lengkapi semua field yang wajib diisi.", "error"); return null;
   }
 
   // Build source options based on type
@@ -1177,11 +1256,11 @@ async function submitCreateSchedule() {
       database: $("#sc-src-database")?.value.trim(),
       table_name: $("#sc-src-table")?.value.trim(),
     };
-    if (!srcOpts.database) { toast("Database source wajib diisi.", "error"); return; }
-    if (!srcOpts.table_name) { toast("Tabel source wajib diisi.", "error"); return; }
+    if (!srcOpts.database) { toast("Database source wajib diisi.", "error"); return null; }
+    if (!srcOpts.table_name) { toast("Tabel source wajib diisi.", "error"); return null; }
   } else {
     srcOpts = { path: $("#sc-src-path")?.value.trim() };
-    if (!srcOpts.path) { toast("Path file source wajib diisi.", "error"); return; }
+    if (!srcOpts.path) { toast("Path file source wajib diisi.", "error"); return null; }
   }
 
   // Build destination options based on type
@@ -1196,26 +1275,33 @@ async function submitCreateSchedule() {
       database: $("#sc-dst-database")?.value.trim(),
       table_name: $("#sc-dst-table")?.value.trim(),
     };
-    if (!dstOpts.database) { toast("Database destination wajib diisi.", "error"); return; }
-    if (!dstOpts.table_name) { toast("Tabel destination wajib diisi.", "error"); return; }
+    if (!dstOpts.database) { toast("Database destination wajib diisi.", "error"); return null; }
+    if (!dstOpts.table_name) { toast("Tabel destination wajib diisi.", "error"); return null; }
   } else {
     dstOpts = { path: $("#sc-dst-path")?.value.trim() };
-    if (!dstOpts.path) { toast("Path file destination wajib diisi.", "error"); return; }
+    if (!dstOpts.path) { toast("Path file destination wajib diisi.", "error"); return null; }
   }
+
+  return {
+    name,
+    pipeline_name: pipeline,
+    source_type: srcType,
+    source_options: srcOpts,
+    destination_type: dstType,
+    destination_options: dstOpts,
+    frequency: freq,
+  };
+}
+
+async function submitCreateSchedule() {
+  const payload = getScheduleFormData();
+  if (!payload) return;
 
   try {
     const res = await fetch(API.schedules, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name,
-        pipeline_name: pipeline,
-        source_type: srcType,
-        source_options: srcOpts,
-        destination_type: dstType,
-        destination_options: dstOpts,
-        frequency: freq,
-      }),
+      body: JSON.stringify(payload),
     });
     if (!res.ok) {
       const err = await res.json();
@@ -1229,11 +1315,52 @@ async function submitCreateSchedule() {
       }
       throw new Error(msg);
     }
-    toast(`Jadwal "${name}" berhasil dibuat!`, "success");
+    toast(`Jadwal "${payload.name}" berhasil dibuat!`, "success");
     $("#modal-create-schedule")?.remove();
     loadSchedules();
   } catch (e) {
     toast(`Gagal membuat jadwal: ${e.message}`, "error");
+  }
+}
+
+async function submitUpdateSchedule(id) {
+  const payload = getScheduleFormData();
+  if (!payload) return;
+
+  try {
+    const res = await fetch(API.schedulesUpdate(id), {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      let msg = "Terjadi kesalahan.";
+      if (typeof err.detail === "string") {
+        msg = err.detail;
+      } else if (Array.isArray(err.detail)) {
+        msg = err.detail.map(d => `${d.loc ? d.loc.slice(1).join('.') : ''}: ${d.msg}`).join("; ");
+      } else if (err.message) {
+        msg = err.message;
+      }
+      throw new Error(msg);
+    }
+    toast(`Jadwal "${payload.name}" berhasil diperbarui!`, "success");
+    $("#modal-create-schedule")?.remove();
+    loadSchedules();
+  } catch (e) {
+    toast(`Gagal memperbarui jadwal: ${e.message}`, "error");
+  }
+}
+
+async function editSchedule(id) {
+  try {
+    const res = await fetch(API.schedulesGet(id));
+    if (!res.ok) throw new Error("Jadwal tidak ditemukan.");
+    const job = await res.json();
+    showCreateScheduleModal(null, job);
+  } catch (err) {
+    toast(`Gagal memuat jadwal: ${err.message}`, "error");
   }
 }
 
