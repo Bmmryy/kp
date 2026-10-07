@@ -2201,6 +2201,7 @@ async function loadHistory() {
   try {
     const res = await fetch(API.history);
     const runs = await res.json();
+    _cachedHistoryRuns = runs || [];
     renderHistory(runs);
     updateStats(runs);
   } catch (err) {
@@ -2237,6 +2238,15 @@ function renderHistory(runs) {
       <td style="color:var(--text-secondary)">${r.metrics?.rows_loaded ?? "—"}</td>
       <td style="color:var(--text-tertiary);font-size:12px">${formatDate(r.started_at)}</td>
       <td style="display:flex;gap:6px;align-items:center;flex-wrap:nowrap">
+        <button class="btn btn-secondary btn-sm" onclick="loadHistoryToBuilder('${r.run_id}')"
+                title="Buka & edit kembali konfigurasi task ini di Pipeline Builder"
+                style="padding:4px 9px;font-size:11.5px;display:inline-flex;align-items:center;gap:4px">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 20h9"></path>
+            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+          </svg>
+          Edit di Builder
+        </button>
         <button class="btn btn-secondary btn-sm" onclick="scheduleFromHistory('${r.run_id}')"
                 title="Jadwalkan task ini secara otomatis"
                 style="padding:4px 9px;font-size:11.5px;display:inline-flex;align-items:center;gap:4px">
@@ -2272,6 +2282,190 @@ function scheduleFromHistory(runId) {
       onSelectHistoryForSchedule(runId);
     }
   }, 100);
+}
+
+async function loadHistoryToBuilder(runId) {
+  let run = (_cachedHistoryRuns || []).find(r => r.run_id === runId);
+  if (!run) {
+    try {
+      const res = await fetch(API.history);
+      const runs = await res.json();
+      _cachedHistoryRuns = runs || [];
+      run = runs.find(r => r.run_id === runId);
+    } catch (_) {}
+  }
+  if (!run) {
+    toast("Data riwayat tidak ditemukan.", "error");
+    return;
+  }
+
+  // 1. Pindah ke view builder
+  showView("builder");
+
+  // 2. Set nama pipeline
+  state.pipelineName = run.pipeline_name || "Edited Pipeline";
+  const nameInput = $("#pipeline-name-input");
+  if (nameInput) nameInput.value = state.pipelineName;
+
+  // 3. Reset state kolom & mapping lama
+  state.srcColumns = [];
+  state.srcSelectedColumns = [];
+  state.srcSelectedTable = "";
+  state.dstSelectedTable = "";
+  state.dstColumns = [];
+  state.columnMapping = {};
+
+  // 4. Source setup
+  const rawSrcType = run.source_type || "csv";
+  const cleanSrcType = rawSrcType.split("+")[0];
+  const isSrcSql = ["mysql", "postgresql", "postgres"].includes(cleanSrcType);
+  const srcOpts = run.source_options || (run.sources && run.sources[0]?.options) || {};
+
+  if (isSrcSql) {
+    setSrcCategory("sql");
+    selectSrcDbType(cleanSrcType === "postgres" ? "postgresql" : cleanSrcType);
+
+    if (state.srcDbCards.length === 0) addSrcDbCard();
+    const card = state.srcDbCards[0];
+    card.host = srcOpts.host || "localhost";
+    card.port = srcOpts.port || (cleanSrcType === "mysql" ? 3306 : 5432);
+    card.user = srcOpts.user || "root";
+    card.password = srcOpts.password || "";
+    card.database = srcOpts.database || "";
+    const srcTable = srcOpts.table_name || srcOpts.table || "";
+    card.tables = srcTable ? [srcTable] : [];
+    card._connOpts = { host: card.host, port: card.port, user: card.user, password: card.password };
+    card.verified = true;
+
+    // Load available databases & tables
+    try {
+      const params = new URLSearchParams({ type: state.srcDbType, host: card.host, port: card.port, user: card.user, password: card.password });
+      const dbRes = await fetch(`${API.listDatabases}?${params}`);
+      if (dbRes.ok) {
+        const dbData = await dbRes.json();
+        card._databases = dbData.databases || [];
+      }
+      if (card.database) {
+        const q = new URLSearchParams({ type: state.srcDbType, host: card.host, port: card.port, user: card.user, password: card.password, database: card.database });
+        const tRes = await fetch(`${API.listTables}?${q}`);
+        if (tRes.ok) {
+          const tData = await tRes.json();
+          card._availableTables = tData.tables || [];
+        }
+      }
+    } catch (_) {}
+
+    renderSrcDbCards();
+    if (card.database && srcTable) {
+      await selectSingleSrcTable(card.id, srcTable);
+    }
+  } else {
+    setSrcCategory("file");
+    selectSrcFileFormat(cleanSrcType);
+    if (srcOpts.path) {
+      state.srcUploadedFiles = [{
+        original_name: srcOpts.path.split("/").pop(),
+        path: srcOpts.path,
+        size_formatted: "Tersimpan",
+      }];
+      renderUploadedFiles();
+    }
+  }
+
+  // 5. Destination setup
+  const dstType = run.destination_type || "csv";
+  const isDstSql = ["mysql", "postgresql", "postgres"].includes(dstType);
+  const dstOpts = run.destination_options || {};
+
+  if (isDstSql) {
+    setDstCategory("sql");
+    selectDstDbType(dstType === "postgres" ? "postgresql" : dstType);
+
+    if ($("#dst-host")) $("#dst-host").value = dstOpts.host || "localhost";
+    if ($("#dst-port")) $("#dst-port").value = dstOpts.port || (dstType === "mysql" ? 3306 : 5432);
+    if ($("#dst-user")) $("#dst-user").value = dstOpts.user || "root";
+    if ($("#dst-password")) $("#dst-password").value = dstOpts.password || "";
+
+    state.dstVerified = true;
+    const btn = $("#dst-verify-btn");
+    if (btn) { btn.className = "verify-btn verified"; btn.innerHTML = "✓ Terverifikasi"; }
+    const status = $("#dst-verify-status");
+    if (status) status.innerHTML = `<span class="verified-badge">✓ Koneksi berhasil!</span>`;
+
+    try {
+      const dbRes = await fetch(`${API.listDatabases}?type=${state.dstDbType}&host=${dstOpts.host || 'localhost'}&port=${dstOpts.port || 3306}&user=${dstOpts.user || 'root'}&password=${encodeURIComponent(dstOpts.password || '')}`);
+      if (dbRes.ok) {
+        const dbData = await dbRes.json();
+        state.dstDatabases = dbData.databases || [];
+        const sel = $("#dst-db-dropdown");
+        if (sel) {
+          sel.innerHTML = `<option value="">— Pilih database —</option>` +
+            state.dstDatabases.map(db => `<option value="${db}" ${db === dstOpts.database ? 'selected' : ''}>${db}</option>`).join("");
+          sel.value = dstOpts.database || "";
+          sel.onchange = () => onDstDbSelected(sel.value);
+        }
+        const dbGroup = $("#dst-db-select-group");
+        if (dbGroup) dbGroup.style.display = "";
+      }
+
+      if (dstOpts.database) {
+        await onDstDbSelected(dstOpts.database);
+        const dstTable = dstOpts.table_name || dstOpts.table || "";
+        if (dstTable) {
+          state.dstSelectedTable = dstTable;
+          const tSel = $("#dst-table-dropdown");
+          if (tSel) tSel.value = dstTable;
+          await onDstTableSelected(dstTable);
+        }
+      }
+    } catch (_) {}
+
+    if (dstOpts.load_mode) {
+      setDstLoadMode(dstOpts.load_mode);
+      const radio = $(`#dst-mode-${dstOpts.load_mode}`);
+      if (radio) radio.checked = true;
+    }
+
+    if (dstOpts.column_mapping) {
+      state.columnMapping = { ...dstOpts.column_mapping };
+      renderColumnMapping();
+    }
+  } else {
+    setDstCategory("file");
+    selectDstFileFormat(dstType);
+    if (dstOpts.path) {
+      const fName = dstOpts.path.split("/").pop().replace(/\.[^/.]+$/, "");
+      if ($("#dst-file-name")) $("#dst-file-name").value = fName;
+    }
+  }
+
+  // 6. Transformations setup
+  state.columnTransformRules = [];
+  state.ruleCounter = 0;
+  if (Array.isArray(run.transformations)) {
+    run.transformations.forEach(t => {
+      const cols = t.params?.columns || (t.column ? [t.column] : []);
+      if (cols.length) {
+        cols.forEach(c => {
+          state.columnTransformRules.push({
+            id: ++state.ruleCounter,
+            column: c,
+            type: t.type,
+            params: { ...t.params },
+          });
+        });
+      } else {
+        const cb = $(`#transform-${t.type}`);
+        if (cb) cb.checked = true;
+      }
+    });
+  }
+  renderColumnTransformRules();
+  updateTransformBadge();
+
+  // 7. Feedback toast & scroll
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  toast(`Konfigurasi "${run.pipeline_name}" berhasil dimuat ke Pipeline Builder!`, "success");
 }
 
 // ─── Dashboard Stats ──────────────────────────────────────────────────────────
