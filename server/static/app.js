@@ -852,18 +852,18 @@ function renderSchedules(jobs) {
       <td style="color:var(--text-secondary)">${j.pipeline_name}</td>
       <td>
         <span class="connector-chip" style="display:inline-flex;align-items:center;gap:5px;font-size:11px">
-          ${j.source_type} <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg> ${j.dest_type}
+          ${j.source_type} <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg> ${j.destination_type || j.dest_type || '—'}
         </span>
       </td>
       <td><span class="pill pill-pending">${FREQ_LABEL[j.frequency] || j.frequency}</span></td>
       <td>
-        <label class="toggle-switch" title="${j.enabled ? 'Nonaktifkan' : 'Aktifkan'}">
-          <input type="checkbox" ${j.enabled ? "checked" : ""} onchange="toggleSchedule('${j.id}', this)">
+        <label class="toggle-switch" title="${(j.is_enabled ?? j.enabled) ? 'Nonaktifkan' : 'Aktifkan'}">
+          <input type="checkbox" ${(j.is_enabled ?? j.enabled) ? "checked" : ""} onchange="toggleSchedule('${j.id}', this)">
           <span class="toggle-slider"></span>
         </label>
       </td>
-      <td style="color:var(--text-tertiary);font-size:12px">${j.last_run ? formatDate(j.last_run) : "—"}</td>
-      <td style="color:var(--text-tertiary);font-size:12px">${j.next_run ? formatDate(j.next_run) : "—"}</td>
+      <td style="color:var(--text-tertiary);font-size:12px">${(j.last_run_at || j.last_run) ? formatDate(j.last_run_at || j.last_run) : "—"}</td>
+      <td style="color:var(--text-tertiary);font-size:12px">${(j.next_run_at || j.next_run) ? formatDate(j.next_run_at || j.next_run) : "—"}</td>
       <td style="display:flex;gap:6px;align-items:center">
         <button class="btn btn-secondary btn-sm" style="padding:4px 10px;font-size:12px" onclick="triggerScheduleNow('${j.id}')" title="Jalankan Sekarang">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>

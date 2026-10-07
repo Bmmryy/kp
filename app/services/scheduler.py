@@ -170,15 +170,37 @@ class SchedulerService:
             return None
 
         try:
-            run_id = self._runner_callback(
-                pipeline_name=f"[Scheduled] {job.pipeline_name}",
-                source_type=job.source_type,
-                source_options=job.source_options,
-                destination_type=job.destination_type,
-                destination_options=job.destination_options,
-                loop=self._loop,
-                transformations=job.transformations,
-            )
+            # Jalankan callback submit di dalam thread yang memiliki running loop atau threadsafe
+            def _do_submit():
+                return self._runner_callback(
+                    pipeline_name=f"[Scheduled] {job.pipeline_name}",
+                    source_type=job.source_type,
+                    source_options=job.source_options,
+                    destination_type=job.destination_type,
+                    destination_options=job.destination_options,
+                    loop=self._loop,
+                    transformations=job.transformations,
+                )
+
+            # Cek apakah self._loop adalah running asyncio event loop yang valid
+            is_running_loop = hasattr(self._loop, "is_running") and self._loop.is_running()
+            if not is_running_loop:
+                run_id = _do_submit()
+            else:
+                try:
+                    current_loop = asyncio.get_running_loop()
+                except RuntimeError:
+                    current_loop = None
+
+                if current_loop is self._loop:
+                    run_id = _do_submit()
+                else:
+                    future = asyncio.run_coroutine_threadsafe(
+                        asyncio.to_thread(_do_submit) if hasattr(asyncio, 'to_thread') else self._async_wrap(_do_submit),
+                        self._loop
+                    )
+                    run_id = future.result(timeout=10)
+
             job.last_run_at = datetime.now()
             job.run_count += 1
             job.last_status = "triggered"
@@ -191,6 +213,10 @@ class SchedulerService:
             job.last_error = str(err)
             logger.exception("Failed to trigger schedule '%s': %s", job.name, err)
             return None
+
+    @staticmethod
+    async def _async_wrap(fn):
+        return fn()
 
     async def _worker_loop(self) -> None:
         """Background loop checking and executing due jobs every 2 seconds."""
