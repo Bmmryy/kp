@@ -643,15 +643,27 @@ function startSSEStream(runId) {
     es.close();
     activeEventSource = null;
 
-    if (data.status === "success") {
-      $("#progress-bar-fill").style.width = "100%";
-      updateDrawerStatus("success");
-      showMetrics(data.metrics);
-      toast(`Pipeline selesai! ${data.metrics?.rows_loaded ?? 0} baris dimuat.`, "success");
-      appendLog("✓ Pipeline selesai dengan sukses.", "success");
-      fetch(API.status(runId)).then(r => r.json()).then(info => {
-        if (info.output_file) renderDownloadButton(info.output_file);
-      }).catch(() => {});
+      if (data.status === "success") {
+        $("#progress-bar-fill").style.width = "100%";
+        updateDrawerStatus("success");
+        showMetrics(data.metrics);
+        toast(`Pipeline selesai! ${data.metrics?.rows_loaded ?? 0} baris dimuat.`, "success");
+        appendLog("✓ Pipeline selesai dengan sukses.", "success");
+
+        // Tampilkan opsi membuat task berikutnya langsung dari drawer
+        const dlBtn = $("#drawer-download-btn");
+        if (dlBtn && !dlBtn.innerHTML) {
+          dlBtn.innerHTML = `
+            <button class="btn btn-primary btn-sm" onclick="closeProgressDrawer(); resetTaskBuilder();" style="margin-top:10px;display:inline-flex;align-items:center;gap:6px">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              + Buat Task Berikutnya
+            </button>
+          `;
+        }
+
+        fetch(API.status(runId)).then(r => r.json()).then(info => {
+          if (info.output_file) renderDownloadButton(info.output_file);
+        }).catch(() => {});
     } else {
       updateDrawerStatus("error");
       const cleanErr = formatDisplayError(data.error);
@@ -1704,14 +1716,37 @@ function resetTaskBuilder() {
   const nameInput = $("#pipeline-name-input");
   if (nameInput) nameInput.value = state.pipelineName;
 
+  // 1. Reset Sumber Data (Tabel & Kolom)
   state.srcColumns = [];
   state.srcSelectedColumns = [];
   state.srcSelectedTable = "";
+  if (state.srcDbCards && state.srcDbCards.length > 0) {
+    state.srcDbCards.forEach(c => { c.tables = []; });
+  }
+
+  // 2. Reset Tabel Tujuan
+  state.dstSelectedTable = "";
   state.dstColumns = [];
+  const dstTableSelect = $("#dst-table-dropdown");
+  if (dstTableSelect) dstTableSelect.value = "";
+  const dstTableNameInput = $("#dst-table-name");
+  if (dstTableNameInput) dstTableNameInput.value = "";
+
+  // 3. Reset Mode Load ke append
+  state.dstLoadMode = "append";
+  const radioAppend = $("#dst-mode-append");
+  if (radioAppend) radioAppend.checked = true;
+  const loadModeGroup = $("#dst-load-mode-group");
+  if (loadModeGroup) loadModeGroup.style.display = "none";
+
+  // 4. Reset Pemetaan Kolom
   state.columnMapping = {};
+  const mapCont = $("#dst-column-mapping-container");
+  if (mapCont) { mapCont.style.display = "none"; mapCont.innerHTML = ""; }
+
+  // 5. Reset Transformasi per Kolom & Global
   state.columnTransformRules = [];
   state.ruleCounter = 0;
-
   ["trim", "capitalize", "uppercase", "lowercase", "fill-null", "mask"].forEach(t => {
     const cb = $(`#transform-${t}`);
     if (cb) cb.checked = false;
@@ -1719,11 +1754,9 @@ function resetTaskBuilder() {
   updateTransformBadge();
   renderColumnTransformRules();
 
-  const mapCont = $("#dst-column-mapping-container");
-  if (mapCont) { mapCont.style.display = "none"; mapCont.innerHTML = ""; }
-
+  // 6. Render ulang kartu sumber data
   renderSrcDbCards();
-  toast(`Task baru siap dikonfigurasi: ${state.pipelineName}`, "info");
+  toast(`Task baru siap: ${state.pipelineName}`, "success");
 }
 
 // ── Drag & Drop for upload zone ─────────────────────────────────────────────
