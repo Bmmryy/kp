@@ -751,16 +751,33 @@
 
                 <!-- Load Mode Selector -->
                 <div id="dst-load-mode-group" class="form-group" style="display:none;margin-top:10px">
-                  <label class="form-label" style="margin-bottom:6px">Mode Pengisian Tabel</label>
-                  <div style="display:flex;gap:10px;flex-wrap:wrap">
-                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px">
-                      <input type="radio" name="dst-load-mode" value="append" id="dst-mode-append" onchange="setDstLoadMode('append')" checked>
-                      <span><strong>Append</strong> — tambah ke data yang ada</span>
+                  <label class="form-label" style="margin-bottom:6px">Mode Sinkronisasi &amp; Pengisian Data</label>
+                  <div style="display:flex;flex-direction:column;gap:7px">
+                    <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-size:12.5px;background:var(--bg-canvas);padding:8px 10px;border-radius:8px;border:1px solid var(--border)">
+                      <input type="radio" name="dst-load-mode" value="sync" id="dst-mode-sync" onchange="setDstLoadMode('sync')" style="margin-top:2px" checked>
+                      <div>
+                        <strong>Sync / Mirror (Selalu Sinkron Otomatis)</strong>
+                        <div style="font-size:11.5px;color:var(--text-secondary)">Tabel tujuan selalu mengikuti perubahan data &amp; struktur sumber (tambah kolom baru &amp; tipe data)</div>
+                      </div>
                     </label>
-                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px">
-                      <input type="radio" name="dst-load-mode" value="truncate" id="dst-mode-truncate" onchange="setDstLoadMode('truncate')">
-                      <span><strong>Truncate</strong> — kosongkan dulu, lalu isi</span>
+                    <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-size:12.5px;background:var(--bg-canvas);padding:8px 10px;border-radius:8px;border:1px solid var(--border)">
+                      <input type="radio" name="dst-load-mode" value="append" id="dst-mode-append" onchange="setDstLoadMode('append')" style="margin-top:2px">
+                      <div>
+                        <strong>Append (Tambah ke Data yang Ada)</strong>
+                        <div style="font-size:11.5px;color:var(--text-secondary)">Tambah baris baru tanpa menghapus data lama + otomatis tambah kolom baru jika ada</div>
+                      </div>
                     </label>
+                    <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-size:12.5px;background:var(--bg-canvas);padding:8px 10px;border-radius:8px;border:1px solid var(--border)">
+                      <input type="radio" name="dst-load-mode" value="truncate" id="dst-mode-truncate" onchange="setDstLoadMode('truncate')" style="margin-top:2px">
+                      <div>
+                        <strong>Truncate (Kosongkan lalu Isi)</strong>
+                        <div style="font-size:11.5px;color:var(--text-secondary)">Kosongkan seluruh data lama tabel tujuan sebelum memuat data baru</div>
+                      </div>
+                    </label>
+                  </div>
+                  <div style="margin-top:8px;padding:8px 12px;background:#F0F7FF;border:1px solid #BAE0FF;border-radius:8px;font-size:11.5px;color:#0050B3;display:flex;align-items:center;gap:8px">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                    <span><strong>Auto Schema Evolution:</strong> Jika tabel belum ada, FlowETL otomatis membuatnya. Jika tabel sumber menambah kolom baru atau mengubah tipe data, tujuan otomatis mengikutinya via <code>ALTER TABLE</code>.</span>
                   </div>
                 </div>
 
@@ -979,7 +996,7 @@
   </div>
 </div>
 
-<script src="/static/app.js?v=20261007_v8"></script>
+<script src="/static/app.js?v=20261007_v9"></script>
 <script>
 // ─── Quick-start presets ───────────────────────────────────────────────────
 

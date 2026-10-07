@@ -124,7 +124,7 @@ const state = {
   ruleCounter: 0,
   transformTab: "rules",      // "rules" | "global"
 
-  dstLoadMode: "append",      // "append" | "truncate"
+  dstLoadMode: "sync",        // "sync" | "append" | "truncate"
 };
 
 // ─── Utility ─────────────────────────────────────────────────────────────────
@@ -1029,6 +1029,18 @@ function showCreateScheduleModal(prefillRun = null, editJob = null) {
           <label class="form-label">Frekuensi Jadwal</label>
           <select class="form-select" id="sc-freq">${freqOptions}</select>
         </div>
+
+        <div class="form-group full-width" style="margin:0">
+          <label class="form-label">Mode Sinkronisasi &amp; Schema Evolution</label>
+          <select class="form-select" id="sc-load-mode">
+            <option value="sync">Sync / Mirror (Selalu sinkron data &amp; struktur kolom terbaru)</option>
+            <option value="append">Append (Tambah data baru + otomatis tambah kolom baru)</option>
+            <option value="truncate">Truncate (Kosongkan lalu isi ulang data)</option>
+          </select>
+          <div style="font-size:11px;color:var(--text-tertiary);margin-top:3px">
+            ✓ Auto Schema Evolution: jika kolom bertambah di sumber, tujuan otomatis menyesuaikan via ALTER TABLE.
+          </div>
+        </div>
       </div>
 
       <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:24px">
@@ -1153,6 +1165,9 @@ function applyRunToScheduleForm(run) {
     } else {
       if ($("#sc-dst-path")) $("#sc-dst-path").value = dstOpts.path || "";
     }
+    if (dstOpts.if_exists && $("#sc-load-mode")) {
+      $("#sc-load-mode").value = dstOpts.if_exists;
+    }
   }
 
   toast(`Form terisi otomatis dari riwayat task: "${run.pipeline_name}"`, "info");
@@ -1210,6 +1225,9 @@ function applyJobToScheduleForm(job) {
   if (freqEl && job.frequency) {
     freqEl.value = job.frequency;
   }
+  const loadModeEl = $("#sc-load-mode");
+  const jobLoadMode = (job.destination_options && job.destination_options.if_exists) || "sync";
+  if (loadModeEl) loadModeEl.value = jobLoadMode;
 }
 
 function onScSrcTypeChange(val) {
@@ -1281,6 +1299,8 @@ function getScheduleFormData() {
     dstOpts = { path: $("#sc-dst-path")?.value.trim() };
     if (!dstOpts.path) { toast("Path file destination wajib diisi.", "error"); return null; }
   }
+
+  dstOpts.if_exists = $("#sc-load-mode")?.value || "sync";
 
   return {
     name,
@@ -2054,10 +2074,10 @@ function resetTaskBuilder() {
   const dstTableNameInput = $("#dst-table-name");
   if (dstTableNameInput) dstTableNameInput.value = "";
 
-  // 3. Reset Mode Load ke append
-  state.dstLoadMode = "append";
-  const radioAppend = $("#dst-mode-append");
-  if (radioAppend) radioAppend.checked = true;
+  // 3. Reset Mode Load ke sync
+  state.dstLoadMode = "sync";
+  const radioSync = $("#dst-mode-sync");
+  if (radioSync) radioSync.checked = true;
   const loadModeGroup = $("#dst-load-mode-group");
   if (loadModeGroup) loadModeGroup.style.display = "none";
 

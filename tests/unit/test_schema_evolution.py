@@ -54,3 +54,28 @@ def test_schema_evolution_sqlite_ddl():
     assert res.has_drift is True
     assert len(res.ddl_statements) == 1
     assert 'ALTER TABLE "products" ADD COLUMN "price"' in res.ddl_statements[0]
+
+
+def test_schema_evolution_detects_type_alteration_mysql():
+    existing_cols = ["id", "code"]
+    existing_info = [
+        {"name": "id", "type": "INTEGER"},
+        {"name": "code", "type": "INTEGER"},  # Target has INTEGER
+    ]
+    # Source changed 'code' to STRING
+    schema = TableSchema(
+        name="items",
+        columns=[
+            ColumnDefinition(name="id", data_type=DataType.INTEGER, primary_key=True),
+            ColumnDefinition(name="code", data_type=DataType.STRING),
+        ],
+    )
+    res = SchemaEvolutionVerifier.verify_and_plan(
+        "mysql", "items", existing_cols, schema, existing_columns_info=existing_info
+    )
+    assert res.has_drift is True
+    assert len(res.modified_columns) == 1
+    assert res.modified_columns[0].name == "code"
+    assert len(res.ddl_statements) == 1
+    assert 'ALTER TABLE "items" MODIFY COLUMN "code"' in res.ddl_statements[0]
+

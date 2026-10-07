@@ -381,18 +381,39 @@ class SQLBaseDestination(DestinationConnector):
                     elif if_exists == "replace":
                         conn.execute(text(f"DROP TABLE IF EXISTS {qt}"))
                         table_exists = False
-                    elif if_exists == "truncate":
-                        conn.execute(text(f"DELETE FROM {qt}"))
-                        return
-                    elif if_exists == "append":
-                        # Verified Schema Evolution: check for drift & auto-alter target
-                        existing_cols = [c["name"] for c in insp.get_columns(schema.name)]
+                    elif if_exists in ("truncate", "sync", "mirror"):
+                        # In sync/mirror/truncate: run Schema Evolution first so new columns are added, then clear rows
+                        existing_cols_info = insp.get_columns(schema.name)
+                        existing_cols = [c["name"] for c in existing_cols_info]
                         evo = SchemaEvolutionVerifier.verify_and_plan(
                             dialect=self.dialect,
                             table_name=schema.name,
                             existing_column_names=existing_cols,
                             incoming_schema=schema,
                             quote_fn=self._quote_identifier,
+                            existing_columns_info=existing_cols_info,
+                        )
+                        if evo.has_drift:
+                            for ddl_stmt in evo.ddl_statements:
+                                logger.info(
+                                    "Executing Verified Schema Evolution on %s:\n%s",
+                                    self.dialect,
+                                    ddl_stmt,
+                                )
+                                conn.execute(text(ddl_stmt))
+                        conn.execute(text(f"DELETE FROM {qt}"))
+                        return
+                    elif if_exists == "append":
+                        # Verified Schema Evolution: check for drift & auto-alter target
+                        existing_cols_info = insp.get_columns(schema.name)
+                        existing_cols = [c["name"] for c in existing_cols_info]
+                        evo = SchemaEvolutionVerifier.verify_and_plan(
+                            dialect=self.dialect,
+                            table_name=schema.name,
+                            existing_column_names=existing_cols,
+                            incoming_schema=schema,
+                            quote_fn=self._quote_identifier,
+                            existing_columns_info=existing_cols_info,
                         )
                         if evo.has_drift:
                             for ddl_stmt in evo.ddl_statements:
