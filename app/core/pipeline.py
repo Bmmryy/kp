@@ -118,10 +118,26 @@ class Pipeline:
 
             # 4. Load Phase
             report_step("LOADING", 0.85)
-            # Ensure destination target schema is prepared if we have at least one batch
+            # Determine destination schema definition
+            dest_schema = None
             if transformed_datasets:
-                first_batch = transformed_datasets[0]
-                dest_schema = first_batch.schema_def
+                dest_schema = transformed_datasets[0].schema_def
+            else:
+                # Source produced 0 rows (empty table or query). Retrieve schema from source if possible.
+                try:
+                    dest_schema = self.source.get_schema(self.source_table)
+                except Exception:
+                    dest_schema = None
+
+                if dest_schema:
+                    # Apply transformer output schema adaptations
+                    for transformer in self.transformations:
+                        try:
+                            dest_schema = transformer.get_output_schema(dest_schema)
+                        except Exception:
+                            pass
+
+            if dest_schema:
                 if self.destination_table and dest_schema.name != self.destination_table:
                     dest_schema = dest_schema.model_copy(update={"name": self.destination_table})
 
@@ -130,6 +146,7 @@ class Pipeline:
                     if_exists=self.load_mode,
                 )
 
+            if transformed_datasets:
                 for batch in transformed_datasets:
                     rows_loaded = self.destination.load(
                         dataset=batch,

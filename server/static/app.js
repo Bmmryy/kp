@@ -510,6 +510,19 @@ async function handleRunPipeline() {
   const transforms = collectTransformations();
   const name       = state.pipelineName || "My Pipeline";
 
+  // Safety confirmation for destructive load modes
+  const ifExists = dest.options?.if_exists || "append";
+  if (ifExists === "replace") {
+    const ok = confirm(`⚠️ PERINGATAN LOAD MODE (REPLACE):\n\nOperasi ini akan MENGHAPUS (DROP) tabel tujuan jika sudah ada dan membuat ulang dari awal.\n\nLanjutkan eksekusi?`);
+    if (!ok) return;
+  } else if (ifExists === "truncate") {
+    const ok = confirm(`⚠️ PERINGATAN LOAD MODE (TRUNCATE):\n\nOperasi ini akan MENGOSONGKAN (DELETE SEMUA DATA) pada tabel tujuan sebelum mengisi data baru.\n\nLanjutkan eksekusi?`);
+    if (!ok) return;
+  } else if (ifExists === "sync" || ifExists === "mirror") {
+    const ok = confirm(`⚡ KONFIRMASI MODE SINKRONISASI (AUTO-SYNC / MIRROR):\n\nData pada tabel tujuan akan diselaraskan agar persis sama dengan sumber. Data lama di tujuan yang tidak ada di sumber akan dibersihkan.\n\nLanjutkan sinkronisasi?`);
+    if (!ok) return;
+  }
+
   // Attach Column Selection or Column Mapping
   if (state.dstTableMode === "existing" && state.dstSelectedTable && state.dstColumns.length > 0) {
     const activeMapping = {};
@@ -915,11 +928,18 @@ async function toggleSchedule(id, checkbox) {
 
 async function triggerScheduleNow(id) {
   try {
+    toast("Memicu eksekusi jadwal sekarang...", "info");
     const res = await fetch(API.schedulesTrigger(id), { method: "POST" });
-    if (!res.ok) throw new Error();
-    toast("Pipeline dijadwalkan dijalankan sekarang!", "success");
-  } catch (_) {
-    toast("Gagal menjalankan jadwal.", "error");
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.detail || "Server menolak pemicuan jadwal.");
+    }
+    const data = await res.json().catch(() => ({}));
+    toast(`✓ Jadwal berhasil dipicu! ${data.message || 'Pipeline sedang berjalan di background.'}`, "success");
+    // Reload schedules to update next_run / last_run status
+    setTimeout(loadSchedules, 1200);
+  } catch (err) {
+    toast(`Gagal menjalankan jadwal: ${err.message || 'Terjadi kesalahan sistem.'}`, "error");
   }
 }
 

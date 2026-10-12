@@ -65,11 +65,17 @@ class SQLiteSource(SourceConnector):
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%';")
         return [row[0] for row in cursor.fetchall()]
 
+    def _quote_identifier(self, name: str) -> str:
+        """Escape double-quotes and wrap with ANSI quotes for SQLite identifiers."""
+        escaped = name.replace('"', '""')
+        return f'"{escaped}"'
+
     def get_schema(self, table_name: str) -> TableSchema:
         if not self.is_connected or not self._conn:
             self.connect()
         cursor = self._conn.cursor()
-        cursor.execute(f"PRAGMA table_info('{table_name}');")
+        qt = self._quote_identifier(table_name)
+        cursor.execute(f"PRAGMA table_info({qt});")
         rows = cursor.fetchall()
         if not rows:
             raise SchemaDiscoveryError(
@@ -109,7 +115,7 @@ class SQLiteSource(SourceConnector):
             self.connect()
 
         schema = self.get_schema(table_name)
-        sql = query or f"SELECT * FROM {table_name}"
+        sql = query or f"SELECT * FROM {self._quote_identifier(table_name)}"
         effective_chunk_size = chunk_size or 5000
 
         try:
@@ -161,11 +167,17 @@ class SQLiteDestination(DestinationConnector):
         cursor.execute("SELECT 1;")
         return cursor.fetchone() is not None
 
+    def _quote_identifier(self, name: str) -> str:
+        """Escape double-quotes and wrap with ANSI quotes for SQLite identifiers."""
+        escaped = name.replace('"', '""')
+        return f'"{escaped}"'
+
     def create_schema(self, schema: TableSchema, if_exists: str = "fail") -> None:
         if not self.is_connected or not self._conn:
             self.connect()
 
         cursor = self._conn.cursor()
+        qt = self._quote_identifier(schema.name)
         # Check if table exists
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=?", (schema.name,))
         table_exists = cursor.fetchone() is not None
@@ -177,24 +189,24 @@ class SQLiteDestination(DestinationConnector):
                     suggested_action="Specify mode 'replace' or 'append'.",
                 )
             elif if_exists == "replace":
-                cursor.execute(f"DROP TABLE IF EXISTS {schema.name}")
+                cursor.execute(f"DROP TABLE IF EXISTS {qt}")
             elif if_exists in ("append", "truncate", "sync", "mirror"):
                 from app.schema.evolution import SchemaEvolutionVerifier
-                cursor.execute(f"PRAGMA table_info({schema.name})")
+                cursor.execute(f"PRAGMA table_info({qt})")
                 existing_cols = [r[1] for r in cursor.fetchall()]
                 evo = SchemaEvolutionVerifier.verify_and_plan(
                     dialect="sqlite",
                     table_name=schema.name,
                     existing_column_names=existing_cols,
                     incoming_schema=schema,
-                    quote_fn=lambda n: f'"{n}"',
+                    quote_fn=self._quote_identifier,
                 )
                 if evo.has_drift:
                     for ddl_stmt in evo.ddl_statements:
                         cursor.execute(ddl_stmt)
                     self._conn.commit()
                 if if_exists in ("truncate", "sync", "mirror"):
-                    cursor.execute(f"DELETE FROM {schema.name}")
+                    cursor.execute(f"DELETE FROM {qt}")
                     self._conn.commit()
                 return
 
@@ -208,9 +220,10 @@ class SQLiteDestination(DestinationConnector):
             if not col.nullable:
                 constraints.append("NOT NULL")
             constraint_str = f" {' '.join(constraints)}" if constraints else ""
-            col_defs.append(f'"{col.name}" {sqlite_type}{constraint_str}')
+            qc = self._quote_identifier(col.name)
+            col_defs.append(f"{qc} {sqlite_type}{constraint_str}")
 
-        ddl = f"CREATE TABLE IF NOT EXISTS {schema.name} (\n  " + ",\n  ".join(col_defs) + "\n);"
+        ddl = f"CREATE TABLE IF NOT EXISTS {qt} (\n  " + ",\n  ".join(col_defs) + "\n);"
         try:
             cursor.execute(ddl)
             self._conn.commit()
@@ -235,8 +248,9 @@ class SQLiteDestination(DestinationConnector):
         cursor = self._conn.cursor()
         cols = dataset.schema_def.column_names
         placeholders = ", ".join(["?"] * len(cols))
-        col_names_quoted = ", ".join([f'"{c}"' for c in cols])
-        insert_sql = f"INSERT INTO {table_name} ({col_names_quoted}) VALUES ({placeholders})"
+        col_names_quoted = ", ".join([self._quote_identifier(c) for c in cols])
+        qt = self._quote_identifier(table_name)
+        insert_sql = f"INSERT INTO {qt} ({col_names_quoted}) VALUES ({placeholders})"
 
         # Convert rows into tuples matching column order with Decimal coercion
         values = []

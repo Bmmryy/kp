@@ -82,7 +82,8 @@ class SQLBaseSource(SourceConnector):
 
     def _quote_identifier(self, name: str) -> str:
         """Quote an identifier (column/table name). Default: ANSI double-quote."""
-        return f'"{name}"'
+        escaped = name.replace('"', '""')
+        return f'"{escaped}"'
 
     # ------------------------------------------------------------------
     # Lifecycle
@@ -176,6 +177,15 @@ class SQLBaseSource(SourceConnector):
             default = col.get("default")
 
             canonical = TypeRegistry.to_canonical(self.dialect, raw_type)
+            col_meta: Dict[str, Any] = {"raw_type": raw_type}
+            type_obj = col.get("type")
+            if hasattr(type_obj, "length") and getattr(type_obj, "length") is not None:
+                col_meta["length"] = getattr(type_obj, "length")
+            if hasattr(type_obj, "precision") and getattr(type_obj, "precision") is not None:
+                col_meta["precision"] = getattr(type_obj, "precision")
+            if hasattr(type_obj, "scale") and getattr(type_obj, "scale") is not None:
+                col_meta["scale"] = getattr(type_obj, "scale")
+
             columns.append(
                 ColumnDefinition(
                     name=col_name,
@@ -183,6 +193,7 @@ class SQLBaseSource(SourceConnector):
                     nullable=nullable,
                     primary_key=(col_name in pk_cols),
                     default=default,
+                    metadata=col_meta,
                 )
             )
 
@@ -290,7 +301,8 @@ class SQLBaseDestination(DestinationConnector):
 
     def _quote_identifier(self, name: str) -> str:
         """Quote an identifier. Default: ANSI double-quote."""
-        return f'"{name}"'
+        escaped = name.replace('"', '""')
+        return f'"{escaped}"'
 
     # ------------------------------------------------------------------
     # Lifecycle

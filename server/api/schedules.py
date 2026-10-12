@@ -2,7 +2,7 @@
 
 from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from app.services.scheduler import scheduler
 
@@ -18,9 +18,21 @@ class CreateScheduleRequest(BaseModel):
     dest_type: Optional[str] = Field(default=None, description="Alias untuk destination_type")
     destination_options: Dict[str, Any] = Field(default_factory=dict)
     dest_options: Dict[str, Any] = Field(default_factory=dict)
-    frequency: str = Field(default="hourly", description="'30s', '1m', '5m', 'hourly', 'daily', 'weekly', 'monthly'")
+    frequency: str = Field(default="hourly", description="'30s', '1m', '5m', '15m', 'hourly', 'daily', 'weekly', 'monthly'")
     transformations: List[Dict[str, Any]] = Field(default_factory=list)
     is_enabled: bool = Field(default=True)
+
+    @field_validator("frequency")
+    @classmethod
+    def validate_frequency(cls, v: str) -> str:
+        from app.services.scheduler import INTERVAL_MAP
+        clean_v = (v or "").strip().lower()
+        if clean_v not in INTERVAL_MAP:
+            raise ValueError(
+                f"Frekuensi jadwal '{v}' tidak didukung. "
+                f"Pilihan yang didukung: {', '.join(INTERVAL_MAP.keys())}."
+            )
+        return clean_v
 
     @property
     def effective_destination_type(self) -> str:

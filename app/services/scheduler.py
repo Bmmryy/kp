@@ -51,7 +51,12 @@ class ScheduledJob:
 
     def calculate_next_run(self, from_time: Optional[datetime] = None) -> datetime:
         base = from_time or datetime.now()
-        seconds = INTERVAL_MAP.get(self.frequency, 3600)
+        if self.frequency not in INTERVAL_MAP:
+            raise ValueError(
+                f"Frekuensi jadwal '{self.frequency}' tidak valid atau belum didukung. "
+                f"Pilihan valid: {list(INTERVAL_MAP.keys())}"
+            )
+        seconds = INTERVAL_MAP[self.frequency]
         return base + timedelta(seconds=seconds)
 
     def to_dict(self) -> Dict[str, Any]:

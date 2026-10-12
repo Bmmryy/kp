@@ -55,7 +55,8 @@ class PostgreSQLSource(SQLBaseSource):
 
     def _quote_identifier(self, name: str) -> str:
         """PostgreSQL uses ANSI double-quote quoting."""
-        return f'"{name}"'
+        escaped = name.replace('"', '""')
+        return f'"{escaped}"'
 
 
 class PostgreSQLDestination(SQLBaseDestination):
@@ -83,4 +84,5 @@ class PostgreSQLDestination(SQLBaseDestination):
 
     def _quote_identifier(self, name: str) -> str:
         """PostgreSQL uses ANSI double-quote quoting."""
-        return f'"{name}"'
+        escaped = name.replace('"', '""')
+        return f'"{escaped}"'

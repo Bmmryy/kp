@@ -57,12 +57,17 @@ class SchemaEvolutionVerifier:
         for col in incoming_schema.columns:
             col_name_lower = col.name.lower()
             col_quoted = q(col.name)
+            # Check if column has metadata dimension overrides
+            col_len = col.metadata.get("length") if col.metadata else None
+            col_prec = col.metadata.get("precision") if col.metadata else None
+            col_scale = col.metadata.get("scale") if col.metadata else None
+
             native_type = TypeRegistry.to_native(
                 dialect,
                 col.data_type,
-                length=None,
-                precision=None,
-                scale=None,
+                length=col_len,
+                precision=col_prec,
+                scale=col_scale,
             )
 
             if col_name_lower not in existing_lower:
@@ -88,12 +93,33 @@ class SchemaEvolutionVerifier:
                     exist_type_obj = exist_col.get("type")
                     exist_type_str = str(exist_type_obj).upper() if exist_type_obj else ""
 
-                    # Check if target column needs alteration
+                    # Check if target column needs alteration (canonical type or dimension drift)
                     target_canonical = TypeRegistry.to_canonical(dialect, exist_type_str)
-                    if target_canonical != col.data_type and dialect.lower() in ("mysql", "postgresql", "postgres"):
+                    needs_alteration = False
+
+                    if target_canonical != col.data_type:
+                        needs_alteration = True
+                    elif dialect.lower() in ("mysql", "postgresql", "postgres"):
+                        # Check length / precision widening
+                        # e.g. VARCHAR(50) vs incoming VARCHAR(255)
+                        import re
+                        m_exist = re.search(r"\((\d+)(?:,\s*(\d+))?\)", exist_type_str)
+                        m_incoming = re.search(r"\((\d+)(?:,\s*(\d+))?\)", native_type)
+                        if m_exist and m_incoming:
+                            exist_len = int(m_exist.group(1))
+                            inc_len = int(m_incoming.group(1))
+                            if inc_len > exist_len:
+                                needs_alteration = True
+                        elif not m_exist and m_incoming:
+                            # Target is unconstrained or different
+                            pass
+                        elif m_exist and not m_incoming:
+                            pass
+
+                    if needs_alteration and dialect.lower() in ("mysql", "postgresql", "postgres"):
                         mod_cols.append(col)
                         mod_msg = (
-                            f"[Verified Schema Evolution] Perubahan tipe data terdeteksi pada '{col.name}': "
+                            f"[Verified Schema Evolution] Perubahan tipe/kapasitas data terdeteksi pada '{col.name}': "
                             f"{exist_type_str} ──► {native_type}. Menyesuaikan tabel '{table_name}'."
                         )
                         logs.append(mod_msg)

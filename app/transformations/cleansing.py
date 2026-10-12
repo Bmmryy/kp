@@ -102,7 +102,75 @@ class MaskingTransformer(Transformer):
         return input_schema
 
 
+class FilterTransformer(Transformer):
+    """Filters dataset rows based on column value conditions.
+
+    Supported operators:
+        '=', '==', '!=', '>', '>=', '<', '<=', 'contains', 'startswith', 'endswith', 'in'
+
+    Params:
+        column: str — Column name to inspect
+        operator: str — Comparison operator (default: '=')
+        value: Any — Comparison target value
+    """
+
+    def transform(self, dataset: Dataset) -> Dataset:
+        column = self.config.params.get("column")
+        operator = self.config.params.get("operator", "=")
+        target_val = self.config.params.get("value")
+
+        if not column:
+            return dataset
+
+        def _matches(row: Dict[str, Any]) -> bool:
+            if column not in row:
+                return False
+            actual_val = row.get(column)
+
+            if actual_val is None:
+                if operator in ("=", "=="):
+                    return target_val is None
+                elif operator in ("!=", "<>"):
+                    return target_val is not None
+                return False
+
+            try:
+                if operator in ("=", "=="):
+                    return actual_val == target_val or str(actual_val) == str(target_val)
+                elif operator in ("!=", "<>"):
+                    return actual_val != target_val and str(actual_val) != str(target_val)
+                elif operator == ">":
+                    return float(actual_val) > float(target_val)
+                elif operator == ">=":
+                    return float(actual_val) >= float(target_val)
+                elif operator == "<":
+                    return float(actual_val) < float(target_val)
+                elif operator == "<=":
+                    return float(actual_val) <= float(target_val)
+                elif operator == "contains":
+                    return str(target_val).lower() in str(actual_val).lower()
+                elif operator == "startswith":
+                    return str(actual_val).lower().startswith(str(target_val).lower())
+                elif operator == "endswith":
+                    return str(actual_val).lower().endswith(str(target_val).lower())
+                elif operator == "in":
+                    if isinstance(target_val, (list, tuple, set)):
+                        return actual_val in target_val or str(actual_val) in [str(x) for x in target_val]
+                    return str(actual_val) in str(target_val)
+            except (ValueError, TypeError):
+                return False
+
+            return True
+
+        filtered_rows = [row for row in dataset.rows if _matches(row)]
+        return Dataset(schema=dataset.schema_def, rows=filtered_rows)
+
+    def get_output_schema(self, input_schema: TableSchema) -> TableSchema:
+        return input_schema
+
+
 # Register with TransformationRegistry
 TransformationRegistry.register("fill_null", FillNullTransformer)
 TransformationRegistry.register("drop_null", DropNullTransformer)
 TransformationRegistry.register("mask", MaskingTransformer)
+TransformationRegistry.register("filter", FilterTransformer)

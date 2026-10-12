@@ -56,7 +56,8 @@ class MySQLSource(SQLBaseSource):
 
     def _quote_identifier(self, name: str) -> str:
         """MySQL uses backtick quoting."""
-        return f"`{name}`"
+        escaped = name.replace("`", "``")
+        return f"`{escaped}`"
 
 
 class MySQLDestination(SQLBaseDestination):
@@ -85,4 +86,5 @@ class MySQLDestination(SQLBaseDestination):
 
     def _quote_identifier(self, name: str) -> str:
         """MySQL uses backtick quoting."""
-        return f"`{name}`"
+        escaped = name.replace("`", "``")
+        return f"`{escaped}`"
