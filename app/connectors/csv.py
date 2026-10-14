@@ -166,7 +166,7 @@ class CSVDestination(DestinationConnector):
                 suggested_action="Set load mode to 'replace' or 'append', or specify a different file name.",
             )
 
-        if not file_path.exists() or if_exists == "replace":
+        if not file_path.exists() or if_exists in ("replace", "truncate", "sync", "mirror"):
             with open(file_path, "w", newline="", encoding=self.encoding) as f:
                 writer = csv.writer(f, delimiter=self.delimiter)
                 writer.writerow(schema.column_names)
@@ -181,7 +181,7 @@ class CSVDestination(DestinationConnector):
             self.connect()
         file_path = self._resolve_file_path(table_name)
         file_exists = file_path.exists()
-        write_mode = "w" if mode == "replace" or not file_exists else "a"
+        write_mode = "w" if mode in ("replace", "truncate", "sync", "mirror") or not file_exists else "a"
 
         try:
             with open(file_path, write_mode, newline="", encoding=self.encoding) as f:

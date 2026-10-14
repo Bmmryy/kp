@@ -31,7 +31,7 @@ class SQLiteSource(SourceConnector):
 
     def __init__(self, config: ConnectorConfig) -> None:
         super().__init__(config)
-        self.database_path = config.options.get("database", ":memory:")
+        self.database_path = config.options.get("database") or config.options.get("path") or ":memory:"
         self._conn: Optional[sqlite3.Connection] = None
 
     def connect(self) -> None:
@@ -145,7 +145,7 @@ class SQLiteDestination(DestinationConnector):
 
     def __init__(self, config: ConnectorConfig) -> None:
         super().__init__(config)
-        self.database_path = config.options.get("database", ":memory:")
+        self.database_path = config.options.get("database") or config.options.get("path") or "output/output.sqlite"
         self._conn: Optional[sqlite3.Connection] = None
 
     def connect(self) -> None:
@@ -246,20 +246,33 @@ class SQLiteDestination(DestinationConnector):
             return 0
 
         cursor = self._conn.cursor()
-        cols = dataset.schema_def.column_names
+        # Deduplicate column names
+        seen_cols = set()
+        cols = []
+        for c in dataset.schema_def.column_names:
+            if c not in seen_cols:
+                seen_cols.add(c)
+                cols.append(c)
+
         placeholders = ", ".join(["?"] * len(cols))
         col_names_quoted = ", ".join([self._quote_identifier(c) for c in cols])
         qt = self._quote_identifier(table_name)
         insert_sql = f"INSERT INTO {qt} ({col_names_quoted}) VALUES ({placeholders})"
 
-        # Convert rows into tuples matching column order with Decimal coercion
+        # Convert rows into tuples matching column order with Decimal & DateTime preservation
+        from datetime import date, datetime
         values = []
         for row in dataset.rows:
             row_vals = []
             for c in cols:
                 v = row.get(c)
                 if isinstance(v, Decimal):
-                    v = float(v)
+                    # Retain exact decimal representation as string or float depending on length
+                    v = str(v)
+                elif isinstance(v, (datetime, date)):
+                    v = v.isoformat()
+                elif isinstance(v, bool):
+                    v = 1 if v else 0
                 row_vals.append(v)
             values.append(tuple(row_vals))
 

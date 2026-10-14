@@ -350,16 +350,23 @@ class SQLBaseDestination(DestinationConnector):
 
     def _generate_ddl(self, schema: TableSchema) -> str:
         """Generate a CREATE TABLE DDL statement for the target dialect."""
+        import re
         col_defs: List[str] = []
         for col in schema.columns:
+            col_len = col.metadata.get("length") if col.metadata else None
+            if col_len is None and col.metadata and "raw_type" in col.metadata:
+                m = re.search(r"\((\d+)\)", str(col.metadata["raw_type"]))
+                if m:
+                    col_len = int(m.group(1))
+            col_prec = col.metadata.get("precision") if col.metadata else None
+            col_scale = col.metadata.get("scale") if col.metadata else None
+
             native_type = TypeRegistry.to_native(
                 self.dialect,
                 col.data_type,
-                # ColumnDefinition does not carry dimension overrides;
-                # TypeRegistry defaults (e.g. VARCHAR(255)) are used as-is.
-                length=None,
-                precision=None,
-                scale=None,
+                length=col_len,
+                precision=col_prec,
+                scale=col_scale,
             )
             q = self._quote_identifier(col.name)
             constraints: List[str] = []
@@ -461,14 +468,51 @@ class SQLBaseDestination(DestinationConnector):
             return 0
 
         qt = self._quote_identifier(table_name)
-        cols = dataset.schema_def.column_names
+        # Ensure column list is unique (preserving insertion order)
+        seen_cols: set = set()
+        cols: List[str] = []
+        for c in dataset.schema_def.column_names:
+            c_key = c.lower() if self.dialect in ("mysql",) else c
+            if c_key not in seen_cols:
+                seen_cols.add(c_key)
+                cols.append(c)
+
+        # EVO-03 fix: only insert columns that actually exist in the destination table
+        # This prevents errors when source column was removed (destination column retained for history)
+        try:
+            insp = sa_inspect(self._engine)
+            if insp.has_table(table_name):
+                dest_col_names_lower = {c["name"].lower() for c in insp.get_columns(table_name)}
+                cols = [c for c in cols if c.lower() in dest_col_names_lower]
+        except SQLAlchemyError:
+            pass  # If inspection fails, proceed with original columns
+
+        if not cols:
+            return 0
+
         q_cols = ", ".join(self._quote_identifier(c) for c in cols)
         placeholders = ", ".join(f":{c}" for c in cols)
         insert_sql = f"INSERT INTO {qt} ({q_cols}) VALUES ({placeholders})"
 
+        # Ensure each row only contains keys for our columns (handle partial rows)
+        col_set = set(cols)
+        col_set_lower = {c.lower(): c for c in cols}
+        sanitized_rows = []
+        for row in dataset.rows:
+            new_row = {}
+            for c in cols:
+                # Try exact match first, then case-insensitive
+                if c in row:
+                    new_row[c] = row[c]
+                else:
+                    lower_key = c.lower()
+                    found = next((v for k, v in row.items() if k.lower() == lower_key), None)
+                    new_row[c] = found
+            sanitized_rows.append(new_row)
+
         logger.debug(
             "Loading %d rows into %s table '%s' (mode=%s)",
-            len(dataset.rows),
+            len(sanitized_rows),
             self.dialect,
             table_name,
             mode,
@@ -476,8 +520,8 @@ class SQLBaseDestination(DestinationConnector):
 
         try:
             with self._engine.begin() as conn:
-                conn.execute(text(insert_sql), dataset.rows)
-            return len(dataset.rows)
+                conn.execute(text(insert_sql), sanitized_rows)
+            return len(sanitized_rows)
         except SQLAlchemyError as err:
             raise LoadError(
                 message=f"Failed to insert records into {self.dialect} table '{table_name}': {err}",

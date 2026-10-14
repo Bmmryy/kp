@@ -63,7 +63,10 @@ class PipelineRun:
     def to_dict(self) -> Dict[str, Any]:
         output_file = None
         if self.destination_type in ("csv", "json", "jsonl", "sqlite"):
-            output_file = self.destination_options.get("path") or self.destination_options.get("database")
+            if self.output_files:
+                output_file = self.output_files[0]
+            else:
+                output_file = self.destination_options.get("path") or self.destination_options.get("database")
 
         return {
             "run_id": self.run_id,
@@ -294,7 +297,15 @@ class PipelineRunnerService:
                     "rows_loaded": context.metrics.rows_loaded,
                     "duration_seconds": round(context.metrics.duration_seconds, 4),
                 }
-                run.push_event("done", {"status": "success", "metrics": run.metrics})
+                dest_file = destination_options.get("path") or destination_options.get("database")
+                if destination_type in ("csv", "json", "jsonl", "sqlite") and dest_file:
+                    run.output_files = [dest_file]
+
+                run.push_event("done", {
+                    "status": "success",
+                    "metrics": run.metrics,
+                    "output_file": run.output_files[0] if run.output_files else None,
+                })
             else:
                 # Pipeline returned a FAILED context
                 err_msg = "; ".join(e.get("message", "") for e in context.errors) or "Pipeline gagal."
@@ -419,10 +430,15 @@ class PipelineRunnerService:
                 "sources_processed": len(sources),
             }
             # Track output file if file destination
-            if is_file_dest and destination_options.get("path"):
-                run.output_files = [destination_options["path"]]
+            dest_file = destination_options.get("path") or destination_options.get("database")
+            if is_file_dest and dest_file:
+                run.output_files = [dest_file]
 
-            run.push_event("done", {"status": "success", "metrics": run.metrics})
+            run.push_event("done", {
+                "status": "success",
+                "metrics": run.metrics,
+                "output_file": run.output_files[0] if run.output_files else None,
+            })
 
         except Exception as exc:
             user_msg = format_user_error(exc)

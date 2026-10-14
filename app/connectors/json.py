@@ -181,10 +181,10 @@ class JSONDestination(DestinationConnector):
                 message=f"JSON destination file '{file_path.name}' already exists.",
                 suggested_action="Set load mode to 'replace' or 'append'.",
             )
-        if not file_path.exists() or if_exists == "replace":
+        if not file_path.exists() or if_exists in ("replace", "truncate", "sync", "mirror"):
             with open(file_path, "w", encoding=self.encoding) as f:
                 if self.is_lines or file_path.suffix in (".jsonl", ".ndjson"):
-                    pass  # Ready for lines
+                    pass  # Ready for lines (empty file)
                 else:
                     json.dump([], f)
 
@@ -200,7 +200,7 @@ class JSONDestination(DestinationConnector):
 
         try:
             if self.is_lines or file_path.suffix in (".jsonl", ".ndjson"):
-                write_mode = "w" if mode == "replace" or not file_path.exists() else "a"
+                write_mode = "w" if mode in ("replace", "truncate", "sync", "mirror") or not file_path.exists() else "a"
                 with open(file_path, write_mode, encoding=self.encoding) as f:
                     for row in dataset.rows:
                         f.write(json.dumps(row, default=str) + "\n")

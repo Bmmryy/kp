@@ -482,6 +482,15 @@ function collectTransformations() {
     const cols = ($("#transform-mask-cols")?.value || "").split(",").map(c => c.trim()).filter(Boolean);
     transforms.push({ type: "mask", params: { columns: cols, mask_char: "*", keep_start: 3, keep_end: 3 } });
   }
+  if ($("#transform-filter")?.checked) {
+    const col = $("#transform-filter-col")?.value.trim();
+    const op  = $("#transform-filter-op")?.value;
+    const val = $("#transform-filter-val")?.value.trim();
+    if (col && op && val !== "") {
+      const numVal = (!isNaN(val) && val !== "") ? (val.includes(".") ? parseFloat(val) : parseInt(val, 10)) : val;
+      transforms.push({ type: "filter", params: { filters: [{ column: col, operator: op, value: numVal }] } });
+    }
+  }
   return transforms;
 }
 
@@ -665,25 +674,37 @@ function startSSEStream(runId) {
         toast(`Pipeline selesai! ${data.metrics?.rows_loaded ?? 0} baris dimuat.`, "success");
         appendLog("✓ Pipeline selesai dengan sukses.", "success");
 
-        // Tampilkan opsi membuat task berikutnya langsung dari drawer
         const dlBtn = $("#drawer-download-btn");
-        if (dlBtn && !dlBtn.innerHTML) {
-          dlBtn.innerHTML = `
-            <button class="btn btn-primary btn-sm" onclick="closeProgressDrawer(); resetTaskBuilder();" style="margin-top:10px;display:inline-flex;align-items:center;gap:6px">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-              + Buat Task Berikutnya
-            </button>
-          `;
+        if (dlBtn) {
+          dlBtn.innerHTML = "";
+          // Tombol download jika ada output file
+          if (data.output_file) {
+            renderDownloadButton(data.output_file);
+          }
+          // Tombol buat task berikutnya
+          const nextBtn = document.createElement("button");
+          nextBtn.className = "btn btn-primary btn-sm";
+          nextBtn.style.cssText = "margin-top:10px;display:inline-flex;align-items:center;gap:6px";
+          nextBtn.onclick = () => { closeProgressDrawer(); resetTaskBuilder(); };
+          nextBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> + Buat Task Berikutnya`;
+          dlBtn.appendChild(nextBtn);
         }
-
-        fetch(API.status(runId)).then(r => r.json()).then(info => {
-          if (info.output_file) renderDownloadButton(info.output_file);
-        }).catch(() => {});
     } else {
       updateDrawerStatus("error");
       const cleanErr = formatDisplayError(data.error);
       toast(`Pipeline gagal: ${cleanErr}`, "error");
       appendLog(`✕ Error: ${cleanErr}`, "error");
+
+      // Tombol Tutup & Coba Lagi agar user tidak terjebak
+      const dlBtn = $("#drawer-download-btn");
+      if (dlBtn) {
+        dlBtn.innerHTML = `
+          <button class="btn btn-secondary btn-sm" onclick="closeProgressDrawer()" style="margin-top:10px;display:inline-flex;align-items:center;gap:6px">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            Tutup &amp; Coba Lagi
+          </button>
+        `;
+      }
     }
 
     // Refresh stats
@@ -928,20 +949,30 @@ async function toggleSchedule(id, checkbox) {
 
 async function triggerScheduleNow(id) {
   try {
-    toast("Memicu eksekusi jadwal sekarang...", "info");
     const res = await fetch(API.schedulesTrigger(id), { method: "POST" });
     if (!res.ok) {
       const errData = await res.json().catch(() => ({}));
       throw new Error(errData.detail || "Server menolak pemicuan jadwal.");
     }
     const data = await res.json().catch(() => ({}));
-    toast(`✓ Jadwal berhasil dipicu! ${data.message || 'Pipeline sedang berjalan di background.'}`, "success");
+    const runId = data.run_id;
+
+    if (runId) {
+      // Open progress drawer to show real-time execution
+      state.currentRunId = runId;
+      openProgressDrawer(runId);
+      startSSEStream(runId);
+      toast(`✓ Jadwal dipicu! Memantau eksekusi...`, "success");
+    } else {
+      toast(`✓ Jadwal berhasil dipicu! ${data.message || "Pipeline sedang berjalan di background."}`, "success");
+    }
     // Reload schedules to update next_run / last_run status
     setTimeout(loadSchedules, 1200);
   } catch (err) {
-    toast(`Gagal menjalankan jadwal: ${err.message || 'Terjadi kesalahan sistem.'}`, "error");
+    toast(`Gagal menjalankan jadwal: ${err.message || "Terjadi kesalahan sistem."}`, "error");
   }
 }
+
 
 async function deleteSchedule(id) {
   if (!confirm("Hapus jadwal ini? Tindakan ini tidak dapat dibatalkan.")) return;
@@ -1555,7 +1586,10 @@ function selectSrcFileFormat(fmt) {
   // Update accepted file types
   const acceptMap = { csv: ".csv", json: ".json", jsonl: ".jsonl", sqlite: ".sqlite,.db" };
   if (fileInput) fileInput.accept = acceptMap[fmt] || "";
+  // Re-detect columns if files already uploaded
+  if (state.srcUploadedFiles.length > 0) detectFileColumns();
 }
+
 
 function selectSrcDbType(dbtype) {
   state.srcDbType = dbtype;
@@ -1574,16 +1608,89 @@ function handleSrcFileSelect(files) {
   const zone  = $("#src-drop-zone");
   const list  = $("#src-file-list");
   if (zone)  zone.classList.add("dragover");
-  uploadFilesToServer(Array.from(files)).then(uploaded => {
+  uploadFilesToServer(Array.from(files)).then(async uploaded => {
     uploaded.forEach(f => { state.srcUploadedFiles.push(f); });
     renderUploadedFiles();
     if (zone) zone.classList.remove("dragover");
     toast(`${uploaded.length} file berhasil diupload.`, "success");
+
+    // Auto-detect columns from the first uploaded file
+    await detectFileColumns();
   }).catch(err => {
     toast(`Upload gagal: ${err.message}`, "error");
     if (zone) zone.classList.remove("dragover");
   });
 }
+
+async function detectFileColumns() {
+  const container = $("#src-file-columns-container");
+  if (!container) return;
+
+  if (state.srcUploadedFiles.length === 0) {
+    container.style.display = "none";
+    container.innerHTML = "";
+    state.srcColumns = [];
+    state.srcSelectedColumns = [];
+    return;
+  }
+
+  // Use first file for column detection
+  const firstFile = state.srcUploadedFiles[0];
+  const fmt = state.srcFileFormat || "csv";
+
+  try {
+    const q = new URLSearchParams({ type: fmt, path: firstFile.path });
+    const res = await fetch(`${API.listColumns}?${q}`);
+    if (!res.ok) throw new Error("Gagal memuat kolom file");
+    const data = await res.json();
+    const cols = data.columns || [];
+
+    state.srcColumns = cols;
+    state.srcSelectedColumns = cols.map(c => c.name);
+
+    if (cols.length === 0) {
+      container.style.display = "none";
+      container.innerHTML = "";
+      return;
+    }
+
+    container.style.display = "block";
+    container.innerHTML = `
+      <div class="column-checklist-box">
+        <div class="column-checklist-header">
+          <div class="column-checklist-title">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            Kolom Terdeteksi (${cols.length})
+          </div>
+          <div style="display:flex;gap:6px">
+            <button type="button" class="btn btn-secondary btn-sm" style="padding:2px 8px;font-size:10.5px" onclick="toggleAllSourceCols(true)">Pilih Semua</button>
+            <button type="button" class="btn btn-secondary btn-sm" style="padding:2px 8px;font-size:10.5px" onclick="toggleAllSourceCols(false)">Kosongkan</button>
+          </div>
+        </div>
+        <div class="column-checklist-grid">
+          ${cols.map(col => `
+            <label class="column-check-item">
+              <div style="display:flex;align-items:center">
+                <input type="checkbox" value="${col.name}" checked onchange="toggleSourceColumn('${col.name.replace(/'/g, "\\'")}', this.checked)">
+                <span style="font-weight:500">${col.name}</span>
+              </div>
+              <span class="column-type-badge">${col.type || "TEXT"}</span>
+            </label>
+          `).join("")}
+        </div>
+        <div style="font-size:11px;color:var(--text-tertiary);margin-top:6px">
+          Centang kolom yang ingin dikirim ke tujuan.
+        </div>
+      </div>
+    `;
+    renderColumnMapping();
+  } catch (e) {
+    container.style.display = "none";
+    console.warn("Gagal deteksi kolom file:", e.message);
+  }
+}
+
+
 
 async function uploadFilesToServer(files) {
   const formData = new FormData();
@@ -1620,7 +1727,9 @@ function renderUploadedFiles() {
 function removeSrcFile(index) {
   state.srcUploadedFiles.splice(index, 1);
   renderUploadedFiles();
+  detectFileColumns();
 }
+
 
 // ── SOURCE: SQL DB Cards ────────────────────────────────────────────────────
 

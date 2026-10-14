@@ -52,6 +52,26 @@ class ConnectParams(BaseModel):
     password: str = ""
 
 
+def _format_connection_error(e: Exception) -> str:
+    import re
+    msg = str(getattr(e, "orig", None) or e)
+    if "Operation not permitted" in msg or "Errno 1" in msg:
+        return "Gagal terhubung ke database: Izin koneksi jaringan socket dibatasi oleh sistem. Pastikan port database terbuka dan server dapat diakses."
+    if "Can't connect to MySQL server" in msg or "2003" in msg or "2002" in msg or "Connection refused" in msg:
+        return "Tidak dapat terhubung ke server database. Pastikan layanan database aktif dan host/port sesuai (contoh: 127.0.0.1:3306)."
+    if "Access denied for user" in msg or "1045" in msg or "password authentication failed" in msg:
+        return "Autentikasi gagal: username atau password database salah."
+    if "Unknown database" in msg or "1049" in msg or ('database "' in msg and 'does not exist' in msg):
+        return "Database tidak ditemukan di server SQL."
+
+    m = re.search(r'\(\d+,\s*["\'](.*?)["\']\)', msg)
+    if m:
+        msg = m.group(1)
+    msg = re.sub(r'\[SQL:.*?\]', '', msg)
+    msg = re.sub(r'\(Background on this error.*?\)', '', msg)
+    return msg.strip() or "Koneksi ke database gagal."
+
+
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
@@ -66,13 +86,13 @@ def verify_connection(params: ConnectParams) -> Dict[str, Any]:
         engine.dispose()
         return {"ok": True, "message": "Koneksi berhasil!"}
     except OperationalError as e:
-        return {"ok": False, "error": str(e.orig or e)}
+        return {"ok": False, "error": _format_connection_error(e)}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except SQLAlchemyError as e:
-        return {"ok": False, "error": str(e)}
+        return {"ok": False, "error": _format_connection_error(e)}
     except Exception as e:
-        return {"ok": False, "error": str(e)}
+        return {"ok": False, "error": _format_connection_error(e)}
 
 
 @router.get("/databases")

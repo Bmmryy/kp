@@ -58,7 +58,12 @@ class SchemaEvolutionVerifier:
             col_name_lower = col.name.lower()
             col_quoted = q(col.name)
             # Check if column has metadata dimension overrides
+            import re
             col_len = col.metadata.get("length") if col.metadata else None
+            if col_len is None and col.metadata and "raw_type" in col.metadata:
+                m_raw = re.search(r"\((\d+)\)", str(col.metadata["raw_type"]))
+                if m_raw:
+                    col_len = int(m_raw.group(1))
             col_prec = col.metadata.get("precision") if col.metadata else None
             col_scale = col.metadata.get("scale") if col.metadata else None
 
@@ -101,8 +106,7 @@ class SchemaEvolutionVerifier:
                         needs_alteration = True
                     elif dialect.lower() in ("mysql", "postgresql", "postgres"):
                         # Check length / precision widening
-                        # e.g. VARCHAR(50) vs incoming VARCHAR(255)
-                        import re
+                        # e.g. VARCHAR(50) vs incoming VARCHAR(255) or VARCHAR vs TEXT
                         m_exist = re.search(r"\((\d+)(?:,\s*(\d+))?\)", exist_type_str)
                         m_incoming = re.search(r"\((\d+)(?:,\s*(\d+))?\)", native_type)
                         if m_exist and m_incoming:
@@ -110,10 +114,9 @@ class SchemaEvolutionVerifier:
                             inc_len = int(m_incoming.group(1))
                             if inc_len > exist_len:
                                 needs_alteration = True
-                        elif not m_exist and m_incoming:
-                            # Target is unconstrained or different
-                            pass
-                        elif m_exist and not m_incoming:
+                        elif m_exist and ("TEXT" in native_type.upper() or "LONGTEXT" in native_type.upper()):
+                            needs_alteration = True
+                        elif "TEXT" in exist_type_str.upper() and m_incoming:
                             pass
 
                     if needs_alteration and dialect.lower() in ("mysql", "postgresql", "postgres"):

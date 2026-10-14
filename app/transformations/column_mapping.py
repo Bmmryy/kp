@@ -74,10 +74,30 @@ class ColumnMappingTransformer(Transformer):
         if not mapping:
             return dataset
 
+        # Validate duplicate target column names (case-insensitive for safety)
+        seen_targets: Dict[str, str] = {}
+        for src_name, dst_name in mapping.items():
+            if not dst_name or dst_name == "__ignore__":
+                continue
+            dst_lower = dst_name.lower()
+            if dst_lower in seen_targets:
+                from app.core.exceptions import TransformationError
+                raise TransformationError(
+                    message=f"Pemetaan kolom tidak valid: Dua kolom sumber ('{seen_targets[dst_lower]}' dan '{src_name}') dipetakan ke kolom target yang sama '{dst_name}'.",
+                    suggested_action="Ubah pemetaan kolom target agar setiap kolom tujuan unik.",
+                )
+            seen_targets[dst_lower] = src_name
+
         new_columns: List[ColumnDefinition] = []
+        seen_col_names = set()
         for col in dataset.schema_def.columns:
             if col.name in mapping:
                 target_col_name = mapping[col.name]
+                if not target_col_name or target_col_name == "__ignore__":
+                    continue
+                if target_col_name.lower() in seen_col_names:
+                    continue
+                seen_col_names.add(target_col_name.lower())
                 new_col = ColumnDefinition(
                     name=target_col_name,
                     data_type=col.data_type,
@@ -89,7 +109,9 @@ class ColumnMappingTransformer(Transformer):
                 )
                 new_columns.append(new_col)
             elif not drop_unmapped:
-                new_columns.append(col.model_copy(deep=True))
+                if col.name.lower() not in seen_col_names:
+                    seen_col_names.add(col.name.lower())
+                    new_columns.append(col.model_copy(deep=True))
 
         new_schema = TableSchema(
             name=target_table or dataset.schema_def.name,
@@ -103,7 +125,8 @@ class ColumnMappingTransformer(Transformer):
             for src_name, val in row.items():
                 if src_name in mapping:
                     target_name = mapping[src_name]
-                    new_row[target_name] = val
+                    if target_name and target_name != "__ignore__":
+                        new_row[target_name] = val
                 elif not drop_unmapped:
                     new_row[src_name] = val
             transformed_rows.append(new_row)
@@ -115,11 +138,17 @@ class ColumnMappingTransformer(Transformer):
         drop_unmapped: bool = self.config.params.get("drop_unmapped", True)
         target_table: Optional[str] = self.config.params.get("target_table")
         new_cols: List[ColumnDefinition] = []
+        seen_cols = set()
         for col in input_schema.columns:
             if col.name in mapping:
-                new_cols.append(col.model_copy(update={"name": mapping[col.name]}))
+                t_name = mapping[col.name]
+                if t_name and t_name != "__ignore__" and t_name.lower() not in seen_cols:
+                    seen_cols.add(t_name.lower())
+                    new_cols.append(col.model_copy(update={"name": t_name}))
             elif not drop_unmapped:
-                new_cols.append(col.model_copy(deep=True))
+                if col.name.lower() not in seen_cols:
+                    seen_cols.add(col.name.lower())
+                    new_cols.append(col.model_copy(deep=True))
         return TableSchema(name=target_table or input_schema.name, columns=new_cols, metadata=input_schema.metadata)
 
 

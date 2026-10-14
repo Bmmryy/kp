@@ -176,14 +176,16 @@ class Dataset(BaseModel):
         if not rows:
             return cls(schema=TableSchema(name=name, columns=[]), rows=[])
 
-        # Infer columns from keys of first row / aggregation of keys
+        import re
         all_keys: Dict[str, DataType] = {}
         for r in rows[:100]:  # inspect up to 100 rows
             for k, v in r.items():
                 if k not in all_keys or all_keys[k] == DataType.STRING:
                     if v is None:
                         continue
-                    if isinstance(v, bool):
+                    if isinstance(v, Decimal):
+                        all_keys[k] = DataType.DECIMAL
+                    elif isinstance(v, bool):
                         all_keys[k] = DataType.BOOLEAN
                     elif isinstance(v, int):
                         all_keys[k] = DataType.INTEGER
@@ -195,6 +197,22 @@ class Dataset(BaseModel):
                         all_keys[k] = DataType.DATE
                     elif isinstance(v, (dict, list)):
                         all_keys[k] = DataType.JSON
+                    elif isinstance(v, str):
+                        s = v.strip()
+                        if s.lower() in ("true", "false"):
+                            all_keys[k] = DataType.BOOLEAN
+                        elif re.match(r"^-?\d+\.\d{3,}$", s):  # e.g. 1250.5055 with high precision
+                            all_keys[k] = DataType.DECIMAL
+                        elif re.match(r"^-?\d+\.\d+$", s):
+                            all_keys[k] = DataType.FLOAT
+                        elif re.match(r"^-?\d+$", s):
+                            all_keys[k] = DataType.INTEGER
+                        elif re.match(r"^\d{4}-\d{2}-\d{2}$", s):
+                            all_keys[k] = DataType.DATE
+                        elif re.match(r"^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}", s):
+                            all_keys[k] = DataType.DATETIME
+                        else:
+                            all_keys[k] = DataType.STRING
                     else:
                         all_keys[k] = DataType.STRING
 

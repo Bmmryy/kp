@@ -500,6 +500,8 @@
                     <div class="drop-sub">atau klik untuk memilih (bisa banyak file sekaligus)</div>
                   </div>
                   <div class="upload-file-list" id="src-file-list"></div>
+                  <!-- File Columns Checklist Container -->
+                  <div id="src-file-columns-container" style="display:none;margin-top:12px"></div>
                 </div>
               </div>
 
@@ -619,12 +621,34 @@
                 </label>
 
                 <!-- Option 6: Masking -->
-                <label class="transform-card" style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;cursor:pointer;background:var(--bg-canvas);transition:all 0.2s">
+                <label class="transform-card" style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;cursor:pointer;background:var(--bg-canvas);transition:all 0.2s">
                   <input type="checkbox" id="transform-mask" style="margin-top:3px;accent-color:var(--accent)" onchange="updateTransformBadge()">
                   <div style="flex:1">
                     <div style="font-size:13px;font-weight:600;color:var(--text)">Sensor Data Sensitif (Masking)</div>
                     <div style="font-size:11.5px;color:var(--text-secondary)">Sensor karakter tengah data pribadi (0812****789)</div>
                     <input type="text" id="transform-mask-cols" class="form-control" placeholder="Nama kolom (contoh: phone, nik)" value="phone" style="margin-top:6px;font-size:11.5px;padding:4px 8px" onclick="event.stopPropagation()">
+                  </div>
+                </label>
+
+                <!-- Option 7: Generic Filter Transformer -->
+                <label class="transform-card" style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;cursor:pointer;background:var(--bg-canvas);transition:all 0.2s">
+                  <input type="checkbox" id="transform-filter" style="margin-top:3px;accent-color:var(--accent)" onchange="updateTransformBadge()">
+                  <div style="flex:1">
+                    <div style="font-size:13px;font-weight:600;color:var(--text)">Filter Baris Data (Row Filter)</div>
+                    <div style="font-size:11.5px;color:var(--text-secondary)">Hanya teruskan baris yang memenuhi kondisi filter tertentu</div>
+                    <div style="display:flex;gap:6px;margin-top:6px" onclick="event.stopPropagation()">
+                      <input type="text" id="transform-filter-col" class="form-control" placeholder="Nama kolom (mis: age, city)" style="font-size:11.5px;padding:4px 8px;flex:1.2">
+                      <select id="transform-filter-op" class="form-select" style="font-size:11.5px;padding:4px 6px;width:85px">
+                        <option value=">=">&gt;=</option>
+                        <option value=">">&gt;</option>
+                        <option value="<=">&lt;=</option>
+                        <option value="<">&lt;</option>
+                        <option value="=">=</option>
+                        <option value="!=">!=</option>
+                        <option value="contains">contains</option>
+                      </select>
+                      <input type="text" id="transform-filter-val" class="form-control" placeholder="Nilai (mis: 18, Jakarta)" style="font-size:11.5px;padding:4px 8px;flex:1">
+                    </div>
                   </div>
                 </label>
               </div>
@@ -772,6 +796,13 @@
                       <div>
                         <strong>Truncate (Kosongkan lalu Isi)</strong>
                         <div style="font-size:11.5px;color:var(--text-secondary)">Kosongkan seluruh data lama tabel tujuan sebelum memuat data baru</div>
+                      </div>
+                    </label>
+                    <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-size:12.5px;background:#FFF1F0;padding:8px 10px;border-radius:8px;border:1px solid #FFA39E">
+                      <input type="radio" name="dst-load-mode" value="replace" id="dst-mode-replace" onchange="setDstLoadMode('replace')" style="margin-top:2px">
+                      <div>
+                        <strong style="color:var(--danger)">Replace (Hapus / Drop &amp; Buat Ulang)</strong>
+                        <div style="font-size:11.5px;color:#A8071A">Hapus (DROP) tabel lama jika sudah ada dan buat ulang tabel baru dari awal (Memerlukan konfirmasi keamanan)</div>
                       </div>
                     </label>
                   </div>
