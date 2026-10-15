@@ -401,9 +401,11 @@ class SQLBaseDestination(DestinationConnector):
                         conn.execute(text(f"DROP TABLE IF EXISTS {qt}"))
                         table_exists = False
                     elif if_exists in ("truncate", "sync", "mirror"):
-                        # In sync/mirror/truncate: run Schema Evolution first so new columns are added, then clear rows
+                        # In sync/mirror/truncate: run Schema Evolution first so new columns are added,
+                        # then clear rows. For sync/mirror, also drop orphaned destination columns.
                         existing_cols_info = insp.get_columns(schema.name)
                         existing_cols = [c["name"] for c in existing_cols_info]
+                        allow_drop = if_exists in ("sync", "mirror")
                         evo = SchemaEvolutionVerifier.verify_and_plan(
                             dialect=self.dialect,
                             table_name=schema.name,
@@ -411,6 +413,7 @@ class SQLBaseDestination(DestinationConnector):
                             incoming_schema=schema,
                             quote_fn=self._quote_identifier,
                             existing_columns_info=existing_cols_info,
+                            allow_drop_columns=allow_drop,
                         )
                         if evo.has_drift:
                             for ddl_stmt in evo.ddl_statements:

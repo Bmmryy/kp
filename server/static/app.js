@@ -1663,6 +1663,8 @@ async function detectFileColumns() {
       return;
     }
 
+    const TYPE_OPTIONS = ["string","integer","float","decimal","boolean","date","datetime","time","json","binary"];
+
     container.style.display = "block";
     container.innerHTML = `
       <div class="column-checklist-box">
@@ -1677,18 +1679,20 @@ async function detectFileColumns() {
           </div>
         </div>
         <div class="column-checklist-grid">
-          ${cols.map(col => `
+          ${cols.map((col, idx) => `
             <label class="column-check-item">
-              <div style="display:flex;align-items:center">
+              <div style="display:flex;align-items:center;gap:6px">
                 <input type="checkbox" value="${col.name}" checked onchange="toggleSourceColumn('${col.name.replace(/'/g, "\\'")}', this.checked)">
                 <span style="font-weight:500">${col.name}</span>
               </div>
-              <span class="column-type-badge">${col.type || "TEXT"}</span>
+              <select class="column-type-select" onchange="overrideSrcColumnType(${idx}, this.value)" title="Override tipe data kolom '${col.name}'">
+                ${TYPE_OPTIONS.map(t => `<option value="${t}" ${(col.type||'string')===t?'selected':''}>${t}</option>`).join('')}
+              </select>
             </label>
           `).join("")}
         </div>
         <div style="font-size:11px;color:var(--text-tertiary);margin-top:6px">
-          Centang kolom yang ingin dikirim ke tujuan.
+          Centang kolom yang ingin dikirim. Klik dropdown tipe untuk mengubah tipe data sebelum dimuat ke SQL.
         </div>
       </div>
     `;
@@ -1696,6 +1700,12 @@ async function detectFileColumns() {
   } catch (e) {
     container.style.display = "none";
     console.warn("Gagal deteksi kolom file:", e.message);
+  }
+}
+
+function overrideSrcColumnType(idx, newType) {
+  if (state.srcColumns[idx]) {
+    state.srcColumns[idx] = { ...state.srcColumns[idx], type: newType };
   }
 }
 
@@ -2402,6 +2412,11 @@ function initDropZone() {
 function collectSources() {
   if (state.srcCategory === "file") {
     if (state.srcUploadedFiles.length === 0) return null;
+    // Build column_types map from current srcColumns (user may have overridden types)
+    const columnTypes = {};
+    for (const col of (state.srcColumns || [])) {
+      if (col.name && col.type) columnTypes[col.name] = col.type;
+    }
     return state.srcUploadedFiles.map(f => {
       const opts = { path: f.path };
       if (state.srcFileFormat === "csv" && $("#src-csv-delimiter")?.value) {
@@ -2410,6 +2425,10 @@ function collectSources() {
       if (state.srcFileFormat === "sqlite") {
         const tbl = $("#src-sqlite-table")?.value.trim();
         if (tbl) opts.table_name = tbl;
+      }
+      // Attach column type overrides so backend can cast before loading into SQL
+      if (Object.keys(columnTypes).length > 0) {
+        opts.column_types = columnTypes;
       }
       return { type: state.srcFileFormat, options: opts };
     });

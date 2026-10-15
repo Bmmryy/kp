@@ -229,3 +229,102 @@ def test_column_mapping_duplicate_detection_and_ignore_handling():
     ))
     with pytest.raises(TransformationError, match="Dua kolom sumber.*dipetakan ke kolom target yang sama 'dept_Id'"):
         dup_trans.transform(ds)
+
+
+# ── New tests for type inference and structural sync ──────────────────────────
+
+def test_cast_columns_transformer_basic():
+    """CastColumnsTransformer harus mengubah tipe data kolom sesuai mapping."""
+    import app.transformations  # noqa: F401
+    trans = TransformationRegistry.create(
+        TransformerConfig(type="cast_columns", params={
+            "column_types": {
+                "age": "integer",
+                "salary": "float",
+                "is_active": "boolean",
+            }
+        })
+    )
+    ds = Dataset.infer_from_dicts(name="test", rows=[
+        {"name": "Andi", "age": "28", "salary": "5000.50", "is_active": "true"},
+        {"name": "Budi", "age": "35", "salary": "7200",    "is_active": "false"},
+    ])
+    result = trans.transform(ds)
+    assert result.rows[0]["age"] == 28
+    assert isinstance(result.rows[0]["salary"], float)
+    assert result.rows[0]["is_active"] is True
+    assert result.rows[1]["is_active"] is False
+    # Kolom name tidak diubah
+    assert result.rows[0]["name"] == "Andi"
+
+
+def test_cast_columns_transformer_schema_update():
+    """Output schema dari CastColumnsTransformer harus mencerminkan tipe baru."""
+    import app.transformations  # noqa: F401
+    trans = TransformationRegistry.create(
+        TransformerConfig(type="cast_columns", params={
+            "column_types": {"qty": "integer"}
+        })
+    )
+    ds = Dataset.infer_from_dicts(name="test", rows=[{"qty": "10", "label": "A"}])
+    result = trans.transform(ds)
+    qty_col = next(c for c in result.schema_def.columns if c.name == "qty")
+    assert qty_col.data_type == DataType.INTEGER
+
+
+def test_schema_evolution_drop_columns_mirror_mode():
+    """verify_and_plan dengan allow_drop_columns=True harus generate DROP COLUMN DDL
+    untuk kolom yang ada di destination tapi tidak ada di source."""
+    incoming = TableSchema(name="tbl", columns=[
+        ColumnDefinition(name="id",   data_type=DataType.INTEGER),
+        ColumnDefinition(name="name", data_type=DataType.STRING),
+    ])
+    # Destination punya 3 kolom: id, name, old_col (orphan)
+    existing = ["id", "name", "old_col"]
+    result = SchemaEvolutionVerifier.verify_and_plan(
+        dialect="mysql",
+        table_name="tbl",
+        existing_column_names=existing,
+        incoming_schema=incoming,
+        allow_drop_columns=True,
+    )
+    assert result.has_drift is True
+    assert "old_col" in result.dropped_columns
+    drop_ddl = " ".join(result.ddl_statements)
+    assert "DROP COLUMN" in drop_ddl
+    assert "old_col" in drop_ddl
+
+
+def test_schema_evolution_no_drop_without_flag():
+    """verify_and_plan default (allow_drop_columns=False) tidak boleh generate DROP COLUMN."""
+    incoming = TableSchema(name="tbl", columns=[
+        ColumnDefinition(name="id", data_type=DataType.INTEGER),
+    ])
+    existing = ["id", "extra_col"]
+    result = SchemaEvolutionVerifier.verify_and_plan(
+        dialect="mysql",
+        table_name="tbl",
+        existing_column_names=existing,
+        incoming_schema=incoming,
+    )
+    # Tidak ada drift dan tidak ada DROP DDL
+    assert result.has_drift is False
+    assert result.dropped_columns == []
+    assert all("DROP" not in ddl.upper() for ddl in result.ddl_statements)
+
+
+def test_schema_evolution_no_drop_for_sqlite_mirror():
+    """verify_and_plan SQLite dengan allow_drop_columns=True tidak generate DROP (tidak didukung SQLite)."""
+    incoming = TableSchema(name="tbl", columns=[
+        ColumnDefinition(name="id", data_type=DataType.INTEGER),
+    ])
+    existing = ["id", "orphan"]
+    result = SchemaEvolutionVerifier.verify_and_plan(
+        dialect="sqlite",
+        table_name="tbl",
+        existing_column_names=existing,
+        incoming_schema=incoming,
+        allow_drop_columns=True,
+    )
+    # SQLite: tidak generate DROP DDL meski allow_drop_columns=True
+    assert all("DROP" not in ddl.upper() for ddl in result.ddl_statements)

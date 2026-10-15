@@ -391,6 +391,22 @@ class PipelineRunnerService:
 
                 src_table = src_opts.get("table_name") or src_opts.get("table") or ""
 
+                # Inject cast_columns transformer if column_types override provided by user
+                source_transformers = list(built_transformers)
+                column_types = src_opts.get("column_types")
+                if column_types and isinstance(column_types, dict) and destination_type not in ("csv", "json", "jsonl", "sqlite"):
+                    from app.transformations.base import TransformerConfig as TC
+                    from app.transformations.registry import TransformationRegistry as TR
+                    cast_cfg = TC(type="cast_columns", params={"column_types": column_types})
+                    cast_transformer = TR.create(cast_cfg)
+                    # Prepend — cast first, then other transforms
+                    source_transformers = [cast_transformer] + source_transformers
+                    logger.info(
+                        "Injected cast_columns transformer for source %d with types: %s",
+                        i + 1,
+                        column_types,
+                    )
+
                 # Untuk file destination: pakai append setelah source pertama
                 effective_dest_opts = dict(destination_options)
                 user_mode = destination_options.get("if_exists", "append")
@@ -402,7 +418,7 @@ class PipelineRunnerService:
                     destination=destination,
                     source_table=src_table,
                     destination_table=dest_table,
-                    transformations=built_transformers,
+                    transformations=source_transformers,
                     load_mode=mode,
                 )
 

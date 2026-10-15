@@ -20,6 +20,7 @@ class SchemaEvolutionResult:
     has_drift: bool
     new_columns: List[ColumnDefinition] = field(default_factory=list)
     modified_columns: List[ColumnDefinition] = field(default_factory=list)
+    dropped_columns: List[str] = field(default_factory=list)
     verification_logs: List[str] = field(default_factory=list)
     ddl_statements: List[str] = field(default_factory=list)
 
@@ -36,10 +37,13 @@ class SchemaEvolutionVerifier:
         incoming_schema: TableSchema,
         quote_fn: Optional[Callable[[str], str]] = None,
         existing_columns_info: Optional[List[Dict[str, Any]]] = None,
+        allow_drop_columns: bool = False,
     ) -> SchemaEvolutionResult:
         """Compares target table columns against incoming schema,
 
         verifies safety, and plans ALTER TABLE statements if new columns or type changes are detected.
+        When allow_drop_columns=True (sync/mirror mode), also generates DROP COLUMN DDL for columns
+        that exist in the destination but are absent from the incoming source schema.
         """
         q = quote_fn or (lambda name: f'"{name}"')
         existing_lower = {name.lower() for name in existing_column_names}
@@ -135,7 +139,28 @@ class SchemaEvolutionVerifier:
 
                         ddl_list.append(ddl)
 
-        has_drift = (len(new_cols) > 0) or (len(mod_cols) > 0)
+        # 3. Drop orphaned columns (only when allow_drop_columns=True, i.e. sync/mirror mode)
+        dropped_cols: List[str] = []
+        if allow_drop_columns and dialect.lower() != "sqlite":
+            incoming_col_names_lower = {col.name.lower() for col in incoming_schema.columns}
+            for existing_name in existing_column_names:
+                if existing_name.lower() not in incoming_col_names_lower:
+                    dropped_cols.append(existing_name)
+                    drop_msg = (
+                        f"[Verified Schema Mirror] Kolom '{existing_name}' tidak ada di sumber. "
+                        f"Menghapus kolom dari tabel target '{table_name}' (mode mirror)."
+                    )
+                    logs.append(drop_msg)
+                    logger.info(drop_msg)
+                    col_drop_quoted = q(existing_name)
+                    ddl_drop = f"ALTER TABLE {table_quoted} DROP COLUMN {col_drop_quoted}"
+                    ddl_list.append(ddl_drop)
+        elif allow_drop_columns and dialect.lower() == "sqlite":
+            logger.warning(
+                "Mode mirror: DROP COLUMN tidak didukung oleh SQLite. Kolom orphan dibiarkan."
+            )
+
+        has_drift = (len(new_cols) > 0) or (len(mod_cols) > 0) or (len(dropped_cols) > 0)
         if not has_drift:
             logs.append(f"[Schema Verification] Struktur tabel '{table_name}' sesuai. Tidak ada perubahan skema.")
 
@@ -143,6 +168,7 @@ class SchemaEvolutionVerifier:
             has_drift=has_drift,
             new_columns=new_cols,
             modified_columns=mod_cols,
+            dropped_columns=dropped_cols,
             verification_logs=logs,
             ddl_statements=ddl_list,
         )

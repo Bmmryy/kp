@@ -195,41 +195,54 @@ def list_columns(
 
     # 2. CSV File
     if type == "csv":
-        import csv as _csv
         from pathlib import Path as _Path
         fpath = _Path(path)
         if not fpath.exists():
             raise HTTPException(status_code=404, detail=f"File '{path}' tidak ditemukan.")
         try:
-            with open(fpath, "r", encoding="utf-8-sig", errors="replace") as f:
-                reader = _csv.reader(f)
-                header = next(reader, [])
+            from app.connectors.base import ConnectorConfig
+            from app.connectors.csv import CSVSource
+            cfg = ConnectorConfig(name="tmp", connector_type="csv", options={"path": str(fpath)})
+            src = CSVSource(cfg)
+            schema = src.get_schema(fpath.stem)
             return {
-                "table": fpath.stem,
-                "columns": [{"name": h.strip(), "type": "VARCHAR(255)", "nullable": True, "primary_key": False} for h in header if h.strip()],
+                "table": schema.name,
+                "columns": [
+                    {
+                        "name": col.name,
+                        "type": col.data_type.value,
+                        "nullable": col.nullable,
+                        "primary_key": col.primary_key,
+                    }
+                    for col in schema.columns
+                ],
             }
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
 
-    # 3. JSON File
+    # 3. JSON / JSONL File
     if type in ("json", "jsonl"):
-        import json as _json
         from pathlib import Path as _Path
         fpath = _Path(path)
         if not fpath.exists():
             raise HTTPException(status_code=404, detail=f"File '{path}' tidak ditemukan.")
         try:
-            with open(fpath, "r", encoding="utf-8", errors="replace") as f:
-                if type == "jsonl":
-                    first_line = f.readline()
-                    sample = _json.loads(first_line) if first_line else {}
-                else:
-                    data = _json.load(f)
-                    sample = data[0] if isinstance(data, list) and data else (data if isinstance(data, dict) else {})
-            keys = list(sample.keys()) if isinstance(sample, dict) else []
+            from app.connectors.base import ConnectorConfig
+            from app.connectors.json import JSONSource
+            cfg = ConnectorConfig(name="tmp", connector_type=type, options={"path": str(fpath), "format": type})
+            src = JSONSource(cfg)
+            schema = src.get_schema(fpath.stem)
             return {
-                "table": fpath.stem,
-                "columns": [{"name": k, "type": "VARCHAR(255)", "nullable": True, "primary_key": False} for k in keys],
+                "table": schema.name,
+                "columns": [
+                    {
+                        "name": col.name,
+                        "type": col.data_type.value,
+                        "nullable": col.nullable,
+                        "primary_key": col.primary_key,
+                    }
+                    for col in schema.columns
+                ],
             }
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
