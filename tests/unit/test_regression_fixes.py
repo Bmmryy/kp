@@ -180,3 +180,52 @@ def test_generic_filter_transformer_registered():
     res_str = t_str.transform(ds)
     assert len(res_str.rows) == 1
     assert res_str.rows[0]["name"] == "Alice"
+
+
+def test_column_mapping_duplicate_detection_and_ignore_handling():
+    """Verify that multiple __ignore__ columns do not collide, but actual duplicate target columns raise error."""
+    from app.core.exceptions import TransformationError
+    import app.transformations.column_mapping
+
+    ds = Dataset(
+        schema=TableSchema(name="bed", columns=[
+            ColumnDefinition(name="bed_No", data_type=DataType.STRING),
+            ColumnDefinition(name="bed_Type", data_type=DataType.STRING),
+            ColumnDefinition(name="ward_No", data_type=DataType.STRING),
+        ]),
+        rows=[{"bed_No": "B01", "bed_Type": "VIP", "ward_No": "W10"}]
+    )
+
+    # 1. Multiple __ignore__ should NOT collide
+    valid_trans = TransformationRegistry.create(TransformerConfig(
+        type="column_mapping",
+        params={
+            "mapping": {
+                "bed_No": "dept_Id",
+                "bed_Type": "__ignore__",
+                "ward_No": "__ignore__",
+            },
+            "drop_unmapped": True,
+            "target_table": "Department",
+        }
+    ))
+    res = valid_trans.transform(ds)
+    assert len(res.rows) == 1
+    assert "dept_Id" in res.rows[0]
+    assert "bed_Type" not in res.rows[0]
+    assert "ward_No" not in res.rows[0]
+
+    # 2. Actual duplicate target columns should raise TransformationError with clear details
+    dup_trans = TransformationRegistry.create(TransformerConfig(
+        type="column_mapping",
+        params={
+            "mapping": {
+                "bed_No": "dept_Id",
+                "ward_No": "dept_Id",
+            },
+            "drop_unmapped": True,
+            "target_table": "Department",
+        }
+    ))
+    with pytest.raises(TransformationError, match="Dua kolom sumber.*dipetakan ke kolom target yang sama 'dept_Id'"):
+        dup_trans.transform(ds)

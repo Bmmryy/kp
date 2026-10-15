@@ -535,22 +535,31 @@ async function handleRunPipeline() {
   // Attach Column Selection or Column Mapping
   if (state.dstTableMode === "existing" && state.dstSelectedTable && state.dstColumns.length > 0) {
     const activeMapping = {};
+    const seenDst = {};
     for (const srcCol of state.srcSelectedColumns) {
       const dstCol = state.columnMapping[srcCol];
       if (dstCol && dstCol !== "__ignore__") {
+        const dstLower = dstCol.toLowerCase();
+        if (seenDst[dstLower]) {
+          toast(`Pemetaan kolom tidak valid: Dua kolom sumber ('${seenDst[dstLower]}' dan '${srcCol}') dipetakan ke kolom target yang sama '${dstCol}'. Ubah pemetaan agar setiap kolom tujuan unik.`, "error", 6000);
+          return;
+        }
+        seenDst[dstLower] = srcCol;
         activeMapping[srcCol] = dstCol;
       }
     }
-    if (Object.keys(activeMapping).length > 0) {
-      transforms.push({
-        type: "column_mapping",
-        params: {
-          mapping: activeMapping,
-          drop_unmapped: true,
-          target_table: state.dstSelectedTable,
-        },
-      });
+    if (Object.keys(activeMapping).length === 0) {
+      toast("Perhatian: Belum ada kolom sumber yang dipetakan ke tabel tujuan. Silakan petakan minimal satu kolom tujuan pada kotak Pemetaan Kolom.", "error", 5000);
+      return;
     }
+    transforms.push({
+      type: "column_mapping",
+      params: {
+        mapping: activeMapping,
+        drop_unmapped: true,
+        target_table: state.dstSelectedTable,
+      },
+    });
   } else if (state.srcSelectedColumns.length > 0 && state.srcColumns.length > 0 && state.srcSelectedColumns.length < state.srcColumns.length) {
     transforms.push({
       type: "select_columns",
@@ -1943,6 +1952,7 @@ async function selectSingleSrcTable(cardId, tableName) {
     state.srcSelectedTable = "";
     state.srcColumns = [];
     state.srcSelectedColumns = [];
+    state.columnMapping = {};
     renderSrcDbCards();
     renderColumnMapping();
     renderColumnTransformRules();
@@ -1951,6 +1961,7 @@ async function selectSingleSrcTable(cardId, tableName) {
 
   card.tables = [tableName];
   state.srcSelectedTable = tableName;
+  state.columnMapping = {};
   toast(`Memuat kolom tabel '${tableName}'...`, "info", 2000);
 
   try {
@@ -2135,6 +2146,7 @@ async function onDstDbSelected(database) {
 
 async function onDstTableSelected(tableName) {
   state.dstSelectedTable = tableName;
+  state.columnMapping = {}; // Reset pemetaan saat tabel tujuan berubah
   const loadModeGroup = $("#dst-load-mode-group");
   if (!tableName) {
     const mapBox = $("#dst-column-mapping-container");
@@ -2162,6 +2174,51 @@ async function onDstTableSelected(tableName) {
   }
 }
 
+function autoMatchColumns() {
+  state.columnMapping = {};
+  const matchedTargets = new Set();
+  state.srcSelectedColumns.forEach(srcName => {
+    const srcClean = srcName.toLowerCase().replace(/[^a-z0-9]/g, "");
+    let match = state.dstColumns.find(d => 
+      d.name.toLowerCase() === srcName.toLowerCase() && !matchedTargets.has(d.name.toLowerCase())
+    );
+    if (!match) {
+      match = state.dstColumns.find(d => 
+        d.name.toLowerCase().replace(/[^a-z0-9]/g, "") === srcClean && !matchedTargets.has(d.name.toLowerCase())
+      );
+    }
+    if (match) {
+      state.columnMapping[srcName] = match.name;
+      matchedTargets.add(match.name.toLowerCase());
+    } else {
+      state.columnMapping[srcName] = "__ignore__";
+    }
+  });
+  renderColumnMapping();
+  toast("Pemetaan otomatis berdasarkan kecocokan nama kolom selesai.", "info", 2000);
+}
+
+function positionalMatchColumns() {
+  state.columnMapping = {};
+  state.srcSelectedColumns.forEach((srcName, idx) => {
+    if (idx < state.dstColumns.length) {
+      state.columnMapping[srcName] = state.dstColumns[idx].name;
+    } else {
+      state.columnMapping[srcName] = "__ignore__";
+    }
+  });
+  renderColumnMapping();
+  toast("Pemetaan 1-ke-1 berurutan diterapkan (tanpa duplikasi).", "info", 2000);
+}
+
+function ignoreAllColumns() {
+  state.srcSelectedColumns.forEach(srcName => {
+    state.columnMapping[srcName] = "__ignore__";
+  });
+  renderColumnMapping();
+  toast("Semua pemetaan diubah ke Abaikan.", "info", 1500);
+}
+
 function renderColumnMapping() {
   const container = $("#dst-column-mapping-container");
   if (!container) return;
@@ -2171,36 +2228,86 @@ function renderColumnMapping() {
     return;
   }
 
+  // Preserve scroll position
+  const scrollPos = container.querySelector(".column-mapping-table")?.scrollTop || 0;
+
+  // Auto-match unmapped columns without duplicate targets
+  const matchedTargets = new Set(
+    Object.values(state.columnMapping).filter(v => v && v !== "__ignore__").map(v => v.toLowerCase())
+  );
+
+  state.srcSelectedColumns.forEach(srcName => {
+    if (!state.columnMapping[srcName]) {
+      const srcClean = srcName.toLowerCase().replace(/[^a-z0-9]/g, "");
+      let match = state.dstColumns.find(d => 
+        d.name.toLowerCase() === srcName.toLowerCase() && !matchedTargets.has(d.name.toLowerCase())
+      );
+      if (!match) {
+        match = state.dstColumns.find(d => 
+          d.name.toLowerCase().replace(/[^a-z0-9]/g, "") === srcClean && !matchedTargets.has(d.name.toLowerCase())
+        );
+      }
+      if (match) {
+        state.columnMapping[srcName] = match.name;
+        matchedTargets.add(match.name.toLowerCase());
+      } else {
+        state.columnMapping[srcName] = "__ignore__";
+      }
+    }
+  });
+
+  // Calculate duplicate targets
+  const targetCounts = {};
+  for (const srcName of state.srcSelectedColumns) {
+    const dst = state.columnMapping[srcName];
+    if (dst && dst !== "__ignore__") {
+      const k = dst.toLowerCase();
+      targetCounts[k] = (targetCounts[k] || 0) + 1;
+    }
+  }
+
+  const hasDuplicate = Object.values(targetCounts).some(cnt => cnt > 1);
+
   container.style.display = "";
   container.innerHTML = `
     <div class="column-mapping-box">
       <div class="column-mapping-header">
-        <h4>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>
-          Pemetaan Kolom (Sumber ──► Tabel Target: ${state.dstSelectedTable})
-        </h4>
-        <span style="font-size:11px;color:var(--text-tertiary)">Pilih kolom target yang diisi</span>
+        <div>
+          <h4>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>
+            Pemetaan Kolom (Sumber ──► Tabel Target: ${state.dstSelectedTable})
+          </h4>
+          <span style="font-size:11px;color:var(--text-tertiary)">Pilih kolom target yang diisi untuk setiap kolom sumber</span>
+        </div>
+        <div class="mapping-quick-actions">
+          <button type="button" class="mapping-btn-small" onclick="autoMatchColumns()" title="Cocokkan berdasarkan nama kolom yang mirip">Cocokkan Nama</button>
+          <button type="button" class="mapping-btn-small" onclick="positionalMatchColumns()" title="Petakan berurutan kolom ke-1 ke kolom ke-1, dll tanpa duplikat">1-ke-1 Berurutan</button>
+          <button type="button" class="mapping-btn-small" onclick="ignoreAllColumns()" title="Set semua ke Abaikan">Abaikan Semua</button>
+        </div>
       </div>
+
+      ${hasDuplicate ? `
+        <div style="background:var(--red-tint);color:var(--red-text);border:1px solid rgba(255,59,48,0.25);padding:7px 10px;border-radius:6px;font-size:11.5px;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:6px">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Ada kolom tujuan yang dipilih lebih dari sekali. Setiap kolom tujuan hanya boleh menerima 1 kolom sumber.
+        </div>
+      ` : ''}
+
       <div class="column-mapping-table">
         ${state.srcSelectedColumns.map(srcName => {
           const srcCol = state.srcColumns.find(c => c.name === srcName);
           const srcType = srcCol ? srcCol.type : "";
-
-          // Auto-match if not yet mapped
-          if (!state.columnMapping[srcName]) {
-            const match = state.dstColumns.find(d => d.name.toLowerCase() === srcName.toLowerCase());
-            state.columnMapping[srcName] = match ? match.name : (state.dstColumns[0]?.name || "__ignore__");
-          }
-          const currentDst = state.columnMapping[srcName];
+          const currentDst = state.columnMapping[srcName] || "__ignore__";
+          const isDup = currentDst !== "__ignore__" && targetCounts[currentDst.toLowerCase()] > 1;
 
           return `
-            <div class="column-mapping-row">
+            <div class="column-mapping-row" style="${isDup ? 'background:rgba(255,59,48,0.06);border:1px solid rgba(255,59,48,0.3)' : ''}">
               <div class="mapping-src-col" title="${srcName}">
                 <span>${srcName}</span>
                 ${srcType ? `<span class="column-type-badge">${srcType}</span>` : ""}
               </div>
               <span class="mapping-arrow">──►</span>
-              <select class="form-select mapping-dst-select" onchange="updateColumnMapping('${srcName}', this.value)">
+              <select class="form-select mapping-dst-select ${isDup ? 'duplicate' : ''}" onchange="updateColumnMapping('${srcName}', this.value)">
                 <option value="__ignore__" ${currentDst === '__ignore__' ? 'selected' : ''}>— Abaikan / Jangan Isi —</option>
                 ${state.dstColumns.map(dc => `
                   <option value="${dc.name}" ${currentDst === dc.name ? 'selected' : ''}>
@@ -2208,19 +2315,24 @@ function renderColumnMapping() {
                   </option>
                 `).join("")}
               </select>
+              ${isDup ? `<div class="mapping-dup-warning"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Kolom '${currentDst}' dipilih juga oleh kolom sumber lain. Ubah salah satunya.</div>` : ''}
             </div>
           `;
         }).join("")}
       </div>
       <div style="font-size:11px;color:var(--text-tertiary);margin-top:8px">
-        ✓ Data hasil transformasi akan otomatis mengisi kolom-kolom tabel target yang Anda pilih di atas.
+        ✓ Data hasil transformasi akan otomatis mengisi kolom-kolom tabel target yang Anda pilih di atas. Kolom yang diatur ke "— Abaikan —" tidak akan dimasukkan.
       </div>
     </div>
   `;
+
+  const newTable = container.querySelector(".column-mapping-table");
+  if (newTable && scrollPos > 0) newTable.scrollTop = scrollPos;
 }
 
 function updateColumnMapping(srcCol, dstCol) {
   state.columnMapping[srcCol] = dstCol;
+  renderColumnMapping();
 }
 
 function resetTaskBuilder() {
