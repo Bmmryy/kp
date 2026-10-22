@@ -284,7 +284,7 @@ def list_exported_files() -> List[Dict[str, Any]]:
         if not directory.exists():
             continue
         for p in directory.glob("*.*"):
-            if p.suffix.lower() in (".csv", ".json", ".jsonl", ".sqlite", ".db") and p.name not in seen:
+            if p.suffix.lower() in (".csv", ".json", ".jsonl", ".sqlite", ".db", ".xlsx") and p.name not in seen:
                 if p.name.startswith("."):
                     continue
                 seen.add(p.name)

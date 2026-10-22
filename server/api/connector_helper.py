@@ -24,16 +24,18 @@ router = APIRouter(prefix="/api/connector", tags=["connector"])
 
 def _build_url(db_type: str, host: str, port: int, user: str, password: str, database: str = "") -> str:
     """Build SQLAlchemy connection URL dari parameter koneksi."""
-    pw = password or ""
+    u = user.strip() if user else ""
+    pw = password.strip() if (password and db_type in ("oracle", "oracle+oracledb")) else (password or "")
     if db_type in ("mysql", "mysql+pymysql"):
         db_part = f"/{database}" if database else ""
-        return f"mysql+pymysql://{user}:{pw}@{host}:{port}{db_part}?charset=utf8mb4"
+        return f"mysql+pymysql://{u}:{pw}@{host}:{port}{db_part}?charset=utf8mb4"
     elif db_type in ("postgresql", "postgres", "postgresql+psycopg2"):
         db_part = f"/{database}" if database else "/postgres"
-        return f"postgresql+psycopg2://{user}:{pw}@{host}:{port}{db_part}"
+        return f"postgresql+psycopg2://{u}:{pw}@{host}:{port}{db_part}"
     elif db_type in ("oracle", "oracle+oracledb"):
-        service = database or "FREEPDB1"
-        return f"oracle+oracledb://{user}:{pw}@{host}:{port}/?service_name={service}"
+        # Untuk Oracle: database parameter = schema/user, service_name selalu FREEPDB1
+        # Gunakan service_name tetap FREEPDB1 agar koneksi tidak putus saat ganti schema
+        return f"oracle+oracledb://{u}:{pw}@{host}:{port}/?service_name=FREEPDB1"
     else:
         raise ValueError(f"Tipe database tidak didukung: {db_type}")
 
@@ -127,14 +129,28 @@ def list_databases(type: str, host: str, port: int, user: str, password: str = "
                 dbs = [row[0] for row in result if row[0].lower() not in system_dbs]
             elif type in ("oracle", "oracle+oracledb"):
                 try:
+                    # Tampilkan semua schema yang memiliki tabel + schema user yang login
                     result = conn.execute(
-                        text("SELECT username FROM all_users WHERE oracle_maintained = 'N' ORDER BY username")
+                        text("""
+                            SELECT DISTINCT owner FROM all_tables
+                            WHERE owner NOT IN (
+                                'SYS','AUDSYS','SYSTEM','OUTLN','DIP','ORACLE_OCM','DBSNMP',
+                                'APPQOSSYS','DBSFWUSER','GGSYS','ANONYMOUS','CTXSYS','DVSYS',
+                                'DVF','GSMADMIN_INTERNAL','MDSYS','OLAPSYS','XDB','WMSYS',
+                                'GSMCATUSER','MDDATA','SYSBACKUP','REMOTE_SCHEDULER_AGENT',
+                                'PDBADMIN','GSMROOTUSER','SI_INFORMTN_SCHEMA','DGGRID',
+                                'LBACSYS','ORDS_METADATA','ORDS_PUBLIC_USER','ORDS_PUBLIC_USER2',
+                                'ORDS_PUBLIC_USER3','SYS$UMF','SYSRAC','XS$NULL'
+                            )
+                            ORDER BY owner
+                        """)
                     )
                     dbs = [row[0] for row in result]
                 except Exception:
                     dbs = []
-                if not dbs:
-                    dbs = [user.upper()]
+                # Selalu sertakan schema milik user yang login jika belum ada
+                if user.upper() not in dbs:
+                    dbs.insert(0, user.upper())
             else:
                 raise HTTPException(status_code=400, detail=f"Tipe tidak didukung: {type}")
         engine.dispose()
@@ -167,17 +183,20 @@ def list_tables(type: str, host: str = "localhost", port: int = 3306, user: str 
         raise HTTPException(status_code=400, detail="Parameter 'database' wajib diisi.")
     try:
         engine = _get_engine(type, host, port, user, password, database)
-        insp = sa_inspect(engine)
         if type in ("oracle", "oracle+oracledb"):
-            tables = insp.get_table_names(schema=database.upper()) or insp.get_table_names()
+            # Untuk Oracle: gunakan query langsung ke all_tables berdasarkan owner/schema
+            schema = database.upper() if database else user.upper()
+            with engine.connect() as conn:
+                result = conn.execute(
+                    text("SELECT table_name FROM all_tables WHERE owner = :schema ORDER BY table_name"),
+                    {"schema": schema}
+                )
+                tables = [row[0] for row in result]
         else:
+            insp = sa_inspect(engine)
             tables = insp.get_table_names()
         engine.dispose()
         return {"tables": tables}
-    except OperationalError as e:
-        raise HTTPException(status_code=503, detail=f"Koneksi gagal: {e.orig or e}")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
     except OperationalError as e:
         raise HTTPException(status_code=503, detail=f"Koneksi gagal: {e.orig or e}")
     except Exception as e:

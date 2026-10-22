@@ -6,6 +6,7 @@ from app.connectors.base import (
     SourceConnector,
 )
 from app.connectors.csv import CSVDestination, CSVSource
+from app.connectors.excel import ExcelDestination, ExcelSource
 from app.connectors.json import JSONDestination, JSONSource
 from app.connectors.mysql import MySQLDestination, MySQLSource
 from app.connectors.oracle import OracleDestination, OracleSource
@@ -18,6 +19,12 @@ def _register_builtin_connectors() -> None:
     # CSV
     ConnectorRegistry.register_source("csv", CSVSource)
     ConnectorRegistry.register_destination("csv", CSVDestination)
+
+    # Excel (.xlsx)
+    ConnectorRegistry.register_source("excel", ExcelSource)
+    ConnectorRegistry.register_destination("excel", ExcelDestination)
+    ConnectorRegistry.register_source("xlsx", ExcelSource)
+    ConnectorRegistry.register_destination("xlsx", ExcelDestination)
 
     # JSON & JSON Lines
     ConnectorRegistry.register_source("json", JSONSource)

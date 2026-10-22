@@ -36,6 +36,14 @@ const CONNECTOR_FIELDS = {
     { key: "delimiter", label: "Delimiter",  type: "text",   placeholder: ",",                 required: false },
     { key: "encoding",  label: "Encoding",   type: "text",   placeholder: "utf-8",             required: false },
   ],
+  excel: [
+    { key: "path",       label: "File Path (.xlsx)", type: "text", placeholder: "output/data.xlsx", required: true },
+    { key: "sheet_name", label: "Sheet Name",        type: "text", placeholder: "Sheet1",           required: false },
+  ],
+  xlsx: [
+    { key: "path",       label: "File Path (.xlsx)", type: "text", placeholder: "output/data.xlsx", required: true },
+    { key: "sheet_name", label: "Sheet Name",        type: "text", placeholder: "Sheet1",           required: false },
+  ],
   json: [
     { key: "path", label: "File Path", type: "text", placeholder: "data/patients.json", required: true },
   ],
@@ -63,12 +71,13 @@ const CONNECTOR_FIELDS = {
     { key: "table_name", label: "Table",    type: "text",     placeholder: "patients_dim", required: false },
   ],
   oracle: [
-    { key: "host",       label: "Host",     type: "text",     placeholder: "localhost",   required: true },
-    { key: "port",       label: "Port",     type: "number",   placeholder: "1521",        required: false },
-    { key: "database",   label: "Service Name", type: "text", placeholder: "FREEPDB1",    required: true },
-    { key: "user",       label: "User",     type: "text",     placeholder: "system",      required: true },
-    { key: "password",   label: "Password", type: "password", placeholder: "••••••••",    required: false },
-    { key: "table_name", label: "Table",    type: "text",     placeholder: "PATIENTS",    required: false },
+    { key: "host",         label: "Host",         type: "text",     placeholder: "localhost",   required: true },
+    { key: "port",         label: "Port",         type: "number",   placeholder: "1521",        required: false },
+    { key: "service_name", label: "Service Name", type: "text",     placeholder: "FREEPDB1",    required: true },
+    { key: "database",     label: "Schema/Owner", type: "text",     placeholder: "SYSTEM",      required: true },
+    { key: "user",         label: "User",         type: "text",     placeholder: "system",      required: true },
+    { key: "password",     label: "Password",     type: "password", placeholder: "••••••••",    required: false },
+    { key: "table_name",   label: "Table",        type: "text",     placeholder: "HOSPITAL_PATIENTS", required: false },
   ],
 };
 CONNECTOR_FIELDS.postgres = CONNECTOR_FIELDS.postgresql;
@@ -1029,29 +1038,29 @@ function showCreateScheduleModal(prefillRun = null, editJob = null) {
   modal.id = "modal-create-schedule";
   modal.style.cssText = `
     position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;
-    background:rgba(0,0,0,0.35);backdrop-filter:blur(6px);
+    background:rgba(0,0,0,0.45);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
   `;
   modal.innerHTML = `
-    <div style="background:#fff;border-radius:18px;padding:32px;width:580px;max-width:96vw;max-height:90vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,0.18);animation:fadeInUp .22s ease">
+    <div style="background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:18px;padding:32px;width:580px;max-width:96vw;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-xl);animation:fadeInUp .22s ease">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
         <div>
-          <h2 style="font-size:17px;font-weight:700;margin:0">${editJob ? "Edit Jadwal ETL" : "Tambah Jadwal ETL"}</h2>
+          <h2 style="font-size:17px;font-weight:700;margin:0;color:var(--text)">${editJob ? "Edit Jadwal ETL" : "Tambah Jadwal ETL"}</h2>
           <div style="font-size:12px;color:var(--text-tertiary);margin-top:2px">
             ${editJob ? `Perbarui parameter, koneksi, atau frekuensi jadwal "${editJob.name}"` : "Jadwalkan task berdasarkan riwayat atau task yang pernah dijalankan"}
           </div>
         </div>
-        <button onclick="document.getElementById('modal-create-schedule').remove()" style="background:none;border:none;cursor:pointer;padding:4px">
+        <button onclick="document.getElementById('modal-create-schedule').remove()" style="background:none;border:none;cursor:pointer;padding:4px;color:var(--text-secondary)">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
       </div>
 
       <!-- Pilih dari Riwayat Pipeline / Task (hanya jika mode tambah baru) -->
-      <div class="form-group full-width" style="margin-bottom:16px;background:#F6F8FA;padding:12px 14px;border-radius:10px;border:1px solid var(--border);${editJob ? 'display:none;' : ''}">
+      <div class="form-group full-width" style="margin-bottom:16px;background:var(--surface-secondary);padding:12px 14px;border-radius:10px;border:1px solid var(--border);${editJob ? 'display:none;' : ''}">
         <label class="form-label" style="font-size:12px;font-weight:600;margin-bottom:6px;display:flex;align-items:center;gap:6px">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
           Pilih Task dari Riwayat yang Pernah Dijalankan
         </label>
-        <select class="form-select" id="sc-history-picker" onchange="onSelectHistoryForSchedule(this.value)" style="font-size:12.5px;background:#fff">
+        <select class="form-select" id="sc-history-picker" onchange="onSelectHistoryForSchedule(this.value)" style="font-size:12.5px;background:var(--surface);color:var(--text);border:1px solid var(--border)">
           <option value="">— Pilih task dari riwayat untuk mengisi otomatis form —</option>
         </select>
       </div>
@@ -1123,7 +1132,7 @@ function showCreateScheduleModal(prefillRun = null, editJob = null) {
         </div>
 
         <!-- Pilihan Khusus Sinkronisasi & Auto Schema Evolution -->
-        <div class="form-group full-width" style="margin:0;background:#F8FAFC;border:1.5px solid #DCE3E8;padding:14px;border-radius:12px">
+        <div class="form-group full-width" style="margin:0;background:var(--surface-secondary);border:1px solid var(--border);padding:14px;border-radius:12px">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
             <label style="font-size:12.5px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:6px;margin:0">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--primary,#0071E3)" stroke-width="2.5"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
@@ -1136,7 +1145,7 @@ function showCreateScheduleModal(prefillRun = null, editJob = null) {
             Atur bagaimana database tujuan merespons setiap kali ada update data atau perubahan kolom di tabel sumber (misal update via phpMyAdmin):
           </div>
 
-          <select class="form-select" id="sc-load-mode" style="font-size:12.5px;font-weight:600;background:#fff;margin-bottom:8px">
+          <select class="form-select" id="sc-load-mode" style="font-size:12.5px;font-weight:600;background:var(--surface);color:var(--text);border:1px solid var(--border);margin-bottom:8px">
             <option value="sync">⚡ Sync / Mirror — Selalu Sinkron Otomatis (Data &amp; Struktur Kolom Mengikuti Sumber)</option>
             <option value="append">➕ Append — Tambah Data Baru (Otomatis Tambah Kolom Baru)</option>
             <option value="truncate">🔄 Truncate &amp; Reload — Kosongkan lalu Muat Ulang Data Terbaru</option>
@@ -1608,7 +1617,7 @@ function selectSrcFileFormat(fmt) {
   if (csvOpts)    csvOpts.style.display    = fmt === "csv"    ? "" : "none";
   if (sqliteOpts) sqliteOpts.style.display = fmt === "sqlite" ? "" : "none";
   // Update accepted file types
-  const acceptMap = { csv: ".csv", json: ".json", jsonl: ".jsonl", sqlite: ".sqlite,.db" };
+  const acceptMap = { csv: ".csv", excel: ".xlsx,.xls", xlsx: ".xlsx,.xls", json: ".json", jsonl: ".jsonl", sqlite: ".sqlite,.db" };
   if (fileInput) fileInput.accept = acceptMap[fmt] || "";
   // Re-detect columns if files already uploaded
   if (state.srcUploadedFiles.length > 0) detectFileColumns();
@@ -2036,8 +2045,9 @@ function selectDstFileFormat(fmt) {
   $$("[data-fmt]", $("#dst-file-format-group")).forEach(btn => {
     btn.classList.toggle("selected", btn.dataset.fmt === fmt);
   });
+  const ext = (fmt === "excel" || fmt === "xlsx") ? ".xlsx" : `.${fmt}`;
   const extSpan = $("#dst-file-ext");
-  if (extSpan) extSpan.textContent = `.${fmt}`;
+  if (extSpan) extSpan.textContent = ext;
   // Show table name field for SQLite
   const sqliteGroup = $("#dst-sqlite-table-group");
   if (sqliteGroup) sqliteGroup.style.display = fmt === "sqlite" ? "" : "none";
@@ -2469,7 +2479,8 @@ function collectDestination() {
   if (state.dstCategory === "file") {
     const name = $("#dst-file-name")?.value.trim() || "output";
     const fmt  = state.dstFileFormat;
-    const path = `output/${name}.${fmt}`;
+    const ext  = (fmt === "excel" || fmt === "xlsx") ? "xlsx" : fmt;
+    const path = `output/${name}.${ext}`;
     const opts = { path };
     if (fmt === "sqlite") {
       opts.table_name = $("#dst-sqlite-table")?.value.trim() || "etl_output";
@@ -2836,9 +2847,68 @@ function setStatValue(id, value) {
   if (el) el.textContent = value;
 }
 
+// ─── Theme Management (Apple HIG Light / Dark) ──────────────────────────────
+
+function initTheme() {
+  const saved = localStorage.getItem("flowetl_theme");
+  const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const initial = saved || (prefersDark ? "dark" : "light");
+  setTheme(initial, false);
+
+  if (window.matchMedia) {
+    try {
+      window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", (e) => {
+        if (!localStorage.getItem("flowetl_theme")) {
+          setTheme(e.matches ? "dark" : "light", false);
+        }
+      });
+    } catch (_) {}
+  }
+}
+
+function setTheme(theme, save = true) {
+  document.documentElement.setAttribute("data-theme", theme);
+  if (save) {
+    try { localStorage.setItem("flowetl_theme", theme); } catch (_) {}
+  }
+  const btn = document.getElementById("theme-toggle-btn");
+  if (btn) {
+    if (theme === "dark") {
+      // Sun icon to switch to light
+      btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="5"></circle>
+        <line x1="12" y1="1" x2="12" y2="3"></line>
+        <line x1="12" y1="21" x2="12" y2="23"></line>
+        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+        <line x1="1" y1="12" x2="3" y2="12"></line>
+        <line x1="21" y1="12" x2="23" y2="12"></line>
+        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+      </svg>`;
+      btn.title = "Beralih ke Mode Terang (Light Mode)";
+      btn.setAttribute("aria-label", "Switch to light mode");
+    } else {
+      // Moon icon to switch to dark
+      btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+      </svg>`;
+      btn.title = "Beralih ke Mode Gelap (Dark Mode)";
+      btn.setAttribute("aria-label", "Switch to dark mode");
+    }
+  }
+}
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute("data-theme") || "light";
+  const next = current === "dark" ? "light" : "dark";
+  setTheme(next, true);
+}
+
 // ─── Init ─────────────────────────────────────────────────────────────────────
 
 async function init() {
+  initTheme();
   // Load registered connectors from API
   try {
     const res = await fetch(API.connectors);
@@ -2870,4 +2940,5 @@ async function init() {
   updateDashboardStats();
 }
 
+try { initTheme(); } catch (_) {}
 document.addEventListener("DOMContentLoaded", init);

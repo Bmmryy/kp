@@ -15,3 +15,6 @@ uvicorn[standard]>=0.29.0
 sse-starlette>=1.8.0
 jinja2>=3.1.0
 python-multipart>=0.0.9
+
+# Excel Support
+openpyxl>=3.1.0

@@ -62,7 +62,7 @@ class PipelineRun:
 
     def to_dict(self) -> Dict[str, Any]:
         output_file = None
-        if self.destination_type in ("csv", "json", "jsonl", "sqlite"):
+        if self.destination_type in ("csv", "json", "jsonl", "sqlite", "excel", "xlsx"):
             if self.output_files:
                 output_file = self.output_files[0]
             else:
@@ -298,7 +298,7 @@ class PipelineRunnerService:
                     "duration_seconds": round(context.metrics.duration_seconds, 4),
                 }
                 dest_file = destination_options.get("path") or destination_options.get("database")
-                if destination_type in ("csv", "json", "jsonl", "sqlite") and dest_file:
+                if destination_type in ("csv", "json", "jsonl", "sqlite", "excel", "xlsx") and dest_file:
                     run.output_files = [dest_file]
 
                 run.push_event("done", {
@@ -372,7 +372,7 @@ class PipelineRunnerService:
                 or "etl_output"
             )
 
-            is_file_dest = destination_type in ("csv", "json", "jsonl", "sqlite")
+            is_file_dest = destination_type in ("csv", "json", "jsonl", "sqlite", "excel", "xlsx")
 
             for i, src_spec in enumerate(sources):
                 src_type = src_spec["type"]

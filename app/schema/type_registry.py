@@ -248,15 +248,15 @@ def _initialize_default_type_mappings() -> None:
     # Oracle Mappings
     # ==========================================
     oracle_mappings = [
-        (r"^number\(1(,0)?\)$", DataType.BOOLEAN),
+        (r"^number\(1(,\s*0)?\)$", DataType.BOOLEAN),
         (r"^boolean$", DataType.BOOLEAN),
-        (r"^number\(\d+\)$", DataType.INTEGER),
+        (r"^number\(\d+(,\s*0)?\)$", DataType.INTEGER),
         (r"^(smallint|int|integer)$", DataType.INTEGER),
         (r"^(binary_float|float|binary_double|double precision)", DataType.FLOAT),
         (r"^(number|decimal|numeric)", DataType.DECIMAL),
-        (r"^(varchar2|nvarchar2|char|nchar|clob|nclob|long|rowid)", DataType.STRING),
+        (r"^(varchar2?|nvarchar2?|char|nchar|clob|nclob|long|rowid|text)", DataType.STRING),
         (r"^date$", DataType.DATE),
-        (r"^timestamp", DataType.DATETIME),
+        (r"^(timestamp|interval)", DataType.DATETIME),
         (r"^(blob|raw|long raw|bfile)", DataType.BINARY),
         (r"^json$", DataType.JSON),
     ]
@@ -295,6 +295,7 @@ def _initialize_default_type_mappings() -> None:
         TypeRegistry.register_native_mapping("csv", pat, c_type)
         TypeRegistry.register_native_mapping("json", pat, c_type)
         TypeRegistry.register_native_mapping("excel", pat, c_type)
+        TypeRegistry.register_native_mapping("xlsx", pat, c_type)
 
     file_targets = {
         DataType.INTEGER: "integer",
@@ -312,6 +313,7 @@ def _initialize_default_type_mappings() -> None:
         TypeRegistry.register_native_target("csv", c_type, native)
         TypeRegistry.register_native_target("json", c_type, native)
         TypeRegistry.register_native_target("excel", c_type, native)
+        TypeRegistry.register_native_target("xlsx", c_type, native)
 
 
 # Auto-initialize standard mappings on module load

@@ -7,7 +7,15 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <title>FlowETL — Visual Data Integration</title>
-  <link rel="stylesheet" href="/static/app.css?v=20261015_typeinfer">
+  <script>
+    (function(){
+      try {
+        var t = localStorage.getItem("flowetl_theme") || (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+        document.documentElement.setAttribute("data-theme", t);
+      } catch(e){}
+    })();
+  </script>
+  <link rel="stylesheet" href="/static/app.css?v=20261022_apple">
 </head>
 <body>
 
@@ -131,7 +139,20 @@
 
     <!-- Topbar -->
     <header class="topbar">
-      <span id="topbar-title" class="topbar-title">Dashboard</span>
+      <div class="topbar-left">
+        <span id="topbar-title" class="topbar-title">Dashboard</span>
+      </div>
+      <div class="topbar-right">
+        <div class="topbar-status">
+          <span class="status-dot"></span>
+          <span>Engine Active</span>
+        </div>
+        <button id="theme-toggle-btn" class="topbar-btn" onclick="toggleTheme()" title="Ganti Tema (Light/Dark)" aria-label="Toggle theme">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+        </button>
+      </div>
     </header>
 
     <!-- Content Area -->
@@ -471,6 +492,7 @@
                   <label class="form-label">Format File</label>
                   <div class="dest-format-group" id="src-file-format-group">
                     <button class="dest-format-btn selected" data-fmt="csv" onclick="selectSrcFileFormat('csv')">CSV</button>
+                    <button class="dest-format-btn" data-fmt="excel" onclick="selectSrcFileFormat('excel')">Excel</button>
                     <button class="dest-format-btn" data-fmt="json" onclick="selectSrcFileFormat('json')">JSON</button>
                     <button class="dest-format-btn" data-fmt="jsonl" onclick="selectSrcFileFormat('jsonl')">JSONL</button>
                     <button class="dest-format-btn" data-fmt="sqlite" onclick="selectSrcFileFormat('sqlite')">SQLite</button>
@@ -692,6 +714,7 @@
                   <label class="form-label">Format Output</label>
                   <div class="dest-format-group" id="dst-file-format-group">
                     <button class="dest-format-btn selected" data-fmt="csv" onclick="selectDstFileFormat('csv')">CSV</button>
+                    <button class="dest-format-btn" data-fmt="excel" onclick="selectDstFileFormat('excel')">Excel (.xlsx)</button>
                     <button class="dest-format-btn" data-fmt="json" onclick="selectDstFileFormat('json')">JSON</button>
                     <button class="dest-format-btn" data-fmt="jsonl" onclick="selectDstFileFormat('jsonl')">JSONL</button>
                     <button class="dest-format-btn" data-fmt="sqlite" onclick="selectDstFileFormat('sqlite')">SQLite</button>
@@ -779,36 +802,36 @@
                 <div id="dst-load-mode-group" class="form-group" style="display:none;margin-top:10px">
                   <label class="form-label" style="margin-bottom:6px">Mode Sinkronisasi &amp; Pengisian Data</label>
                   <div style="display:flex;flex-direction:column;gap:7px">
-                    <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-size:12.5px;background:var(--bg-canvas);padding:8px 10px;border-radius:8px;border:1px solid var(--border)">
+                    <label class="radio-card">
                       <input type="radio" name="dst-load-mode" value="sync" id="dst-mode-sync" onchange="setDstLoadMode('sync')" style="margin-top:2px" checked>
                       <div>
                         <strong>Sync / Mirror (Selalu Sinkron Otomatis)</strong>
                         <div style="font-size:11.5px;color:var(--text-secondary)">Tabel tujuan selalu mengikuti perubahan data &amp; struktur sumber (tambah kolom baru &amp; tipe data)</div>
                       </div>
                     </label>
-                    <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-size:12.5px;background:var(--bg-canvas);padding:8px 10px;border-radius:8px;border:1px solid var(--border)">
+                    <label class="radio-card">
                       <input type="radio" name="dst-load-mode" value="append" id="dst-mode-append" onchange="setDstLoadMode('append')" style="margin-top:2px">
                       <div>
                         <strong>Append (Tambah ke Data yang Ada)</strong>
                         <div style="font-size:11.5px;color:var(--text-secondary)">Tambah baris baru tanpa menghapus data lama + otomatis tambah kolom baru jika ada</div>
                       </div>
                     </label>
-                    <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-size:12.5px;background:var(--bg-canvas);padding:8px 10px;border-radius:8px;border:1px solid var(--border)">
+                    <label class="radio-card">
                       <input type="radio" name="dst-load-mode" value="truncate" id="dst-mode-truncate" onchange="setDstLoadMode('truncate')" style="margin-top:2px">
                       <div>
                         <strong>Truncate (Kosongkan lalu Isi)</strong>
                         <div style="font-size:11.5px;color:var(--text-secondary)">Kosongkan seluruh data lama tabel tujuan sebelum memuat data baru</div>
                       </div>
                     </label>
-                    <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-size:12.5px;background:#FFF1F0;padding:8px 10px;border-radius:8px;border:1px solid #FFA39E">
+                    <label class="radio-card radio-card-danger">
                       <input type="radio" name="dst-load-mode" value="replace" id="dst-mode-replace" onchange="setDstLoadMode('replace')" style="margin-top:2px">
                       <div>
-                        <strong style="color:var(--danger)">Replace (Hapus / Drop &amp; Buat Ulang)</strong>
-                        <div style="font-size:11.5px;color:#A8071A">Hapus (DROP) tabel lama jika sudah ada dan buat ulang tabel baru dari awal (Memerlukan konfirmasi keamanan)</div>
+                        <strong style="color:var(--red-text)">Replace (Hapus / Drop &amp; Buat Ulang)</strong>
+                        <div style="font-size:11.5px;color:var(--red-text);opacity:0.85">Hapus (DROP) tabel lama jika sudah ada dan buat ulang tabel baru dari awal (Memerlukan konfirmasi keamanan)</div>
                       </div>
                     </label>
                   </div>
-                  <div style="margin-top:8px;padding:8px 12px;background:#F0F7FF;border:1px solid #BAE0FF;border-radius:8px;font-size:11.5px;color:#0050B3;display:flex;align-items:center;gap:8px">
+                  <div class="info-banner" style="margin-top:8px">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
                     <span><strong>Auto Schema Evolution:</strong> Jika tabel belum ada, FlowETL otomatis membuatnya. Jika tabel sumber menambah kolom baru atau mengubah tipe data, tujuan otomatis mengikutinya via <code>ALTER TABLE</code>.</span>
                   </div>
@@ -965,7 +988,7 @@
         </div>
 
         <!-- Info banner -->
-        <div style="display:flex;align-items:flex-start;gap:10px;background:#F0F7FF;border:1px solid rgba(0,113,227,0.15);border-radius:12px;padding:12px 16px;margin-bottom:20px;font-size:13px;color:#0071E3">
+        <div class="info-banner" style="margin-bottom:20px">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
           <span>Frekuensi <strong>30 Detik</strong> dan <strong>1 Menit</strong> tersedia untuk demo/uji coba. Untuk produksi gunakan <strong>Per Jam</strong> atau lebih.</span>
         </div>
@@ -1029,7 +1052,7 @@
   </div>
 </div>
 
-<script src="/static/app.js?v=20261015_typeinfer"></script>
+<script src="/static/app.js?v=20261022_apple"></script>
 <script>
 // ─── Quick-start presets ───────────────────────────────────────────────────
 

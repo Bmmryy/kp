@@ -15,10 +15,11 @@ Usage in pipeline YAML::
       options:
         host: localhost
         port: 1521
-        database: FREEPDB1  # or service_name
+        service_name: FREEPDB1   # service name koneksi (tetap FREEPDB1)
+        database: SYSTEM          # schema/owner di Oracle (default: sama dengan user)
         user: system
         password: "${ORACLE_PASSWORD}"
-        table: PATIENTS
+        table: HOSPITAL_PATIENTS
 """
 
 from __future__ import annotations
@@ -37,11 +38,26 @@ class OracleSource(SQLBaseSource):
         opts = config.options
         self._host: str = opts.get("host", "localhost")
         self._port: int = int(opts.get("port", 1521))
-        # Support service_name or database or sid
-        self._service_name: str = opts.get("service_name") or opts.get("database") or "FREEPDB1"
+        # service_name = nama service Oracle (FREEPDB1), BUKAN schema
+        # database = schema/owner (misal: SYSTEM, PDBADMIN)
+        # Jika user set "database" berisi nama service, tetap pakai FREEPDB1
+        raw_db = opts.get("database", "")
+        raw_svc = opts.get("service_name", "")
+        # Heuristik: jika database adalah service name yang dikenal, pakai sebagai service_name
+        known_services = {"freepdb1", "xepdb1", "orclpdb1", "pdborcl", "orcl"}
+        if raw_svc:
+            self._service_name: str = raw_svc
+            self._schema: Optional[str] = raw_db.upper() if raw_db else None
+        elif raw_db.lower() in known_services:
+            # user mengisi field "database" dengan service name (behavior lama)
+            self._service_name = raw_db
+            self._schema = None  # pakai default schema user
+        else:
+            self._service_name = "FREEPDB1"
+            self._schema = raw_db.upper() if raw_db else None
         self._sid: Optional[str] = opts.get("sid")
-        self._user: str = opts.get("user", "system")
-        self._password: str = opts.get("password", "")
+        self._user: str = opts.get("user", "system").strip()
+        self._password: str = opts.get("password", "").strip()
 
     @property
     def dialect(self) -> str:
@@ -62,6 +78,10 @@ class OracleSource(SQLBaseSource):
         """Oracle uses double-quote identifier quoting."""
         escaped = name.replace('"', '""')
         return f'"{escaped}"'
+
+    def _get_schema(self) -> Optional[str]:
+        """Kembalikan schema/owner yang dipakai untuk query tabel."""
+        return self._schema
 
 
 class OracleDestination(SQLBaseDestination):
@@ -72,10 +92,21 @@ class OracleDestination(SQLBaseDestination):
         opts = config.options
         self._host: str = opts.get("host", "localhost")
         self._port: int = int(opts.get("port", 1521))
-        self._service_name: str = opts.get("service_name") or opts.get("database") or "FREEPDB1"
+        raw_db = opts.get("database", "")
+        raw_svc = opts.get("service_name", "")
+        known_services = {"freepdb1", "xepdb1", "orclpdb1", "pdborcl", "orcl"}
+        if raw_svc:
+            self._service_name: str = raw_svc
+            self._schema: Optional[str] = raw_db.upper() if raw_db else None
+        elif raw_db.lower() in known_services:
+            self._service_name = raw_db
+            self._schema = None
+        else:
+            self._service_name = "FREEPDB1"
+            self._schema = raw_db.upper() if raw_db else None
         self._sid: Optional[str] = opts.get("sid")
-        self._user: str = opts.get("user", "system")
-        self._password: str = opts.get("password", "")
+        self._user: str = opts.get("user", "system").strip()
+        self._password: str = opts.get("password", "").strip()
 
     @property
     def dialect(self) -> str:
@@ -96,3 +127,8 @@ class OracleDestination(SQLBaseDestination):
         """Oracle uses double-quote identifier quoting."""
         escaped = name.replace('"', '""')
         return f'"{escaped}"'
+
+    def _get_schema(self) -> Optional[str]:
+        """Kembalikan schema/owner yang dipakai untuk query tabel."""
+        return self._schema
+
