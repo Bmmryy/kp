@@ -1,0 +1,2838 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>FlowETL — Visual Data Integration</title>
+  <script>
+    (function(){
+      try {
+        var t = localStorage.getItem("flowetl_theme") || (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+        document.documentElement.setAttribute("data-theme", t);
+      } catch(e){}
+    })();
+  </script>
+  <style>
+/* ===================================================================
+   FlowETL — Apple-Inspired Human Interface Guidelines (HIG) SaaS Design System
+   Minimalist, Pure Canvas, SF Pro Typography, macOS Aesthetics & Dark Mode
+   =================================================================== */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* -------------------------------------------------------------------
+   1. Design Tokens — Light Theme (Default)
+   ------------------------------------------------------------------- */
+:root,
+[data-theme="light"] {
+  /* Canvas & Surfaces */
+  --bg-canvas:        #F5F5F7;
+  --bg-subtle:        #FBFBFD;
+  --surface:          #FFFFFF;
+  --surface-subtle:   #F9F9FB;
+  --surface-hover:    #F2F2F7;
+  --surface-active:   #E5E5EA;
+  --surface-glass:    rgba(255, 255, 255, 0.82);
+  --surface-glass-topbar: rgba(245, 245, 247, 0.85);
+
+  /* Typography Colors */
+  --text:             #1D1D1F;
+  --text-secondary:   #6E6E73;
+  --text-tertiary:    #86868B;
+  --text-quaternary:  #AEAEB2;
+
+  /* Borders */
+  --border:           #D2D2D7;
+  --border-subtle:    rgba(0, 0, 0, 0.06);
+  --border-strong:    rgba(0, 0, 0, 0.16);
+  --border-focus:     #007AFF;
+
+  /* Accents & Semantic Colors */
+  --accent:           #007AFF;
+  --accent-hover:     #0071E3;
+  --accent-active:    #005BB5;
+  --accent-tint:      rgba(0, 122, 255, 0.08);
+  --accent-tint-subtle: rgba(0, 122, 255, 0.04);
+
+  --green:            #34C759;
+  --green-text:       #248A3D;
+  --green-tint:       rgba(52, 199, 89, 0.10);
+
+  --orange:           #FF9500;
+  --orange-text:      #B76E00;
+  --orange-tint:      rgba(255, 149, 0, 0.10);
+
+  --red:              #FF3B30;
+  --red-text:         #D70015;
+  --red-tint:         rgba(255, 59, 48, 0.10);
+
+  --purple:           #AF52DE;
+  --purple-text:      #8944AB;
+  --purple-tint:      rgba(175, 82, 222, 0.10);
+
+  --teal:             #30B0C7;
+  --teal-text:        #007D99;
+  --teal-tint:        rgba(48, 176, 199, 0.10);
+
+  /* Geometry & Radii */
+  --sidebar-w:        256px;
+  --radius-card:      16px;
+  --radius-btn:       10px;
+  --radius-input:     10px;
+  --radius-sm:        8px;
+  --radius-pill:      9999px;
+
+  /* Ambient Shadows */
+  --shadow-subtle:    0 1px 3px rgba(0, 0, 0, 0.03), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-card:      0 2px 8px -2px rgba(0, 0, 0, 0.04), 0 0 1px rgba(0, 0, 0, 0.08);
+  --shadow-hover:     0 8px 24px -4px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
+  --shadow-drawer:    0 -10px 32px rgba(0, 0, 0, 0.08), 0 -1px 3px rgba(0, 0, 0, 0.04);
+  --shadow-modal:     0 24px 64px rgba(0, 0, 0, 0.16), 0 4px 16px rgba(0, 0, 0, 0.08);
+
+  /* Typography Stack */
+  --font:             -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --mono:             "SF Mono", Menlo, Monaco, Consolas, "Courier New", monospace;
+
+  /* Transitions & Springs */
+  --ease-spring:      cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-bounce:      cubic-bezier(0.34, 1.56, 0.64, 1);
+  --transition-fast:  150ms ease;
+  --transition-smooth: 220ms var(--ease-spring);
+}
+
+/* -------------------------------------------------------------------
+   2. Design Tokens — Dark Theme
+   ------------------------------------------------------------------- */
+[data-theme="dark"] {
+  /* Canvas & Surfaces */
+  --bg-canvas:        #151516;
+  --bg-subtle:        #1C1C1E;
+  --surface:          #1C1C1E;
+  --surface-subtle:   #242426;
+  --surface-hover:    #2C2C2E;
+  --surface-active:   #3A3A3C;
+  --surface-glass:    rgba(28, 28, 30, 0.85);
+  --surface-glass-topbar: rgba(21, 21, 22, 0.85);
+
+  /* Typography Colors */
+  --text:             #F5F5F7;
+  --text-secondary:   #A1A1A6;
+  --text-tertiary:    #8E8E93;
+  --text-quaternary:  #636366;
+
+  /* Borders */
+  --border:           #38383A;
+  --border-subtle:    rgba(255, 255, 255, 0.07);
+  --border-strong:    rgba(255, 255, 255, 0.15);
+  --border-focus:     #0A84FF;
+
+  /* Accents & Semantic Colors */
+  --accent:           #0A84FF;
+  --accent-hover:     #409CFF;
+  --accent-active:    #0064D6;
+  --accent-tint:      rgba(10, 132, 255, 0.15);
+  --accent-tint-subtle: rgba(10, 132, 255, 0.08);
+
+  --green:            #30D158;
+  --green-text:       #30D158;
+  --green-tint:       rgba(48, 209, 88, 0.15);
+
+  --orange:           #FFD60A;
+  --orange-text:      #FFD60A;
+  --orange-tint:      rgba(255, 214, 10, 0.15);
+
+  --red:              #FF453A;
+  --red-text:         #FF453A;
+  --red-tint:         rgba(255, 69, 58, 0.15);
+
+  --purple:           #BF5AF2;
+  --purple-text:      #BF5AF2;
+  --purple-tint:      rgba(191, 90, 242, 0.15);
+
+  --teal:             #5AC8F5;
+  --teal-text:        #5AC8F5;
+  --teal-tint:        rgba(90, 200, 245, 0.15);
+
+  /* Ambient Shadows (Dark Mode) */
+  --shadow-subtle:    0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-card:      0 2px 12px rgba(0, 0, 0, 0.35), 0 0 1px rgba(255, 255, 255, 0.05);
+  --shadow-hover:     0 8px 28px rgba(0, 0, 0, 0.55), 0 1px 4px rgba(255, 255, 255, 0.08);
+  --shadow-drawer:    0 -10px 40px rgba(0, 0, 0, 0.6);
+  --shadow-modal:     0 24px 70px rgba(0, 0, 0, 0.7);
+}
+
+/* -------------------------------------------------------------------
+   3. Base Setup & Typography
+   ------------------------------------------------------------------- */
+html, body {
+  height: 100%;
+  font-family: var(--font);
+  background-color: var(--bg-canvas) !important;
+  color: var(--text) !important;
+  font-size: 13.5px;
+  line-height: 1.47;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.011em;
+  overflow: hidden;
+  transition: background-color var(--transition-smooth), color var(--transition-smooth);
+}
+
+/* -------------------------------------------------------------------
+   4. App Layout & Frosted Glass Sidebar
+   ------------------------------------------------------------------- */
+.layout {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--bg-canvas);
+}
+
+.sidebar {
+  width: var(--sidebar-w);
+  min-width: var(--sidebar-w);
+  background: var(--surface-glass);
+  backdrop-filter: blur(28px) saturate(190%);
+  -webkit-backdrop-filter: blur(28px) saturate(190%);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  user-select: none;
+  z-index: 20;
+  transition: background var(--transition-smooth), border-color var(--transition-smooth);
+}
+
+.sidebar-logo {
+  padding: 20px 18px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.sidebar-logo .logo-mark {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+}
+
+/* Apple Squircle App Icon */
+.sidebar-logo .logo-icon {
+  width: 34px;
+  height: 34px;
+  background: linear-gradient(145deg, var(--accent) 0%, #0056B3 100%);
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFFFFF;
+  box-shadow: 0 2px 8px rgba(0, 122, 255, 0.28);
+  transition: transform 0.35s var(--ease-bounce), box-shadow 0.35s ease;
+  flex-shrink: 0;
+}
+
+.sidebar-logo .logo-mark:hover .logo-icon {
+  transform: scale(1.06) rotate(3deg);
+  box-shadow: 0 4px 14px rgba(0, 122, 255, 0.38);
+}
+
+.sidebar-logo .logo-name {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  line-height: 1.2;
+}
+
+.sidebar-logo .logo-tagline {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  margin-top: 2px;
+}
+
+/* Sidebar Navigation */
+.sidebar-nav {
+  flex: 1;
+  padding: 14px 10px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.nav-section-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  padding: 8px 12px 4px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: var(--radius-btn);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  transition: all var(--transition-fast);
+  user-select: none;
+}
+
+.nav-item .nav-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  color: var(--text-tertiary);
+  transition: color var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.nav-item:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.nav-item:hover .nav-icon {
+  color: var(--text);
+}
+
+.nav-item.active {
+  background: var(--accent-tint);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.nav-item.active .nav-icon {
+  color: var(--accent);
+}
+
+.sidebar-footer {
+  padding: 14px 18px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 6px var(--green);
+  animation: applePulse 2.5s infinite;
+  flex-shrink: 0;
+}
+
+@keyframes applePulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.55; transform: scale(0.9); }
+}
+
+/* -------------------------------------------------------------------
+   5. Main Area & Modern Apple Topbar
+   ------------------------------------------------------------------- */
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg-canvas);
+  position: relative;
+}
+
+.topbar {
+  height: 56px;
+  min-height: 56px;
+  background: var(--surface-glass-topbar);
+  backdrop-filter: blur(24px) saturate(190%);
+  -webkit-backdrop-filter: blur(24px) saturate(190%);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  z-index: 10;
+  transition: background var(--transition-smooth), border-color var(--transition-smooth);
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.topbar-title {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.018em;
+  color: var(--text);
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.topbar-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: var(--surface-subtle);
+  border: 1px solid var(--border);
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+}
+
+.topbar-btn {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-btn);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: var(--shadow-subtle);
+}
+
+.topbar-btn:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+  border-color: var(--border-strong);
+  transform: translateY(-1px);
+}
+
+.topbar-btn:active {
+  transform: scale(0.96);
+}
+
+/* Content Container */
+.content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 28px 32px 48px;
+  scroll-behavior: smooth;
+}
+
+.view {
+  display: none;
+  animation: appleFadeIn 0.22s var(--ease-spring);
+}
+
+.view.active {
+  display: block;
+}
+
+@keyframes appleFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.section-header {
+  margin-bottom: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.section-title {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.024em;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.section-icon {
+  width: 20px;
+  height: 20px;
+  color: var(--accent);
+}
+
+/* -------------------------------------------------------------------
+   6. Apple HIG Stats Grid & Dashboard Cards
+   ------------------------------------------------------------------- */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 14px;
+  margin-bottom: 28px;
+}
+
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: 16px 18px;
+  box-shadow: var(--shadow-card);
+  transition: transform var(--transition-smooth), box-shadow var(--transition-smooth), border-color var(--transition-fast);
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover);
+  border-color: var(--border-strong);
+}
+
+.stat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.stat-label {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  letter-spacing: -0.01em;
+}
+
+.stat-icon-badge {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stat-icon-badge.blue   { background: var(--accent-tint); color: var(--accent); }
+.stat-icon-badge.green  { background: var(--green-tint); color: var(--green-text); }
+.stat-icon-badge.red    { background: var(--red-tint); color: var(--red-text); }
+.stat-icon-badge.indigo { background: rgba(88, 86, 214, 0.12); color: #5856D6; }
+.stat-icon-badge.teal   { background: var(--teal-tint); color: var(--teal-text); }
+.stat-icon-badge.gray   { background: rgba(142, 142, 147, 0.12); color: var(--text-tertiary); }
+
+.stat-value {
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  color: var(--text);
+  line-height: 1.1;
+  margin-bottom: 4px;
+}
+
+.stat-sub {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  letter-spacing: -0.01em;
+}
+
+/* Card Container */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  margin-bottom: 24px;
+  overflow: hidden;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.card-header {
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.card-title {
+  font-size: 14.5px;
+  font-weight: 600;
+  letter-spacing: -0.018em;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-icon {
+  width: 16px;
+  height: 16px;
+  color: var(--accent);
+}
+
+.card-body {
+  padding: 22px;
+}
+
+/* Quick Start Cards */
+.quick-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.quick-card {
+  background: var(--bg-canvas);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  transition: all var(--transition-smooth);
+}
+
+.quick-card:hover {
+  background: var(--surface);
+  border-color: var(--accent);
+  box-shadow: var(--shadow-hover);
+  transform: translateY(-2px);
+}
+
+.quick-card.featured {
+  background: var(--surface);
+  border-color: rgba(0, 122, 255, 0.3);
+  box-shadow: 0 4px 16px rgba(0, 122, 255, 0.08);
+}
+
+.quick-flow-icons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.quick-flow-badge {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  transition: transform 0.25s var(--ease-bounce), color 0.2s ease;
+  box-shadow: var(--shadow-subtle);
+}
+
+.quick-card:hover .quick-flow-badge {
+  transform: scale(1.08);
+  color: var(--accent);
+}
+
+.quick-flow-arrow {
+  color: var(--text-tertiary);
+  width: 14px;
+  height: 14px;
+}
+
+.quick-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.quick-desc {
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  line-height: 1.45;
+  margin-bottom: 16px;
+  flex: 1;
+}
+
+/* -------------------------------------------------------------------
+   7. Apple SaaS Buttons & Connector Chips
+   ------------------------------------------------------------------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  font-family: var(--font);
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  padding: 8px 16px;
+  border-radius: var(--radius-btn);
+  border: 1px solid transparent;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all var(--transition-fast);
+  user-select: none;
+  white-space: nowrap;
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: #FFFFFF;
+  box-shadow: 0 1px 4px rgba(0, 122, 255, 0.28);
+}
+
+.btn-primary:hover {
+  background: var(--accent-hover);
+  box-shadow: 0 3px 10px rgba(0, 122, 255, 0.38);
+}
+
+.btn-secondary {
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--border);
+  box-shadow: var(--shadow-subtle);
+}
+
+.btn-secondary:hover {
+  background: var(--surface-hover);
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+
+.btn-danger {
+  background: var(--red);
+  color: #FFFFFF;
+}
+
+.btn-danger:hover {
+  background: #E0352B;
+}
+
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 12px;
+  border-radius: 8px;
+}
+
+.btn-icon {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border-radius: 50%;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Connector Chips */
+.connector-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 13px;
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  user-select: none;
+  box-shadow: var(--shadow-subtle);
+}
+
+.connector-chip:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  transform: translateY(-1px);
+}
+
+/* -------------------------------------------------------------------
+   8. Main Pipeline Editor — Visual Centerpiece (Highest Priority)
+   ------------------------------------------------------------------- */
+.task-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 22px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: 14px 20px;
+  box-shadow: var(--shadow-card);
+}
+
+.task-header-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.task-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: var(--radius-pill);
+  background: var(--accent-tint);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+
+/* Main 3-Panel Visual Flow: SOURCE → TRANSFORM → DESTINATION */
+.pipeline-builder {
+  display: grid;
+  grid-template-columns: 1fr 40px 1fr 40px 1fr;
+  align-items: start;
+  gap: 0;
+  margin-bottom: 28px;
+}
+
+.pipeline-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  display: flex;
+  flex-direction: column;
+}
+
+.pipeline-panel:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-hover);
+}
+
+.pipeline-panel-header {
+  padding: 14px 18px;
+  background: var(--surface-subtle);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.panel-badge {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  border-radius: var(--radius-pill);
+}
+
+.badge-source      { background: var(--accent-tint); color: var(--accent); border: 1px solid rgba(0, 122, 255, 0.2); }
+.badge-transform   { background: var(--purple-tint); color: var(--purple-text); border: 1px solid rgba(175, 82, 222, 0.2); }
+.badge-destination { background: var(--green-tint);  color: var(--green-text);  border: 1px solid rgba(52, 199, 89, 0.2); }
+
+.pipeline-panel-body {
+  padding: 18px;
+}
+
+/* Connecting Arrows between Stages */
+.pipeline-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-tertiary);
+  box-shadow: var(--shadow-subtle);
+  margin: 0 auto;
+  z-index: 2;
+  transition: all var(--transition-fast);
+}
+
+.pipeline-running .pipeline-arrow {
+  color: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 0 12px var(--accent-tint);
+  animation: appleArrowPulse 1.8s infinite ease-in-out;
+}
+
+@keyframes appleArrowPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.12); }
+}
+
+/* -------------------------------------------------------------------
+   9. Form Controls & Connection Panels
+   ------------------------------------------------------------------- */
+.form-group {
+  margin-bottom: 14px;
+}
+
+.form-label {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+  letter-spacing: -0.01em;
+}
+
+.form-control {
+  width: 100%;
+  padding: 8px 12px;
+  font-family: var(--font);
+  font-size: 13px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-input);
+  outline: none;
+  transition: all var(--transition-fast);
+  box-sizing: border-box;
+}
+
+.form-control:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-tint);
+}
+
+.form-control::placeholder {
+  color: var(--text-quaternary);
+}
+
+.form-select {
+  width: 100%;
+  padding: 8px 30px 8px 12px;
+  font-family: var(--font);
+  font-size: 13px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-input);
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2386868B' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  transition: all var(--transition-fast);
+  box-sizing: border-box;
+}
+
+.form-select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-tint);
+}
+
+/* Format & Segmented Selector Buttons */
+.dest-format-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.dest-format-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface-subtle);
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.dest-format-btn:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+
+.dest-format-btn.selected {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #FFFFFF;
+  font-weight: 600;
+  box-shadow: 0 1px 4px rgba(0, 122, 255, 0.25);
+}
+
+/* Upload Drop Zone */
+.upload-drop-zone {
+  border: 1.5px dashed var(--border-strong);
+  border-radius: var(--radius-input);
+  background: var(--bg-canvas);
+  padding: 24px 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+  position: relative;
+}
+
+.upload-drop-zone:hover,
+.upload-drop-zone.dragover {
+  border-color: var(--accent);
+  background: var(--accent-tint-subtle);
+}
+
+.upload-drop-zone input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+}
+
+.upload-drop-zone .drop-icon {
+  color: var(--text-tertiary);
+  margin-bottom: 6px;
+}
+
+.upload-drop-zone .drop-title {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+
+.upload-drop-zone .drop-sub {
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+.upload-file-list {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.upload-file-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 7px 10px;
+  font-size: 12px;
+}
+
+.upload-file-item .file-name {
+  flex: 1;
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Stepper Indicator */
+.step-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-bottom: 14px;
+}
+
+.step-dot {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--bg-canvas);
+  border: 1.5px solid var(--border-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+  transition: all var(--transition-fast);
+}
+
+.step-dot.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #FFFFFF;
+}
+
+.step-dot.done {
+  background: var(--green);
+  border-color: var(--green);
+  color: #FFFFFF;
+}
+
+.step-line {
+  flex: 1;
+  height: 2px;
+  background: var(--border);
+  margin: 0 4px;
+  transition: background var(--transition-fast);
+}
+
+.step-line.done {
+  background: var(--green);
+}
+
+/* Verification Button */
+.verify-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  cursor: pointer;
+  color: var(--text);
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+  box-shadow: var(--shadow-subtle);
+}
+
+.verify-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-tint-subtle);
+}
+
+.verify-btn.verified {
+  border-color: var(--green);
+  color: var(--green-text);
+  background: var(--green-tint);
+}
+
+.verify-btn.failed {
+  border-color: var(--red);
+  color: var(--red-text);
+  background: var(--red-tint);
+}
+
+/* Table Chips */
+.table-chips-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px;
+  background: var(--bg-canvas);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  min-height: 44px;
+  max-height: 160px;
+  overflow-y: auto;
+}
+
+.table-chip-selectable {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  user-select: none;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.table-chip-selectable:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.table-chip-selectable.selected {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #FFFFFF;
+}
+
+.table-chip-selectable .chip-check {
+  display: none;
+}
+
+.table-chip-selectable.selected .chip-check {
+  display: block;
+}
+
+/* -------------------------------------------------------------------
+   10. Transformation Panel (Rules & Global Options)
+   ------------------------------------------------------------------- */
+.transform-tabs-bar {
+  display: flex;
+  gap: 4px;
+  background: var(--bg-canvas);
+  padding: 3px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  margin-bottom: 12px;
+}
+
+.transform-tab-btn {
+  flex: 1;
+  padding: 5px 10px;
+  font-size: 11.5px;
+  font-weight: 500;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-align: center;
+}
+
+.transform-tab-btn:hover {
+  color: var(--text);
+}
+
+.transform-tab-btn.selected {
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.transform-rule-item {
+  background: var(--bg-canvas);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  margin-bottom: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: border-color var(--transition-fast);
+}
+
+.transform-rule-item:hover {
+  border-color: var(--border-strong);
+}
+
+.transform-rule-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.transform-rule-col-select,
+.transform-rule-type-select {
+  font-size: 12px;
+  padding: 5px 8px;
+  border-radius: 6px;
+}
+
+.transform-rule-remove-btn {
+  background: none;
+  border: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color var(--transition-fast), background var(--transition-fast);
+}
+
+.transform-rule-remove-btn:hover {
+  color: var(--red);
+  background: var(--red-tint);
+}
+
+.transform-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 8px;
+  cursor: pointer;
+  background: var(--bg-canvas);
+  transition: all var(--transition-fast);
+}
+
+.transform-card:hover {
+  border-color: var(--border-strong);
+  background: var(--surface);
+}
+
+/* Radio Cards (Load Mode) */
+.radio-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 12px;
+  background: var(--bg-canvas);
+  padding: 9px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  transition: all var(--transition-fast);
+}
+
+.radio-card:hover {
+  border-color: var(--border-strong);
+  background: var(--surface);
+}
+
+.radio-card-danger {
+  background: var(--red-tint);
+  border-color: rgba(255, 59, 48, 0.25);
+}
+
+.radio-card-danger:hover {
+  background: var(--red-tint);
+  border-color: var(--red);
+}
+
+.info-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  background: var(--accent-tint);
+  border: 1px solid rgba(0, 122, 255, 0.2);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-size: 11.5px;
+  color: var(--accent);
+  line-height: 1.45;
+}
+
+/* -------------------------------------------------------------------
+   11. Tables & Data Presentation (macOS Style)
+   ------------------------------------------------------------------- */
+.table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+table th {
+  padding: 11px 16px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  background: var(--surface-subtle);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+table td {
+  padding: 13px 16px;
+  font-size: 12.5px;
+  color: var(--text);
+  border-bottom: 1px solid var(--border-subtle);
+  vertical-align: middle;
+}
+
+table tr:last-child td {
+  border-bottom: none;
+}
+
+table tr:hover td {
+  background: var(--surface-hover);
+}
+
+/* Status Pills */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+}
+
+.pill-success {
+  background: var(--green-tint);
+  color: var(--green-text);
+}
+
+.pill-error {
+  background: var(--red-tint);
+  color: var(--red-text);
+}
+
+.pill-running {
+  background: var(--accent-tint);
+  color: var(--accent);
+}
+
+.pill-pending {
+  background: rgba(142, 142, 147, 0.12);
+  color: var(--text-secondary);
+}
+
+/* -------------------------------------------------------------------
+   12. Execution Drawer & Log Viewer
+   ------------------------------------------------------------------- */
+.progress-drawer {
+  position: fixed;
+  bottom: 0;
+  left: var(--sidebar-w);
+  right: 0;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  box-shadow: var(--shadow-drawer);
+  transform: translateY(100%);
+  transition: transform 0.32s var(--ease-spring);
+  z-index: 50;
+  max-height: 48vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.progress-drawer.open {
+  transform: translateY(0);
+}
+
+.drawer-header {
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--surface-subtle);
+}
+
+.drawer-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.drawer-body {
+  padding: 16px 24px 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.progress-bar-wrap {
+  height: 6px;
+  background: var(--border-subtle);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--accent) 0%, #30B0C7 100%);
+  border-radius: var(--radius-pill);
+  transition: width 0.35s ease;
+}
+
+/* macOS Terminal Style for Log Console */
+.log-console {
+  background: #18181A;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-input);
+  padding: 14px 16px;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: #F5F5F7;
+  max-height: 150px;
+  overflow-y: auto;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+.log-line {
+  margin-bottom: 2px;
+}
+
+.log-line.info    { color: #A1A1A6; }
+.log-line.success { color: var(--green); }
+.log-line.error   { color: var(--red); }
+
+.metrics-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.metric-box {
+  background: var(--bg-canvas);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  text-align: center;
+}
+
+.metric-value {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.metric-label {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  margin-top: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* -------------------------------------------------------------------
+   13. Toast Notifications
+   ------------------------------------------------------------------- */
+#toast-container {
+  position: fixed;
+  top: 20px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 18px;
+  background: var(--surface-glass);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-modal);
+  border: 1px solid var(--border);
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text);
+  animation: appleToastIn 0.3s var(--ease-spring);
+}
+
+@keyframes appleToastIn {
+  from { opacity: 0; transform: translateY(-8px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.toast.toast-success { border-color: rgba(52, 199, 89, 0.3); color: var(--green-text); }
+.toast.toast-error   { border-color: rgba(255, 59, 48, 0.3); color: var(--red-text); }
+.toast.toast-info    { border-color: rgba(0, 122, 255, 0.3); color: var(--accent); }
+
+/* -------------------------------------------------------------------
+   14. Responsive Layout (Mobile, Tablet, Desktop)
+   ------------------------------------------------------------------- */
+@media (max-width: 1080px) {
+  .stats-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .quick-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 960px) {
+  .pipeline-builder {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  .pipeline-arrow {
+    transform: rotate(90deg);
+    margin: 4px auto;
+  }
+  .task-header-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed;
+    left: -100%;
+    top: 0;
+    bottom: 0;
+    transition: left 0.3s var(--ease-spring);
+  }
+  .sidebar.mobile-open {
+    left: 0;
+  }
+  .progress-drawer {
+    left: 0;
+  }
+  .content {
+    padding: 18px 16px 36px;
+  }
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .quick-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+</style>
+</head>
+<body>
+
+<div id="toast-container"></div>
+
+<div class="layout">
+
+  <!-- ===== SIDEBAR ===== -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <a class="logo-mark" href="#">
+        <div class="logo-icon">
+          <!-- Apple Style Geometric Flow SF Symbol -->
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.19"/>
+          </svg>
+        </div>
+        <div>
+          <div class="logo-name">FlowETL</div>
+          <div class="logo-tagline">Data Integration</div>
+        </div>
+      </a>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Menu</div>
+
+      <button class="nav-item active" data-view="dashboard">
+        <span class="nav-icon">
+          <!-- square.grid.2x2 -->
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7" rx="2"></rect>
+            <rect x="14" y="3" width="7" height="7" rx="2"></rect>
+            <rect x="14" y="14" width="7" height="7" rx="2"></rect>
+            <rect x="3" y="14" width="7" height="7" rx="2"></rect>
+          </svg>
+        </span>
+        <span>Dashboard</span>
+      </button>
+
+      <button class="nav-item" data-view="builder">
+        <span class="nav-icon">
+          <!-- slider.horizontal.3 / flowchart -->
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="4" y1="21" x2="4" y2="14"></line>
+            <line x1="4" y1="10" x2="4" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="12"></line>
+            <line x1="12" y1="8" x2="12" y2="3"></line>
+            <line x1="20" y1="21" x2="20" y2="16"></line>
+            <line x1="20" y1="12" x2="20" y2="3"></line>
+            <line x1="1" y1="14" x2="7" y2="14"></line>
+            <line x1="9" y1="8" x2="15" y2="8"></line>
+            <line x1="17" y1="16" x2="23" y2="16"></line>
+          </svg>
+        </span>
+        <span>Pipeline Builder</span>
+      </button>
+
+      <button class="nav-item" data-view="history">
+        <span class="nav-icon">
+          <!-- clock.arrow.circlepath -->
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+        </span>
+        <span>History</span>
+      </button>
+
+      <button class="nav-item" data-view="files">
+        <span class="nav-icon">
+          <!-- arrow.down.doc -->
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="12" y1="18" x2="12" y2="12"></line>
+            <polyline points="9 15 12 18 15 15"></polyline>
+          </svg>
+        </span>
+        <span>File Data (Unduh)</span>
+      </button>
+
+      <button class="nav-item" data-view="schedules">
+        <span class="nav-icon">
+          <!-- calendar.badge.clock -->
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+            <circle cx="12" cy="15" r="2"></circle>
+          </svg>
+        </span>
+        <span>Penjadwalan (Schedules)</span>
+      </button>
+
+      <div class="nav-section-label" style="margin-top:10px">Resources</div>
+
+      <a class="nav-item" href="/api/docs" target="_blank">
+        <span class="nav-icon">
+          <!-- book.closed / doc.text -->
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+          </svg>
+        </span>
+        <span>API Docs</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="status-badge">
+        <div class="status-dot"></div>
+        <span>Server Aktif</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ===== MAIN ===== -->
+  <div class="main">
+
+    <!-- Topbar -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <span id="topbar-title" class="topbar-title">Dashboard</span>
+      </div>
+      <div class="topbar-right">
+        <div class="topbar-status">
+          <span class="status-dot"></span>
+          <span>Engine Active</span>
+        </div>
+        <button id="theme-toggle-btn" class="topbar-btn" onclick="toggleTheme()" title="Ganti Tema (Light/Dark)" aria-label="Toggle theme">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Content Area -->
+    <div class="content">
+
+      <!-- ===================================================== -->
+      <!-- VIEW: DASHBOARD                                        -->
+      <!-- ===================================================== -->
+      <div id="view-dashboard" class="view active">
+
+        <div class="section-header">
+          <h1 class="section-title">Selamat datang di FlowETL</h1>
+        </div>
+
+        <!-- Stats Grid (Apple HIG Widgets) -->
+        <div class="stats-grid">
+
+          <!-- Stat 1: Total Pipeline -->
+          <div class="stat-card">
+            <div class="stat-header">
+              <div class="stat-label">Total Pipeline</div>
+              <div class="stat-icon-badge blue">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="23 4 23 10 17 10"></polyline>
+                  <polyline points="1 20 1 14 7 14"></polyline>
+                  <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                </svg>
+              </div>
+            </div>
+            <div class="stat-value" id="stat-total">0</div>
+            <div class="stat-sub">Sejak server dimulai</div>
+          </div>
+
+          <!-- Stat 2: Sukses -->
+          <div class="stat-card">
+            <div class="stat-header">
+              <div class="stat-label">Sukses</div>
+              <div class="stat-icon-badge green">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                  <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+              </div>
+            </div>
+            <div class="stat-value" id="stat-success" style="color:var(--green-text)">0</div>
+            <div class="stat-sub">Pipeline berhasil dimuat</div>
+          </div>
+
+          <!-- Stat 3: Error -->
+          <div class="stat-card">
+            <div class="stat-header">
+              <div class="stat-label">Error</div>
+              <div class="stat-icon-badge red">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="15" y1="9" x2="9" y2="15"></line>
+                  <line x1="9" y1="9" x2="15" y2="15"></line>
+                </svg>
+              </div>
+            </div>
+            <div class="stat-value" id="stat-error" style="color:var(--red-text)">0</div>
+            <div class="stat-sub">Pipeline gagal</div>
+          </div>
+
+          <!-- Stat 4: Sedang Berjalan -->
+          <div class="stat-card">
+            <div class="stat-header">
+              <div class="stat-label">Aktif</div>
+              <div class="stat-icon-badge indigo">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="12" y1="2" x2="12" y2="6"></line>
+                  <line x1="12" y1="18" x2="12" y2="22"></line>
+                  <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line>
+                  <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line>
+                  <line x1="2" y1="12" x2="6" y2="12"></line>
+                  <line x1="18" y1="12" x2="22" y2="12"></line>
+                  <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line>
+                  <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line>
+                </svg>
+              </div>
+            </div>
+            <div class="stat-value" id="stat-running" style="color:#5856D6">0</div>
+            <div class="stat-sub">Pipeline aktif sekarang</div>
+          </div>
+
+          <!-- Stat 5: Success Rate -->
+          <div class="stat-card">
+            <div class="stat-header">
+              <div class="stat-label">Success Rate</div>
+              <div class="stat-icon-badge teal">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                  <polyline points="17 6 23 6 23 12"></polyline>
+                </svg>
+              </div>
+            </div>
+            <div class="stat-value" id="stat-rate">—</div>
+            <div class="stat-sub">Rata-rata keberhasilan</div>
+          </div>
+
+          <!-- Stat 6: Terakhir Dijalankan -->
+          <div class="stat-card">
+            <div class="stat-header">
+              <div class="stat-label">Terakhir Dijalankan</div>
+              <div class="stat-icon-badge gray">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+              </div>
+            </div>
+            <div class="stat-value" id="stat-last" style="font-size:13px;letter-spacing:0;font-weight:500">—</div>
+            <div class="stat-sub">Waktu run terakhir</div>
+          </div>
+
+        </div>
+
+        <!-- Quick Start -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">
+              <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+              </svg>
+              Template Integrasi
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="quick-grid">
+
+              <!-- Template 1: File ke Database -->
+              <div class="quick-card">
+                <div class="quick-flow-icons">
+                  <div class="quick-flow-badge" title="CSV / Excel Document">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                      <polyline points="14 2 14 8 20 8"></polyline>
+                      <line x1="8" y1="13" x2="16" y2="13"></line>
+                      <line x1="8" y1="17" x2="16" y2="17"></line>
+                    </svg>
+                  </div>
+                  <svg class="quick-flow-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                    <polyline points="12 5 19 12 12 19"></polyline>
+                  </svg>
+                  <div class="quick-flow-badge" title="Database Staging / SQL">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+                      <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+                      <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+                    </svg>
+                  </div>
+                </div>
+                <div class="quick-title">File ke Database Ingestion</div>
+                <div class="quick-desc">Import dataset file CSV atau Excel (.xlsx) langsung ke database relasional / staging.</div>
+                <button class="btn btn-secondary btn-sm" onclick="presetFileToDatabase()">Gunakan Template</button>
+              </div>
+
+              <!-- Template 2: Database to Database Sync -->
+              <div class="quick-card">
+                <div class="quick-flow-icons">
+                  <div class="quick-flow-badge" title="Source MySQL Database">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+                      <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+                      <line x1="6" y1="6" x2="6.01" y2="6"></line>
+                      <line x1="6" y1="18" x2="6.01" y2="18"></line>
+                    </svg>
+                  </div>
+                  <svg class="quick-flow-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                    <polyline points="12 5 19 12 12 19"></polyline>
+                  </svg>
+                  <div class="quick-flow-badge" title="Target PostgreSQL Database">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="3" y="4" width="18" height="16" rx="3"></rect>
+                      <line x1="3" y1="10" x2="21" y2="10"></line>
+                      <line x1="9" y1="20" x2="9" y2="10"></line>
+                    </svg>
+                  </div>
+                </div>
+                <div class="quick-title">Database to Database Sync</div>
+                <div class="quick-desc">Sinkronisasi data relasional antar database engine (MySQL ke PostgreSQL) dengan replikasi skema otomatis.</div>
+                <button class="btn btn-secondary btn-sm" onclick="presetDBtoDBSync()">Gunakan Template</button>
+              </div>
+
+              <!-- Template 3: Database ke Excel (.xlsx) Export -->
+              <div class="quick-card">
+                <div class="quick-flow-icons">
+                  <div class="quick-flow-badge" title="Relational Database">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+                      <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+                      <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+                    </svg>
+                  </div>
+                  <svg class="quick-flow-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                    <polyline points="12 5 19 12 12 19"></polyline>
+                  </svg>
+                  <div class="quick-flow-badge" style="color:var(--success)" title="Excel Spreadsheet (.xlsx)">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                      <polyline points="14 2 14 8 20 8"></polyline>
+                      <rect x="8" y="12" width="8" height="6" rx="1"></rect>
+                      <line x1="8" y1="15" x2="16" y2="15"></line>
+                    </svg>
+                  </div>
+                </div>
+                <div class="quick-title">Database ke Excel (.xlsx) Export</div>
+                <div class="quick-desc">Ekstraksi data kueri basis data langsung menjadi spreadsheet Excel (.xlsx) siap unduh untuk laporan.</div>
+                <button class="btn btn-secondary btn-sm" onclick="presetDBtoExcel()">Gunakan Template</button>
+              </div>
+
+              <!-- Template 4: Data Cleansing & Normalization -->
+              <div class="quick-card">
+                <div class="quick-flow-icons">
+                  <div class="quick-flow-badge" title="Raw Dataset">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                      <line x1="9" y1="13" x2="15" y2="13"></line>
+                      <line x1="9" y1="17" x2="13" y2="17"></line>
+                    </svg>
+                  </div>
+                  <svg class="quick-flow-arrow" style="color:var(--purple,#AF52DE)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                    <polyline points="12 5 19 12 12 19"></polyline>
+                  </svg>
+                  <div class="quick-flow-badge" style="color:var(--purple,#AF52DE)" title="Clean Standardized Data">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+                    </svg>
+                  </div>
+                </div>
+                <div class="quick-title">Data Cleansing & Normalization</div>
+                <div class="quick-desc">Pembersihan data otomatis: standardisasi teks (Trim &amp; Capitalize) dan penanganan nilai kosong (Fill Null).</div>
+                <button class="btn btn-secondary btn-sm" onclick="presetDataCleansing()">Gunakan Template</button>
+              </div>
+
+              <!-- Template 5: JSON & Log Stream Ingestion -->
+              <div class="quick-card">
+                <div class="quick-flow-icons">
+                  <div class="quick-flow-badge" title="JSON / JSONL Document">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="16 18 22 12 16 6"></polyline>
+                      <polyline points="8 6 2 12 8 18"></polyline>
+                    </svg>
+                  </div>
+                  <svg class="quick-flow-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                    <polyline points="12 5 19 12 12 19"></polyline>
+                  </svg>
+                  <div class="quick-flow-badge" title="Analytics Database">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+                      <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+                      <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+                    </svg>
+                  </div>
+                </div>
+                <div class="quick-title">JSON &amp; Log Stream Ingestion</div>
+                <div class="quick-desc">Ingest dokumen JSON atau file log JSONL semi-terstruktur ke dalam database analitik siap kueri.</div>
+                <button class="btn btn-secondary btn-sm" onclick="presetJSONtoDB()">Gunakan Template</button>
+              </div>
+
+              <!-- Template 6: Enterprise Oracle Migration -->
+              <div class="quick-card">
+                <div class="quick-flow-icons">
+                  <div class="quick-flow-badge" title="Relational Database">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+                      <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+                      <line x1="6" y1="6" x2="6.01" y2="6"></line>
+                      <line x1="6" y1="18" x2="6.01" y2="18"></line>
+                    </svg>
+                  </div>
+                  <svg class="quick-flow-arrow" style="color:var(--error,#FF3B30)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                    <polyline points="12 5 19 12 12 19"></polyline>
+                  </svg>
+                  <div class="quick-flow-badge" style="color:var(--error,#FF3B30)" title="Oracle Database 23ai">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <polygon points="12 6 17 15 7 15"></polygon>
+                    </svg>
+                  </div>
+                </div>
+                <div class="quick-title">Enterprise Oracle Migration</div>
+                <div class="quick-desc">Migrasi data skala enterprise ke Oracle Database (Oracle 23ai / Cloud) dengan pemetaan tipe data otomatis.</div>
+                <button class="btn btn-secondary btn-sm" onclick="presetOracleSync()">Gunakan Template</button>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- Connector Registry -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">
+              <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+              </svg>
+              Connector Terdaftar
+            </div>
+          </div>
+          <div class="card-body">
+            <div style="display:flex;flex-wrap:wrap;gap:8px" id="dashboard-connectors">
+              <span style="color:var(--text-tertiary);font-size:13px">Memuat data connector...</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ===================================================== -->
+      <!-- VIEW: PIPELINE BUILDER                                 -->
+      <!-- ===================================================== -->
+      <div id="view-builder" class="view">
+
+        <div class="section-header">
+          <h1 class="section-title">Pipeline Builder</h1>
+        </div>
+
+        <!-- Task / Project Header Bar -->
+        <div class="task-header-bar">
+          <div class="task-header-info">
+            <span class="task-badge">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+              ETL Task
+            </span>
+            <div style="flex:1;max-width:440px">
+              <input id="pipeline-name-input" class="form-control" type="text"
+                     placeholder="Nama Task / Pipeline (contoh: Pipeline Integrasi Data)"
+                     value="Pipeline Integrasi Data"
+                     style="font-weight:600;font-size:13.5px">
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <button class="btn btn-secondary btn-sm" onclick="scheduleCurrentTask()" title="Jadwalkan Task ini secara otomatis">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+              </svg>
+              Jadwalkan Task Ini
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="resetTaskBuilder()" title="Mulai Task / Project Baru">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              + Buat Task Baru
+            </button>
+          </div>
+        </div>
+
+        <!-- 3-Panel Builder -->
+        <div class="pipeline-builder">
+
+          <!-- ══ Source Panel ══════════════════════════════════════ -->
+          <div class="pipeline-panel">
+            <div class="pipeline-panel-header">
+              <span class="panel-badge badge-source">Source</span>
+              <span style="font-size:13px;font-weight:600;color:var(--text)">Sumber Data</span>
+            </div>
+            <div class="pipeline-panel-body">
+
+              <!-- Source Type Selector (File / SQL) -->
+              <div class="form-group">
+                <label class="form-label">Kategori Sumber</label>
+                <div style="display:flex;gap:8px;margin-bottom:10px">
+                  <button class="dest-format-btn selected" id="src-cat-file" onclick="setSrcCategory('file')">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                    Upload File
+                  </button>
+                  <button class="dest-format-btn" id="src-cat-sql" onclick="setSrcCategory('sql')">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
+                    Database SQL
+                  </button>
+                </div>
+              </div>
+
+              <!-- ── FILE SOURCE PANEL ── -->
+              <div id="src-panel-file">
+                <div class="form-group">
+                  <label class="form-label">Format File</label>
+                  <div class="dest-format-group" id="src-file-format-group">
+                    <button class="dest-format-btn selected" data-fmt="csv" onclick="selectSrcFileFormat('csv')">CSV</button>
+                    <button class="dest-format-btn" data-fmt="excel" onclick="selectSrcFileFormat('excel')">Excel</button>
+                    <button class="dest-format-btn" data-fmt="json" onclick="selectSrcFileFormat('json')">JSON</button>
+                    <button class="dest-format-btn" data-fmt="jsonl" onclick="selectSrcFileFormat('jsonl')">JSONL</button>
+                    <button class="dest-format-btn" data-fmt="sqlite" onclick="selectSrcFileFormat('sqlite')">SQLite</button>
+                  </div>
+                </div>
+
+                <div id="src-csv-options" class="form-group" style="margin-top:6px">
+                  <label class="form-label" style="font-size:11px">Delimiter</label>
+                  <input class="form-control" id="src-csv-delimiter" type="text" value="," placeholder="," style="max-width:80px;font-size:12px;padding:4px 8px">
+                </div>
+
+                <div id="src-sqlite-options" class="form-group" style="margin-top:6px;display:none">
+                  <label class="form-label" style="font-size:11px">Nama Tabel (opsional)</label>
+                  <input class="form-control" id="src-sqlite-table" type="text" placeholder="Biarkan kosong untuk semua tabel" style="font-size:12px;padding:4px 8px">
+                </div>
+
+                <!-- Drag & Drop Upload Zone -->
+                <div class="form-group">
+                  <label class="form-label">Upload File</label>
+                  <div class="upload-drop-zone" id="src-drop-zone">
+                    <input type="file" id="src-file-input" multiple accept=".csv,.xlsx,.xls,.json,.jsonl,.sqlite,.db"
+                           onchange="handleSrcFileSelect(this.files)">
+                    <div class="drop-icon">
+                      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                    </div>
+                    <div class="drop-title">Drag & Drop file di sini</div>
+                    <div class="drop-sub">atau klik untuk memilih (bisa banyak file sekaligus)</div>
+                  </div>
+                  <div class="upload-file-list" id="src-file-list"></div>
+                  <!-- File Columns Checklist Container -->
+                  <div id="src-file-columns-container" style="display:none;margin-top:12px"></div>
+                </div>
+              </div>
+
+              <!-- ── SQL SOURCE PANEL ── -->
+              <div id="src-panel-sql" style="display:none">
+                <div class="form-group">
+                  <label class="form-label">Tipe Database</label>
+                  <div class="dest-format-group">
+                    <button class="dest-format-btn selected" data-dbtype="mysql" onclick="selectSrcDbType('mysql')">MySQL</button>
+                    <button class="dest-format-btn" data-dbtype="postgresql" onclick="selectSrcDbType('postgresql')">PostgreSQL</button>
+                    <button class="dest-format-btn" data-dbtype="oracle" onclick="selectSrcDbType('oracle')">Oracle</button>
+                  </div>
+                </div>
+
+                <!-- Source DB Cards Container -->
+                <div id="src-db-cards"></div>
+
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Connecting Arrow -->
+          <div class="pipeline-arrow" title="Alur Data">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+          </div>
+
+          <!-- ══ Transform Panel ════════════════════════════════════ -->
+          <div class="pipeline-panel">
+            <div class="pipeline-panel-header" style="justify-content:space-between">
+              <div style="display:flex;align-items:center;gap:10px">
+                <span class="panel-badge badge-transform">Transform</span>
+                <span style="font-size:13px;font-weight:600;color:var(--text)">Transformasi Data</span>
+              </div>
+              <span id="transform-mode-badge" class="pill pill-pending" style="font-size:10.5px">Pass-Through</span>
+            </div>
+            <div class="pipeline-panel-body" style="padding:14px">
+              <!-- Mode Tabs / Switcher -->
+              <div class="transform-tabs-bar">
+                <button type="button" class="transform-tab-btn selected" id="transform-tab-rules" onclick="setTransformTab('rules')">
+                  Aturan per Kolom
+                </button>
+                <button type="button" class="transform-tab-btn" id="transform-tab-global" onclick="setTransformTab('global')">
+                  Opsi Global
+                </button>
+              </div>
+
+              <!-- Section: Aturan per Kolom -->
+              <div id="transform-rules-section">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+                  <span style="font-size:11.5px;color:var(--text-secondary);font-weight:500">Transformasi per Kolom:</span>
+                  <button type="button" class="btn btn-primary btn-sm" onclick="addColumnTransformRule()" style="font-size:11px;padding:3px 10px;display:flex;align-items:center;gap:4px">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    Tambah Aturan
+                  </button>
+                </div>
+
+                <!-- Rules list container -->
+                <div id="column-transform-rules-list"></div>
+
+                <div style="font-size:11px;color:var(--text-tertiary);margin-top:8px">
+                  Pilih kolom sumber dan transformasi khusus yang ingin diterapkan pada kolom tersebut.
+                </div>
+              </div>
+
+              <!-- Section: Opsi Global -->
+              <div id="transform-global-section" style="display:none">
+                <div style="font-size:11.5px;color:var(--text-tertiary);margin-bottom:10px">
+                  Transformasi berikut berlaku untuk semua kolom yang relevan:
+                </div>
+
+                <!-- Option 1: Trim -->
+                <label class="transform-card" style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;cursor:pointer;background:var(--bg-canvas);transition:all 0.2s">
+                  <input type="checkbox" id="transform-trim" style="margin-top:3px;accent-color:var(--accent)" onchange="updateTransformBadge()">
+                  <div style="flex:1">
+                    <div style="font-size:13px;font-weight:600;color:var(--text)">Trim Spasi</div>
+                    <div style="font-size:11.5px;color:var(--text-secondary)">Hapus spasi di awal &amp; akhir string (" Budi " → "Budi")</div>
+                  </div>
+                </label>
+
+                <!-- Option 2: Capitalize -->
+                <label class="transform-card" style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;cursor:pointer;background:var(--bg-canvas);transition:all 0.2s">
+                  <input type="checkbox" id="transform-capitalize" style="margin-top:3px;accent-color:var(--accent)" onchange="updateTransformBadge()">
+                  <div style="flex:1">
+                    <div style="font-size:13px;font-weight:600;color:var(--text)">Capitalize (Title Case)</div>
+                    <div style="font-size:11.5px;color:var(--text-secondary)">Kapitalisasi huruf awal setiap kata ("jakarta" → "Jakarta")</div>
+                  </div>
+                </label>
+
+                <!-- Option 3: UPPERCASE -->
+                <label class="transform-card" style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;cursor:pointer;background:var(--bg-canvas);transition:all 0.2s">
+                  <input type="checkbox" id="transform-uppercase" style="margin-top:3px;accent-color:var(--accent)" onchange="updateTransformBadge()">
+                  <div style="flex:1">
+                    <div style="font-size:13px;font-weight:600;color:var(--text)">UPPERCASE</div>
+                    <div style="font-size:11.5px;color:var(--text-secondary)">Ubah semua huruf menjadi kapital ("jakarta" → "JAKARTA")</div>
+                  </div>
+                </label>
+
+                <!-- Option 4: lowercase -->
+                <label class="transform-card" style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;cursor:pointer;background:var(--bg-canvas);transition:all 0.2s">
+                  <input type="checkbox" id="transform-lowercase" style="margin-top:3px;accent-color:var(--accent)" onchange="updateTransformBadge()">
+                  <div style="flex:1">
+                    <div style="font-size:13px;font-weight:600;color:var(--text)">lowercase</div>
+                    <div style="font-size:11.5px;color:var(--text-secondary)">Ubah semua huruf menjadi kecil ("JAKARTA" → "jakarta")</div>
+                  </div>
+                </label>
+
+                <!-- Option 5: Fill Null -->
+                <label class="transform-card" style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;cursor:pointer;background:var(--bg-canvas);transition:all 0.2s">
+                  <input type="checkbox" id="transform-fill-null" style="margin-top:3px;accent-color:var(--accent)" onchange="updateTransformBadge()">
+                  <div style="flex:1">
+                    <div style="font-size:13px;font-weight:600;color:var(--text)">Isi Kolom Kosong (Fill Null)</div>
+                    <div style="font-size:11.5px;color:var(--text-secondary)">Ganti nilai null/kosong dengan nilai pengganti default</div>
+                    <input type="text" id="transform-fill-null-val" class="form-control" placeholder="Nilai pengganti (contoh: N/A)" value="N/A" style="margin-top:6px;font-size:11.5px;padding:4px 8px" onclick="event.stopPropagation()">
+                  </div>
+                </label>
+
+                <!-- Option 6: Masking -->
+                <label class="transform-card" style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;cursor:pointer;background:var(--bg-canvas);transition:all 0.2s">
+                  <input type="checkbox" id="transform-mask" style="margin-top:3px;accent-color:var(--accent)" onchange="updateTransformBadge()">
+                  <div style="flex:1">
+                    <div style="font-size:13px;font-weight:600;color:var(--text)">Sensor Data Sensitif (Masking)</div>
+                    <div style="font-size:11.5px;color:var(--text-secondary)">Sensor karakter tengah data pribadi (0812****789)</div>
+                    <input type="text" id="transform-mask-cols" class="form-control" placeholder="Nama kolom (contoh: phone, nik)" value="phone" style="margin-top:6px;font-size:11.5px;padding:4px 8px" onclick="event.stopPropagation()">
+                  </div>
+                </label>
+
+                <!-- Option 7: Generic Filter Transformer -->
+                <label class="transform-card" style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;cursor:pointer;background:var(--bg-canvas);transition:all 0.2s">
+                  <input type="checkbox" id="transform-filter" style="margin-top:3px;accent-color:var(--accent)" onchange="updateTransformBadge()">
+                  <div style="flex:1">
+                    <div style="font-size:13px;font-weight:600;color:var(--text)">Filter Baris Data (Row Filter)</div>
+                    <div style="font-size:11.5px;color:var(--text-secondary)">Hanya teruskan baris yang memenuhi kondisi filter tertentu</div>
+                    <div style="display:flex;gap:6px;margin-top:6px" onclick="event.stopPropagation()">
+                      <input type="text" id="transform-filter-col" class="form-control" placeholder="Nama kolom (mis: age, city)" style="font-size:11.5px;padding:4px 8px;flex:1.2">
+                      <select id="transform-filter-op" class="form-select" style="font-size:11.5px;padding:4px 6px;width:85px">
+                        <option value=">=">&gt;=</option>
+                        <option value=">">&gt;</option>
+                        <option value="<=">&lt;=</option>
+                        <option value="<">&lt;</option>
+                        <option value="=">=</option>
+                        <option value="!=">!=</option>
+                        <option value="contains">contains</option>
+                      </select>
+                      <input type="text" id="transform-filter-val" class="form-control" placeholder="Nilai (mis: 18, Jakarta)" style="font-size:11.5px;padding:4px 8px;flex:1">
+                    </div>
+                  </div>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Connecting Arrow -->
+          <div class="pipeline-arrow" title="Alur Data">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+          </div>
+
+          <!-- ══ Destination Panel ═══════════════════════════════════ -->
+          <div class="pipeline-panel">
+            <div class="pipeline-panel-header">
+              <span class="panel-badge badge-destination">Destination</span>
+              <span style="font-size:13px;font-weight:600;color:var(--text)">Tujuan Data</span>
+            </div>
+            <div class="pipeline-panel-body">
+
+              <!-- Destination Category Selector -->
+              <div class="form-group">
+                <label class="form-label">Kategori Tujuan</label>
+                <div style="display:flex;gap:8px;margin-bottom:10px">
+                  <button class="dest-format-btn selected" id="dst-cat-file" onclick="setDstCategory('file')">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                    Output File
+                  </button>
+                  <button class="dest-format-btn" id="dst-cat-sql" onclick="setDstCategory('sql')">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
+                    Database SQL
+                  </button>
+                </div>
+              </div>
+
+              <!-- ── FILE DESTINATION PANEL ── -->
+              <div id="dst-panel-file">
+                <div class="form-group">
+                  <label class="form-label">Format Output</label>
+                  <div class="dest-format-group" id="dst-file-format-group">
+                    <button class="dest-format-btn selected" data-fmt="csv" onclick="selectDstFileFormat('csv')">CSV</button>
+                    <button class="dest-format-btn" data-fmt="excel" onclick="selectDstFileFormat('excel')">Excel (.xlsx)</button>
+                    <button class="dest-format-btn" data-fmt="json" onclick="selectDstFileFormat('json')">JSON</button>
+                    <button class="dest-format-btn" data-fmt="jsonl" onclick="selectDstFileFormat('jsonl')">JSONL</button>
+                    <button class="dest-format-btn" data-fmt="sqlite" onclick="selectDstFileFormat('sqlite')">SQLite</button>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Nama File Output</label>
+                  <div style="display:flex;align-items:center;gap:6px">
+                    <input class="form-control" id="dst-file-name" type="text" placeholder="output" value="output" style="max-width:180px">
+                    <span id="dst-file-ext" style="font-size:13px;color:var(--text-secondary);font-weight:500">.csv</span>
+                  </div>
+                  <div style="font-size:11px;color:var(--text-tertiary);margin-top:4px">
+                    File akan disimpan di folder <code>output/</code>
+                  </div>
+                </div>
+                <div id="dst-sqlite-table-group" class="form-group" style="display:none">
+                  <label class="form-label">Nama Tabel (untuk SQLite)</label>
+                  <input class="form-control" id="dst-sqlite-table" type="text" placeholder="etl_output" value="etl_output">
+                </div>
+              </div>
+
+              <!-- ── SQL DESTINATION PANEL ── -->
+              <div id="dst-panel-sql" style="display:none">
+                <div class="form-group">
+                  <label class="form-label">Tipe Database</label>
+                  <div class="dest-format-group">
+                    <button class="dest-format-btn selected" data-dbtype="mysql" onclick="selectDstDbType('mysql')">MySQL</button>
+                    <button class="dest-format-btn" data-dbtype="postgresql" onclick="selectDstDbType('postgresql')">PostgreSQL</button>
+                    <button class="dest-format-btn" data-dbtype="oracle" onclick="selectDstDbType('oracle')">Oracle</button>
+                  </div>
+                </div>
+
+                <!-- Koneksi destination -->
+                <div class="form-group">
+                  <label class="form-label">Koneksi Database Tujuan</label>
+                  <div style="display:grid;grid-template-columns:1fr 80px;gap:8px;margin-bottom:8px">
+                    <input class="form-control" id="dst-host" type="text" placeholder="localhost">
+                    <input class="form-control" id="dst-port" type="number" placeholder="3306">
+                  </div>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+                    <input class="form-control" id="dst-user" type="text" placeholder="root">
+                    <input class="form-control" id="dst-password" type="password" placeholder="password (kosongkan jika tidak ada)">
+                  </div>
+                  <button class="verify-btn" id="dst-verify-btn" onclick="verifyDstConnection()">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                    Verifikasi Koneksi
+                  </button>
+                  <div id="dst-verify-status" style="margin-top:6px;font-size:11.5px;color:var(--text-tertiary)"></div>
+                </div>
+
+                <div id="dst-db-select-group" class="form-group" style="display:none">
+                  <label class="form-label">Database Tujuan</label>
+                  <select class="form-select" id="dst-db-dropdown" onchange="onDstDbSelected(this.value)">
+                    <option value="">— Pilih database —</option>
+                  </select>
+                </div>
+
+                <!-- Destination Target Table Selector (Existing vs New) -->
+                <div id="dst-table-select-group" class="form-group" style="display:none">
+                  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+                    <label class="form-label" style="margin:0">Tabel Tujuan</label>
+                    <div style="display:flex;gap:6px;font-size:11px">
+                      <button type="button" class="dest-format-btn selected" id="dst-mode-existing-btn" onclick="setDstTableMode('existing')" style="padding:2px 8px;font-size:11px">Tabel yang Ada</button>
+                      <button type="button" class="dest-format-btn" id="dst-mode-new-btn" onclick="setDstTableMode('new')" style="padding:2px 8px;font-size:11px">Tabel Baru</button>
+                    </div>
+                  </div>
+
+                  <!-- Mode: Existing Table Dropdown -->
+                  <div id="dst-table-existing-container">
+                    <select class="form-select" id="dst-table-dropdown" onchange="onDstTableSelected(this.value)">
+                      <option value="">— Pilih tabel tujuan yang sudah ada —</option>
+                    </select>
+                  </div>
+
+                  <!-- Mode: New Table Input -->
+                  <div id="dst-table-new-container" style="display:none">
+                    <input class="form-control" id="dst-table-name" type="text" placeholder="nama_tabel_baru">
+                    <div style="font-size:11px;color:var(--text-tertiary);margin-top:4px">
+                      Tabel akan dibuat otomatis jika belum ada.
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Load Mode Selector -->
+                <div id="dst-load-mode-group" class="form-group" style="display:none;margin-top:10px">
+                  <label class="form-label" style="margin-bottom:6px">Mode Sinkronisasi &amp; Pengisian Data</label>
+                  <div style="display:flex;flex-direction:column;gap:7px">
+                    <label class="radio-card">
+                      <input type="radio" name="dst-load-mode" value="sync" id="dst-mode-sync" onchange="setDstLoadMode('sync')" style="margin-top:2px" checked>
+                      <div>
+                        <strong>Sync / Mirror (Selalu Sinkron Otomatis)</strong>
+                        <div style="font-size:11.5px;color:var(--text-secondary)">Tabel tujuan selalu mengikuti perubahan data &amp; struktur sumber (tambah kolom baru &amp; tipe data)</div>
+                      </div>
+                    </label>
+                    <label class="radio-card">
+                      <input type="radio" name="dst-load-mode" value="append" id="dst-mode-append" onchange="setDstLoadMode('append')" style="margin-top:2px">
+                      <div>
+                        <strong>Append (Tambah ke Data yang Ada)</strong>
+                        <div style="font-size:11.5px;color:var(--text-secondary)">Tambah baris baru tanpa menghapus data lama + otomatis tambah kolom baru jika ada</div>
+                      </div>
+                    </label>
+                    <label class="radio-card">
+                      <input type="radio" name="dst-load-mode" value="truncate" id="dst-mode-truncate" onchange="setDstLoadMode('truncate')" style="margin-top:2px">
+                      <div>
+                        <strong>Truncate (Kosongkan lalu Isi)</strong>
+                        <div style="font-size:11.5px;color:var(--text-secondary)">Kosongkan seluruh data lama tabel tujuan sebelum memuat data baru</div>
+                      </div>
+                    </label>
+                    <label class="radio-card radio-card-danger">
+                      <input type="radio" name="dst-load-mode" value="replace" id="dst-mode-replace" onchange="setDstLoadMode('replace')" style="margin-top:2px">
+                      <div>
+                        <strong style="color:var(--red-text)">Replace (Hapus / Drop &amp; Buat Ulang)</strong>
+                        <div style="font-size:11.5px;color:var(--red-text);opacity:0.85">Hapus (DROP) tabel lama jika sudah ada dan buat ulang tabel baru dari awal (Memerlukan konfirmasi keamanan)</div>
+                      </div>
+                    </label>
+                  </div>
+                  <div class="info-banner" style="margin-top:8px">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                    <span><strong>Auto Schema Evolution:</strong> Jika tabel belum ada, FlowETL otomatis membuatnya. Jika tabel sumber menambah kolom baru atau mengubah tipe data, tujuan otomatis mengikutinya via <code>ALTER TABLE</code>.</span>
+                  </div>
+                </div>
+
+                <!-- Column Mapping Section -->
+                <div id="dst-column-mapping-container" style="display:none"></div>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Run Action Button & Schedule Shortcut -->
+        <div style="display:flex;justify-content:center;gap:12px;margin-top:12px">
+          <button id="run-pipeline-btn" class="btn btn-primary" style="padding:11px 32px;font-size:14.5px;font-weight:600">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+            Jalankan Pipeline
+          </button>
+          <button type="button" class="btn btn-secondary" onclick="scheduleCurrentTask()" style="padding:11px 22px;font-size:14.5px;font-weight:600">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            Jadwalkan Task
+          </button>
+        </div>
+
+      </div>
+
+      <!-- ===================================================== -->
+      <!-- VIEW: HISTORY                                          -->
+      <!-- ===================================================== -->
+      <div id="view-history" class="view">
+
+        <div class="section-header">
+          <h1 class="section-title">Pipeline History</h1>
+          <button class="btn btn-secondary btn-sm" onclick="loadHistory()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="23 4 23 10 17 10"></polyline>
+              <polyline points="1 20 1 14 7 14"></polyline>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+            </svg>
+            Refresh
+          </button>
+        </div>
+
+        <div class="card">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Run ID</th>
+                  <th>Nama Pipeline</th>
+                  <th>Source</th>
+                  <th>Destination</th>
+                  <th>Status</th>
+                  <th>Rows</th>
+                  <th>Waktu</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="history-tbody">
+                <tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-tertiary)">
+                  Klik History di sidebar untuk memuat data.
+                </td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ===================================================== -->
+      <!-- VIEW: FILES (DOWNLOAD / INSTALL DATA)                  -->
+      <!-- ===================================================== -->
+      <div id="view-files" class="view">
+
+        <div class="section-header">
+          <h1 class="section-title">
+            <svg class="section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+            </svg>
+            File Data Hasil Export (Unduh)
+          </h1>
+          <button class="btn btn-secondary btn-sm" onclick="loadFiles()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="23 4 23 10 17 10"></polyline>
+              <polyline points="1 20 1 14 7 14"></polyline>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+            </svg>
+            Refresh
+          </button>
+        </div>
+
+        <div class="card">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nama File</th>
+                  <th>Ukuran</th>
+                  <th>Terakhir Diubah</th>
+                  <th>Lokasi File</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="files-tbody">
+                <tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-tertiary)">
+                  Memuat daftar file...
+                </td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ===== SCHEDULES VIEW ===== -->
+      <div id="view-schedules" class="view">
+
+        <div class="section-header">
+          <h1 class="section-title">
+            <svg class="section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            Penjadwalan Otomatis
+          </h1>
+          <div style="display:flex;gap:8px;align-items:center">
+            <button class="btn btn-secondary btn-sm" onclick="loadSchedules()">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <polyline points="1 20 1 14 7 14"></polyline>
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+              </svg>
+              Refresh
+            </button>
+            <button class="btn btn-primary btn-sm" onclick="showCreateScheduleModal()">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+              Tambah Jadwal
+            </button>
+          </div>
+        </div>
+
+        <!-- Info banner -->
+        <div class="info-banner" style="margin-bottom:20px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+          <span>Frekuensi <strong>30 Detik</strong> dan <strong>1 Menit</strong> tersedia untuk demo/uji coba. Untuk produksi gunakan <strong>Per Jam</strong> atau lebih.</span>
+        </div>
+
+        <div class="card">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nama Jadwal</th>
+                  <th>Pipeline</th>
+                  <th>Source → Dest</th>
+                  <th>Frekuensi</th>
+                  <th>Status</th>
+                  <th>Terakhir Jalan</th>
+                  <th>Jadwal Berikutnya</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="schedules-tbody">
+                <tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-tertiary)">
+                  Memuat jadwal...
+                </td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+    </div> <!-- /content -->
+  </div> <!-- /main -->
+</div> <!-- /layout -->
+
+<!-- ===== PROGRESS DRAWER ===== -->
+<div id="progress-drawer" class="progress-drawer">
+  <div id="drawer-header" class="drawer-header">
+    <div class="drawer-title">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+      </svg>
+      <span id="drawer-run-id">Pipeline Progress</span>
+      <span id="drawer-status-pill"></span>
+    </div>
+    <button id="drawer-close-btn" class="btn btn-secondary btn-sm btn-icon" title="Tutup">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    </button>
+  </div>
+  <div class="drawer-body">
+    <div class="progress-bar-wrap">
+      <div id="progress-bar-fill" class="progress-bar-fill"></div>
+    </div>
+    <div id="log-console" class="log-console">
+      <span style="color:var(--text-tertiary)">Menunggu pipeline dimulai...</span>
+    </div>
+    <div id="drawer-metrics"></div>
+    <div id="drawer-download-btn" style="margin-top:16px;text-align:center"></div>
+  </div>
+</div>
+
+<script src="/static/app.js?v=20261022_apple"></script>
+<script>
+// ─── Quick-start enterprise presets (General & Production-Ready) ───────────
+
+function presetFileToDatabase() {
+  applyRunToPipelineBuilder({
+    pipeline_name: "Import File CSV ke Database Staging",
+    source_type: "csv",
+    source_options: { path: "data/source_data.csv" },
+    destination_type: "sqlite",
+    destination_options: { path: "output/staging.sqlite", table_name: "staging_data", load_mode: "replace" },
+    transformations: []
+  });
+}
+
+function presetDBtoDBSync() {
+  applyRunToPipelineBuilder({
+    pipeline_name: "Sinkronisasi MySQL ke PostgreSQL",
+    source_type: "mysql",
+    source_options: { host: "localhost", port: 3306, database: "production_db", user: "root", password: "" },
+    destination_type: "postgresql",
+    destination_options: { host: "localhost", port: 5432, database: "analytics_dw", user: "postgres", password: "", load_mode: "sync" },
+    transformations: []
+  });
+}
+
+function presetDBtoExcel() {
+  applyRunToPipelineBuilder({
+    pipeline_name: "Ekstraksi Database ke Spreadsheet Excel (.xlsx)",
+    source_type: "mysql",
+    source_options: { host: "localhost", port: 3306, database: "production_db", user: "root", password: "" },
+    destination_type: "excel",
+    destination_options: { path: "output/laporan_data.xlsx" },
+    transformations: []
+  });
+}
+
+function presetDataCleansing() {
+  applyRunToPipelineBuilder({
+    pipeline_name: "Pipeline Data Cleansing & Normalization",
+    source_type: "csv",
+    source_options: { path: "data/dataset.csv" },
+    destination_type: "csv",
+    destination_options: { path: "output/clean_dataset.csv" },
+    transformations: [
+      { type: "trim", params: {} },
+      { type: "fill_null", params: { value: "-" } },
+      { type: "capitalize", params: {} }
+    ]
+  });
+}
+
+function presetJSONtoDB() {
+  applyRunToPipelineBuilder({
+    pipeline_name: "Ingest Dokumen JSON ke Database Analitik",
+    source_type: "json",
+    source_options: { path: "data/dataset.json" },
+    destination_type: "sqlite",
+    destination_options: { path: "output/analytics.sqlite", table_name: "json_records", load_mode: "append" },
+    transformations: []
+  });
+}
+
+function presetOracleSync() {
+  applyRunToPipelineBuilder({
+    pipeline_name: "Migrasi Enterprise ke Oracle Database",
+    source_type: "mysql",
+    source_options: { host: "localhost", port: 3306, database: "production_db", user: "root", password: "" },
+    destination_type: "oracle",
+    destination_options: { host: "localhost", port: 1521, service_name: "FREEPDB1", database: "SYSTEM", user: "system", password: "", load_mode: "sync" },
+    transformations: []
+  });
+}
+
+// Aliases for backwards compatibility
+function presetCSVtoSQLite() { presetFileToDatabase(); }
+function presetSQLiteToJSON() { presetJSONtoDB(); }
+function presetMySQLtoPostgres() { presetDBtoDBSync(); }
+
+// Populate dashboard connector chips after init
+const _origInit = init;
+async function init() {
+  await _origInit();
+  const container = document.getElementById("dashboard-connectors");
+  if (container && state.connectors.sources.length) {
+    const all = [...new Set([...state.connectors.sources, ...state.connectors.destinations])];
+    container.innerHTML = all.map(c =>
+      `<span class="connector-chip" style="cursor:default">${CONNECTOR_ICONS[c] || getConnectorSVG(c)} ${c}</span>`
+    ).join("");
+  }
+}
+</script>
+
+        <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            setTimeout(function() {
+                if (typeof showView === 'function') showView('files');
+                if (typeof setTheme === 'function') setTheme('dark', false);
+                
+                
+            }, 150);
+        });
+        </script>
+        
+</body>
+</html>

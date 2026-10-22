@@ -1,0 +1,168 @@
+{
+  "color": {
+    "light": {
+      "background": {
+        "value": "#F5F5F7",
+        "type": "color",
+        "description": "Canvas background"
+      },
+      "surface": {
+        "value": "#FFFFFF",
+        "type": "color",
+        "description": "Main cards surface"
+      },
+      "surfaceSecondary": {
+        "value": "#FBFBFD",
+        "type": "color",
+        "description": "Secondary panels"
+      },
+      "text": {
+        "value": "#1D1D1F",
+        "type": "color",
+        "description": "Primary high-contrast text"
+      },
+      "textSecondary": {
+        "value": "#6E6E73",
+        "type": "color",
+        "description": "Subtitle & secondary text"
+      },
+      "textTertiary": {
+        "value": "#86868B",
+        "type": "color",
+        "description": "Muted labels"
+      },
+      "border": {
+        "value": "#D2D2D7",
+        "type": "color",
+        "description": "1px hairline border"
+      },
+      "accent": {
+        "value": "#007AFF",
+        "type": "color",
+        "description": "Apple System Blue"
+      },
+      "success": {
+        "value": "#248A3D",
+        "type": "color",
+        "description": "Apple System Green"
+      },
+      "warning": {
+        "value": "#B76E00",
+        "type": "color",
+        "description": "Apple System Orange/Gold"
+      },
+      "error": {
+        "value": "#D70015",
+        "type": "color",
+        "description": "Apple System Red"
+      }
+    },
+    "dark": {
+      "background": {
+        "value": "#151516",
+        "type": "color",
+        "description": "Dark canvas background"
+      },
+      "surface": {
+        "value": "#1C1C1E",
+        "type": "color",
+        "description": "Dark gray main surface"
+      },
+      "surfaceSecondary": {
+        "value": "#242426",
+        "type": "color",
+        "description": "Elevated dark card"
+      },
+      "text": {
+        "value": "#F5F5F7",
+        "type": "color",
+        "description": "Primary light text"
+      },
+      "textSecondary": {
+        "value": "#A1A1A6",
+        "type": "color",
+        "description": "Secondary gray text"
+      },
+      "textTertiary": {
+        "value": "#636366",
+        "type": "color",
+        "description": "Muted dark text"
+      },
+      "border": {
+        "value": "#38383A",
+        "type": "color",
+        "description": "Dark border hairline"
+      },
+      "accent": {
+        "value": "#0A84FF",
+        "type": "color",
+        "description": "Vibrant Dark Blue"
+      },
+      "success": {
+        "value": "#30D158",
+        "type": "color",
+        "description": "Vibrant Green"
+      },
+      "warning": {
+        "value": "#FFD60A",
+        "type": "color",
+        "description": "Vibrant Yellow"
+      },
+      "error": {
+        "value": "#FF453A",
+        "type": "color",
+        "description": "Vibrant Red"
+      }
+    }
+  },
+  "borderRadius": {
+    "card": {
+      "value": "16px",
+      "type": "borderRadius"
+    },
+    "input": {
+      "value": "10px",
+      "type": "borderRadius"
+    },
+    "button": {
+      "value": "10px",
+      "type": "borderRadius"
+    },
+    "pill": {
+      "value": "9999px",
+      "type": "borderRadius"
+    }
+  },
+  "spacing": {
+    "xs": {
+      "value": "4px",
+      "type": "spacing"
+    },
+    "sm": {
+      "value": "8px",
+      "type": "spacing"
+    },
+    "md": {
+      "value": "16px",
+      "type": "spacing"
+    },
+    "lg": {
+      "value": "24px",
+      "type": "spacing"
+    },
+    "xl": {
+      "value": "32px",
+      "type": "spacing"
+    }
+  },
+  "typography": {
+    "fontFamily": {
+      "value": "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', sans-serif",
+      "type": "fontFamilies"
+    },
+    "monoFamily": {
+      "value": "'SF Mono', Menlo, Consolas, monospace",
+      "type": "fontFamilies"
+    }
+  }
+}

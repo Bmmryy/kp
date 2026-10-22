@@ -2850,10 +2850,12 @@ function setStatValue(id, value) {
 // ─── Theme Management (Apple HIG Light / Dark) ──────────────────────────────
 
 function initTheme() {
-  const saved = localStorage.getItem("flowetl_theme");
+  const urlParams = new URLSearchParams(window.location.search);
+  const themeParam = urlParams.get("theme");
+  const saved = (themeParam === "dark" || themeParam === "light") ? themeParam : localStorage.getItem("flowetl_theme");
   const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
   const initial = saved || (prefersDark ? "dark" : "light");
-  setTheme(initial, false);
+  setTheme(initial, !themeParam);
 
   if (window.matchMedia) {
     try {
@@ -2935,9 +2937,38 @@ async function init() {
     if (!e.target.closest("button")) return;
   });
 
-  // Initial view
-  showView("dashboard");
+  // Initial view from URL parameter or hash (#builder, ?view=builder)
+  const urlParams = new URLSearchParams(window.location.search);
+  const viewParam = urlParams.get("view") || window.location.hash.replace("#", "");
+  const validViews = ["dashboard", "builder", "history", "files", "schedules"];
+  const initialView = validViews.includes(viewParam) ? viewParam : "dashboard";
+  showView(initialView);
   updateDashboardStats();
+
+  window.addEventListener("hashchange", () => {
+    const h = window.location.hash.replace("#", "");
+    if (validViews.includes(h)) showView(h);
+  });
+
+  // Deep-link triggers for modal / drawer
+  if (urlParams.get("modal") === "schedule") {
+    setTimeout(() => showCreateScheduleModal(), 250);
+  } else if (urlParams.get("drawer") === "progress") {
+    setTimeout(() => {
+      openProgressDrawer("Sinkronisasi Data Real-time (MySQL → PostgreSQL)");
+      setProgress(85, "LOADING (85%)");
+      const log = document.getElementById("log-console");
+      if (log) {
+        log.innerHTML = `
+          <div style="color:var(--success)">[ 10%] CONNECTING_SOURCE ✓ Terhubung ke database sumber (MySQL)</div>
+          <div style="color:var(--success)">[ 20%] CONNECTING_DESTINATION ✓ Terhubung ke target (PostgreSQL)</div>
+          <div style="color:var(--accent)">[ 30%] EXTRACTING (500 baris diekstraksi)</div>
+          <div style="color:var(--purple,#AF52DE)">[ 60%] TRANSFORMING (Data Cleansing: Trim, Fill Null, Capitalize)</div>
+          <div style="color:var(--accent)">[ 85%] LOADING (Menyimpan 500 baris ke tabel target)</div>
+        `;
+      }
+    }, 250);
+  }
 }
 
 try { initTheme(); } catch (_) {}
