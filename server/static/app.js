@@ -62,8 +62,22 @@ const CONNECTOR_FIELDS = {
     { key: "password",   label: "Password", type: "password", placeholder: "••••••••",     required: false },
     { key: "table_name", label: "Table",    type: "text",     placeholder: "patients_dim", required: false },
   ],
+  oracle: [
+    { key: "host",       label: "Host",     type: "text",     placeholder: "localhost",   required: true },
+    { key: "port",       label: "Port",     type: "number",   placeholder: "1521",        required: false },
+    { key: "database",   label: "Service Name", type: "text", placeholder: "FREEPDB1",    required: true },
+    { key: "user",       label: "User",     type: "text",     placeholder: "system",      required: true },
+    { key: "password",   label: "Password", type: "password", placeholder: "••••••••",    required: false },
+    { key: "table_name", label: "Table",    type: "text",     placeholder: "PATIENTS",    required: false },
+  ],
 };
 CONNECTOR_FIELDS.postgres = CONNECTOR_FIELDS.postgresql;
+
+function getDbDefaultPort(dbtype) {
+  if (dbtype === "mysql") return 3306;
+  if (dbtype === "oracle") return 1521;
+  return 5432;
+}
 
 // SF Symbols-style SVG icons for each connector (no emoji)
 function getConnectorSVG(name) {
@@ -76,12 +90,13 @@ function getConnectorSVG(name) {
     mysql:      `<svg ${s}><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>`,
     postgresql: `<svg ${s}><rect x="3" y="4" width="18" height="16" rx="3"></rect><line x1="3" y1="10" x2="21" y2="10"></line><line x1="9" y1="20" x2="9" y2="10"></line></svg>`,
     postgres:   `<svg ${s}><rect x="3" y="4" width="18" height="16" rx="3"></rect><line x1="3" y1="10" x2="21" y2="10"></line><line x1="9" y1="20" x2="9" y2="10"></line></svg>`,
+    oracle:     `<svg ${s}><rect x="2" y="4" width="20" height="16" rx="2"></rect><path d="M7 15h10M7 9h10"></path></svg>`,
   };
   return icons[name] || `<svg ${s}><circle cx="12" cy="12" r="4"></circle><path d="M1.05 12H7M17 12h5.95M12 1.05V7M12 17v5.95"></path></svg>`;
 }
 
 const CONNECTOR_ICONS = Object.fromEntries(
-  ["csv","json","jsonl","sqlite","mysql","postgresql","postgres"].map(k => [k, getConnectorSVG(k)])
+  ["csv","json","jsonl","sqlite","mysql","postgresql","postgres","oracle"].map(k => [k, getConnectorSVG(k)])
 );
 
 // ─── State ───────────────────────────────────────────────────────────────────
@@ -1003,10 +1018,10 @@ function showCreateScheduleModal(prefillRun = null, editJob = null) {
     `<option value="${v}">${l}</option>`
   ).join("");
 
-  const srcTypeOptions = ["mysql", "postgresql", "csv", "json", "jsonl", "sqlite"].map(t =>
+  const srcTypeOptions = ["mysql", "postgresql", "oracle", "csv", "json", "jsonl", "sqlite"].map(t =>
     `<option value="${t}">${t.toUpperCase()}</option>`
   ).join("");
-  const dstTypeOptions = ["csv", "json", "jsonl", "sqlite", "mysql", "postgresql"].map(t =>
+  const dstTypeOptions = ["csv", "json", "jsonl", "sqlite", "mysql", "postgresql", "oracle"].map(t =>
     `<option value="${t}">${t.toUpperCase()}</option>`
   ).join("");
 
@@ -1223,11 +1238,11 @@ function applyRunToScheduleForm(run) {
     srcTypeSelect.value = cleanSrcType;
     onScSrcTypeChange(cleanSrcType);
 
-    const isSrcSql = ["mysql", "postgresql", "postgres"].includes(cleanSrcType);
+    const isSrcSql = ["mysql", "postgresql", "postgres", "oracle"].includes(cleanSrcType);
     const srcOpts = run.source_options || (run.sources && run.sources[0]?.options) || {};
     if (isSrcSql) {
       if ($("#sc-src-host")) $("#sc-src-host").value = srcOpts.host || "localhost";
-      if ($("#sc-src-port")) $("#sc-src-port").value = srcOpts.port || (cleanSrcType === "mysql" ? 3306 : 5432);
+      if ($("#sc-src-port")) $("#sc-src-port").value = srcOpts.port || getDbDefaultPort(cleanSrcType);
       if ($("#sc-src-user")) $("#sc-src-user").value = srcOpts.user || "root";
       if ($("#sc-src-pass")) $("#sc-src-pass").value = srcOpts.password || "";
       if ($("#sc-src-database")) $("#sc-src-database").value = srcOpts.database || "";
@@ -1244,11 +1259,11 @@ function applyRunToScheduleForm(run) {
     dstTypeSelect.value = dstType;
     onScDstTypeChange(dstType);
 
-    const isDstSql = ["mysql", "postgresql", "postgres"].includes(dstType);
+    const isDstSql = ["mysql", "postgresql", "postgres", "oracle"].includes(dstType);
     const dstOpts = run.destination_options || {};
     if (isDstSql) {
       if ($("#sc-dst-host")) $("#sc-dst-host").value = dstOpts.host || "localhost";
-      if ($("#sc-dst-port")) $("#sc-dst-port").value = dstOpts.port || (dstType === "mysql" ? 3306 : 5432);
+      if ($("#sc-dst-port")) $("#sc-dst-port").value = dstOpts.port || getDbDefaultPort(dstType);
       if ($("#sc-dst-user")) $("#sc-dst-user").value = dstOpts.user || "root";
       if ($("#sc-dst-pass")) $("#sc-dst-pass").value = dstOpts.password || "";
       if ($("#sc-dst-database")) $("#sc-dst-database").value = dstOpts.database || "";
@@ -1281,11 +1296,11 @@ function applyJobToScheduleForm(job) {
     srcTypeSelect.value = srcType;
     onScSrcTypeChange(srcType);
 
-    const isSrcSql = ["mysql", "postgresql", "postgres"].includes(srcType);
+    const isSrcSql = ["mysql", "postgresql", "postgres", "oracle"].includes(srcType);
     const srcOpts = job.source_options || {};
     if (isSrcSql) {
       if ($("#sc-src-host")) $("#sc-src-host").value = srcOpts.host || "localhost";
-      if ($("#sc-src-port")) $("#sc-src-port").value = srcOpts.port || (srcType === "mysql" ? 3306 : 5432);
+      if ($("#sc-src-port")) $("#sc-src-port").value = srcOpts.port || getDbDefaultPort(srcType);
       if ($("#sc-src-user")) $("#sc-src-user").value = srcOpts.user || "root";
       if ($("#sc-src-pass")) $("#sc-src-pass").value = srcOpts.password || "";
       if ($("#sc-src-database")) $("#sc-src-database").value = srcOpts.database || "";
@@ -1301,11 +1316,11 @@ function applyJobToScheduleForm(job) {
     dstTypeSelect.value = dstType;
     onScDstTypeChange(dstType);
 
-    const isDstSql = ["mysql", "postgresql", "postgres"].includes(dstType);
+    const isDstSql = ["mysql", "postgresql", "postgres", "oracle"].includes(dstType);
     const dstOpts = job.destination_options || job.dest_options || {};
     if (isDstSql) {
       if ($("#sc-dst-host")) $("#sc-dst-host").value = dstOpts.host || "localhost";
-      if ($("#sc-dst-port")) $("#sc-dst-port").value = dstOpts.port || (dstType === "mysql" ? 3306 : 5432);
+      if ($("#sc-dst-port")) $("#sc-dst-port").value = dstOpts.port || getDbDefaultPort(dstType);
       if ($("#sc-dst-user")) $("#sc-dst-user").value = dstOpts.user || "root";
       if ($("#sc-dst-pass")) $("#sc-dst-pass").value = dstOpts.password || "";
       if ($("#sc-dst-database")) $("#sc-dst-database").value = dstOpts.database || "";
@@ -1329,24 +1344,24 @@ function applyJobToScheduleForm(job) {
 }
 
 function onScSrcTypeChange(val) {
-  const isSql  = ["mysql","postgresql","postgres"].includes(val);
+  const isSql  = ["mysql","postgresql","postgres","oracle"].includes(val);
   const sqlFld = $("#sc-src-sql-fields");
   const filFld = $("#sc-src-file-fields");
   if (sqlFld)  sqlFld.style.display = isSql ? "" : "none";
   if (filFld)  filFld.style.display = isSql ? "none" : "";
   // Update port placeholder
   const portInp = $("#sc-src-port");
-  if (portInp) portInp.placeholder = val === "mysql" ? "3306" : "5432";
+  if (portInp) portInp.placeholder = String(getDbDefaultPort(val));
 }
 
 function onScDstTypeChange(val) {
-  const isSql  = ["mysql","postgresql","postgres"].includes(val);
+  const isSql  = ["mysql","postgresql","postgres","oracle"].includes(val);
   const sqlFld = $("#sc-dst-sql-fields");
   const filFld = $("#sc-dst-file-fields");
   if (sqlFld)  sqlFld.style.display = isSql ? "" : "none";
   if (filFld)  filFld.style.display = isSql ? "none" : "";
   const portInp = $("#sc-dst-port");
-  if (portInp) portInp.placeholder = val === "mysql" ? "3306" : "5432";
+  if (portInp) portInp.placeholder = String(getDbDefaultPort(val));
 }
 
 function getScheduleFormData() {
@@ -1362,11 +1377,11 @@ function getScheduleFormData() {
 
   // Build source options based on type
   let srcOpts = {};
-  const isSrcSql = ["mysql","postgresql","postgres"].includes(srcType);
+  const isSrcSql = ["mysql","postgresql","postgres","oracle"].includes(srcType);
   if (isSrcSql) {
     srcOpts = {
       host:     $("#sc-src-host")?.value.trim() || "localhost",
-      port:     parseInt($("#sc-src-port")?.value) || (srcType === "mysql" ? 3306 : 5432),
+      port:     parseInt($("#sc-src-port")?.value) || getDbDefaultPort(srcType),
       user:     $("#sc-src-user")?.value.trim() || "root",
       password: $("#sc-src-pass")?.value || "",
       database: $("#sc-src-database")?.value.trim(),
@@ -1381,11 +1396,11 @@ function getScheduleFormData() {
 
   // Build destination options based on type
   let dstOpts = {};
-  const isDstSql = ["mysql","postgresql","postgres"].includes(dstType);
+  const isDstSql = ["mysql","postgresql","postgres","oracle"].includes(dstType);
   if (isDstSql) {
     dstOpts = {
       host:     $("#sc-dst-host")?.value.trim() || "localhost",
-      port:     parseInt($("#sc-dst-port")?.value) || (dstType === "mysql" ? 3306 : 5432),
+      port:     parseInt($("#sc-dst-port")?.value) || getDbDefaultPort(dstType),
       user:     $("#sc-dst-user")?.value.trim() || "root",
       password: $("#sc-dst-pass")?.value || "",
       database: $("#sc-dst-database")?.value.trim(),
@@ -1516,10 +1531,10 @@ function scheduleCurrentTask() {
       srcTypeSelect.value = src.type;
       onScSrcTypeChange(src.type);
 
-      const isSrcSql = ["mysql", "postgresql", "postgres"].includes(src.type);
+      const isSrcSql = ["mysql", "postgresql", "postgres", "oracle"].includes(src.type);
       if (isSrcSql) {
         if ($("#sc-src-host")) $("#sc-src-host").value = src.options.host || "localhost";
-        if ($("#sc-src-port")) $("#sc-src-port").value = src.options.port || (src.type === "mysql" ? 3306 : 5432);
+        if ($("#sc-src-port")) $("#sc-src-port").value = src.options.port || getDbDefaultPort(src.type);
         if ($("#sc-src-user")) $("#sc-src-user").value = src.options.user || "root";
         if ($("#sc-src-pass")) $("#sc-src-pass").value = src.options.password || "";
         if ($("#sc-src-database")) $("#sc-src-database").value = src.options.database || "";
@@ -1535,10 +1550,10 @@ function scheduleCurrentTask() {
       dstTypeSelect.value = dest.type;
       onScDstTypeChange(dest.type);
 
-      const isDstSql = ["mysql", "postgresql", "postgres"].includes(dest.type);
+      const isDstSql = ["mysql", "postgresql", "postgres", "oracle"].includes(dest.type);
       if (isDstSql) {
         if ($("#sc-dst-host")) $("#sc-dst-host").value = dest.options.host || "localhost";
-        if ($("#sc-dst-port")) $("#sc-dst-port").value = dest.options.port || (dest.type === "mysql" ? 3306 : 5432);
+        if ($("#sc-dst-port")) $("#sc-dst-port").value = dest.options.port || getDbDefaultPort(dest.type);
         if ($("#sc-dst-user")) $("#sc-dst-user").value = dest.options.user || "root";
         if ($("#sc-dst-pass")) $("#sc-dst-pass").value = dest.options.password || "";
         if ($("#sc-dst-database")) $("#sc-dst-database").value = dest.options.database || "";
@@ -1607,7 +1622,7 @@ function selectSrcDbType(dbtype) {
   });
   // Update default port hints for existing cards
   $$(".src-db-port-input").forEach(inp => {
-    inp.placeholder = dbtype === "mysql" ? "3306" : "5432";
+    inp.placeholder = String(getDbDefaultPort(dbtype));
   });
 }
 
@@ -1757,7 +1772,7 @@ async function verifySrcCard(id) {
   if (!card) return;
 
   const host     = $(`#src-host-${id}`)?.value.trim() || "";
-  const port     = parseInt($(`#src-port-${id}`)?.value) || (state.srcDbType === "mysql" ? 3306 : 5432);
+  const port     = parseInt($(`#src-port-${id}`)?.value) || getDbDefaultPort(state.srcDbType);
   const user     = $(`#src-user-${id}`)?.value.trim() || "";
   const password = $(`#src-pass-${id}`)?.value || "";
 
@@ -1845,7 +1860,7 @@ function renderSrcDbCards() {
   if (!container) return;
   container.innerHTML = "";
   state.srcDbCards.forEach(card => {
-    const defaultPort = state.srcDbType === "mysql" ? "3306" : "5432";
+    const defaultPort = String(getDbDefaultPort(state.srcDbType));
     const div = document.createElement("div");
     div.className = "source-card";
     div.id = `src-card-${card.id}`;
@@ -2035,7 +2050,7 @@ function selectDstDbType(dbtype) {
   });
   // Update default port placeholder
   const portInput = $("#dst-port");
-  if (portInput) portInput.placeholder = dbtype === "mysql" ? "3306" : "5432";
+  if (portInput) portInput.placeholder = String(getDbDefaultPort(dbtype));
   // Reset verification
   state.dstVerified = false;
   state.dstDatabases = [];
@@ -2051,7 +2066,7 @@ function selectDstDbType(dbtype) {
 
 async function verifyDstConnection() {
   const host     = $("#dst-host")?.value.trim();
-  const port     = parseInt($("#dst-port")?.value) || (state.dstDbType === "mysql" ? 3306 : 5432);
+  const port     = parseInt($("#dst-port")?.value) || getDbDefaultPort(state.dstDbType);
   const user     = $("#dst-user")?.value.trim();
   const password = $("#dst-password")?.value || "";
 
@@ -2133,7 +2148,7 @@ async function onDstDbSelected(database) {
   }
 
   const host     = $("#dst-host")?.value.trim() || "localhost";
-  const port     = parseInt($("#dst-port")?.value) || (state.dstDbType === "mysql" ? 3306 : 5432);
+  const port     = parseInt($("#dst-port")?.value) || getDbDefaultPort(state.dstDbType);
   const user     = $("#dst-user")?.value.trim() || "root";
   const password = $("#dst-password")?.value || "";
 
@@ -2168,7 +2183,7 @@ async function onDstTableSelected(tableName) {
   if (loadModeGroup) loadModeGroup.style.display = "";
 
   const host     = $("#dst-host")?.value.trim() || "localhost";
-  const port     = parseInt($("#dst-port")?.value) || (state.dstDbType === "mysql" ? 3306 : 5432);
+  const port     = parseInt($("#dst-port")?.value) || getDbDefaultPort(state.dstDbType);
   const user     = $("#dst-user")?.value.trim() || "root";
   const password = $("#dst-password")?.value || "";
   const database = $("#dst-db-dropdown")?.value;
@@ -2440,7 +2455,7 @@ function collectSources() {
       type: state.srcDbType,
       options: {
         host: card.host,
-        port: parseInt(card.port) || (state.srcDbType === "mysql" ? 3306 : 5432),
+        port: parseInt(card.port) || getDbDefaultPort(state.srcDbType),
         user: card.user,
         password: card.password,
         database: card.database,
@@ -2471,7 +2486,7 @@ function collectDestination() {
       type: state.dstDbType,
       options: {
         host: $("#dst-host")?.value.trim() || "localhost",
-        port: parseInt($("#dst-port")?.value) || (state.dstDbType === "mysql" ? 3306 : 5432),
+        port: parseInt($("#dst-port")?.value) || getDbDefaultPort(state.dstDbType),
         user: $("#dst-user")?.value.trim() || "root",
         password: $("#dst-password")?.value || "",
         database,
@@ -2640,7 +2655,7 @@ async function loadHistoryToBuilder(runId) {
   // 4. Source setup
   const rawSrcType = run.source_type || "csv";
   const cleanSrcType = rawSrcType.split("+")[0];
-  const isSrcSql = ["mysql", "postgresql", "postgres"].includes(cleanSrcType);
+  const isSrcSql = ["mysql", "postgresql", "postgres", "oracle"].includes(cleanSrcType);
   const srcOpts = run.source_options || (run.sources && run.sources[0]?.options) || {};
 
   if (isSrcSql) {
@@ -2650,7 +2665,7 @@ async function loadHistoryToBuilder(runId) {
     if (state.srcDbCards.length === 0) addSrcDbCard();
     const card = state.srcDbCards[0];
     card.host = srcOpts.host || "localhost";
-    card.port = srcOpts.port || (cleanSrcType === "mysql" ? 3306 : 5432);
+    card.port = srcOpts.port || getDbDefaultPort(cleanSrcType);
     card.user = srcOpts.user || "root";
     card.password = srcOpts.password || "";
     card.database = srcOpts.database || "";
@@ -2696,7 +2711,7 @@ async function loadHistoryToBuilder(runId) {
 
   // 5. Destination setup
   const dstType = run.destination_type || "csv";
-  const isDstSql = ["mysql", "postgresql", "postgres"].includes(dstType);
+  const isDstSql = ["mysql", "postgresql", "postgres", "oracle"].includes(dstType);
   const dstOpts = run.destination_options || {};
 
   if (isDstSql) {
@@ -2704,7 +2719,7 @@ async function loadHistoryToBuilder(runId) {
     selectDstDbType(dstType === "postgres" ? "postgresql" : dstType);
 
     if ($("#dst-host")) $("#dst-host").value = dstOpts.host || "localhost";
-    if ($("#dst-port")) $("#dst-port").value = dstOpts.port || (dstType === "mysql" ? 3306 : 5432);
+    if ($("#dst-port")) $("#dst-port").value = dstOpts.port || getDbDefaultPort(dstType);
     if ($("#dst-user")) $("#dst-user").value = dstOpts.user || "root";
     if ($("#dst-password")) $("#dst-password").value = dstOpts.password || "";
 
@@ -2715,7 +2730,7 @@ async function loadHistoryToBuilder(runId) {
     if (status) status.innerHTML = `<span class="verified-badge">✓ Koneksi berhasil!</span>`;
 
     try {
-      const dbRes = await fetch(`${API.listDatabases}?type=${state.dstDbType}&host=${dstOpts.host || 'localhost'}&port=${dstOpts.port || 3306}&user=${dstOpts.user || 'root'}&password=${encodeURIComponent(dstOpts.password || '')}`);
+      const dbRes = await fetch(`${API.listDatabases}?type=${state.dstDbType}&host=${dstOpts.host || 'localhost'}&port=${dstOpts.port || getDbDefaultPort(state.dstDbType)}&user=${dstOpts.user || 'root'}&password=${encodeURIComponent(dstOpts.password || '')}`);
       if (dbRes.ok) {
         const dbData = await dbRes.json();
         state.dstDatabases = dbData.databases || [];

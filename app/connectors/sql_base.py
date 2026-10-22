@@ -97,7 +97,8 @@ class SQLBaseSource(SourceConnector):
             self._engine = sa.create_engine(url, pool_pre_ping=True)
             # Eagerly verify reachability
             with self._engine.connect() as conn:
-                conn.execute(text("SELECT 1"))
+                ping_sql = "SELECT 1 FROM DUAL" if self.dialect == "oracle" else "SELECT 1"
+                conn.execute(text(ping_sql))
             self._inspector = sa_inspect(self._engine)
             self._is_connected = True
             logger.info("Connected to %s successfully.", self.dialect)
@@ -119,7 +120,8 @@ class SQLBaseSource(SourceConnector):
     def test_connection(self) -> bool:
         self.connect()
         with self._engine.connect() as conn:
-            result = conn.execute(text("SELECT 1"))
+            ping_sql = "SELECT 1 FROM DUAL" if self.dialect == "oracle" else "SELECT 1"
+            result = conn.execute(text(ping_sql))
             return result.fetchone() is not None
 
     def close(self) -> None:
@@ -315,7 +317,8 @@ class SQLBaseDestination(DestinationConnector):
         try:
             self._engine = sa.create_engine(url, pool_pre_ping=True)
             with self._engine.connect() as conn:
-                conn.execute(text("SELECT 1"))
+                ping_sql = "SELECT 1 FROM DUAL" if self.dialect == "oracle" else "SELECT 1"
+                conn.execute(text(ping_sql))
             self._is_connected = True
             logger.info("Connected to %s destination successfully.", self.dialect)
         except OperationalError as err:
@@ -335,7 +338,8 @@ class SQLBaseDestination(DestinationConnector):
     def test_connection(self) -> bool:
         self.connect()
         with self._engine.connect() as conn:
-            result = conn.execute(text("SELECT 1"))
+            ping_sql = "SELECT 1 FROM DUAL" if self.dialect == "oracle" else "SELECT 1"
+            result = conn.execute(text(ping_sql))
             return result.fetchone() is not None
 
     def close(self) -> None:

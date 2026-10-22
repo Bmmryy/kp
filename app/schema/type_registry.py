@@ -94,10 +94,14 @@ class TypeRegistry:
 
         # Dynamic dimension adjustments if requested
         if canonical_type == DataType.STRING and length:
-            if "varchar" in base_native.lower():
+            if "varchar2" in base_native.lower():
+                return f"VARCHAR2({length})"
+            elif "varchar" in base_native.lower():
                 return f"VARCHAR({length})"
         elif canonical_type == DataType.DECIMAL and precision and scale:
-            if "decimal" in base_native.lower() or "numeric" in base_native.lower():
+            if "number" in base_native.lower():
+                return f"NUMBER({precision}, {scale})"
+            elif "decimal" in base_native.lower() or "numeric" in base_native.lower():
                 return f"DECIMAL({precision}, {scale})"
 
         return base_native
@@ -239,6 +243,40 @@ def _initialize_default_type_mappings() -> None:
     for c_type, native in mssql_targets.items():
         TypeRegistry.register_native_target("sqlserver", c_type, native)
         TypeRegistry.register_native_target("mssql", c_type, native)
+
+    # ==========================================
+    # Oracle Mappings
+    # ==========================================
+    oracle_mappings = [
+        (r"^number\(1(,0)?\)$", DataType.BOOLEAN),
+        (r"^boolean$", DataType.BOOLEAN),
+        (r"^number\(\d+\)$", DataType.INTEGER),
+        (r"^(smallint|int|integer)$", DataType.INTEGER),
+        (r"^(binary_float|float|binary_double|double precision)", DataType.FLOAT),
+        (r"^(number|decimal|numeric)", DataType.DECIMAL),
+        (r"^(varchar2|nvarchar2|char|nchar|clob|nclob|long|rowid)", DataType.STRING),
+        (r"^date$", DataType.DATE),
+        (r"^timestamp", DataType.DATETIME),
+        (r"^(blob|raw|long raw|bfile)", DataType.BINARY),
+        (r"^json$", DataType.JSON),
+    ]
+    for pat, c_type in oracle_mappings:
+        TypeRegistry.register_native_mapping("oracle", pat, c_type)
+
+    oracle_targets = {
+        DataType.INTEGER: "NUMBER(38)",
+        DataType.FLOAT: "BINARY_DOUBLE",
+        DataType.DECIMAL: "NUMBER(18, 4)",
+        DataType.STRING: "VARCHAR2(255)",
+        DataType.BOOLEAN: "NUMBER(1)",
+        DataType.DATE: "DATE",
+        DataType.DATETIME: "TIMESTAMP",
+        DataType.TIME: "VARCHAR2(16)",
+        DataType.JSON: "CLOB",
+        DataType.BINARY: "BLOB",
+    }
+    for c_type, native in oracle_targets.items():
+        TypeRegistry.register_native_target("oracle", c_type, native)
 
     # ==========================================
     # CSV / Flat File Mappings

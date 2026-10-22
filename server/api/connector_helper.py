@@ -31,13 +31,19 @@ def _build_url(db_type: str, host: str, port: int, user: str, password: str, dat
     elif db_type in ("postgresql", "postgres", "postgresql+psycopg2"):
         db_part = f"/{database}" if database else "/postgres"
         return f"postgresql+psycopg2://{user}:{pw}@{host}:{port}{db_part}"
+    elif db_type in ("oracle", "oracle+oracledb"):
+        service = database or "FREEPDB1"
+        return f"oracle+oracledb://{user}:{pw}@{host}:{port}/?service_name={service}"
     else:
         raise ValueError(f"Tipe database tidak didukung: {db_type}")
 
 
 def _get_engine(db_type: str, host: str, port: int, user: str, password: str, database: str = "") -> sa.Engine:
     url = _build_url(db_type, host, port, user, password, database)
-    return sa.create_engine(url, pool_pre_ping=True, pool_timeout=5, connect_args={"connect_timeout": 5})
+    connect_args = {}
+    if db_type not in ("oracle", "oracle+oracledb"):
+        connect_args["connect_timeout"] = 5
+    return sa.create_engine(url, pool_pre_ping=True, pool_timeout=5, connect_args=connect_args)
 
 
 # ---------------------------------------------------------------------------
@@ -59,6 +65,12 @@ def _format_connection_error(e: Exception) -> str:
         return "Gagal terhubung ke database: Izin koneksi jaringan socket dibatasi oleh sistem. Pastikan port database terbuka dan server dapat diakses."
     if "Can't connect to MySQL server" in msg or "2003" in msg or "2002" in msg or "Connection refused" in msg:
         return "Tidak dapat terhubung ke server database. Pastikan layanan database aktif dan host/port sesuai (contoh: 127.0.0.1:3306)."
+    if "ORA-12541" in msg or "DPY-6005" in msg or "DPY-6000" in msg:
+        return "Tidak dapat terhubung ke listener Oracle. Pastikan Oracle database aktif dan port 1521 terbuka."
+    if "ORA-01017" in msg:
+        return "Autentikasi Oracle gagal: username atau password salah."
+    if "ORA-12514" in msg:
+        return "Service name Oracle tidak ditemukan. Pastikan nama service/database benar (contoh: FREEPDB1 atau XEPDB1)."
     if "Access denied for user" in msg or "1045" in msg or "password authentication failed" in msg:
         return "Autentikasi gagal: username atau password database salah."
     if "Unknown database" in msg or "1049" in msg or ('database "' in msg and 'does not exist' in msg):
@@ -82,7 +94,8 @@ def verify_connection(params: ConnectParams) -> Dict[str, Any]:
     try:
         engine = _get_engine(params.type, params.host, params.port, params.user, params.password)
         with engine.connect() as conn:
-            conn.execute(text("SELECT 1"))
+            ping_sql = "SELECT 1 FROM DUAL" if params.type in ("oracle", "oracle+oracledb") else "SELECT 1"
+            conn.execute(text(ping_sql))
         engine.dispose()
         return {"ok": True, "message": "Koneksi berhasil!"}
     except OperationalError as e:
@@ -112,6 +125,16 @@ def list_databases(type: str, host: str, port: int, user: str, password: str = "
                 )
                 system_dbs = {"postgres", "template0", "template1"}
                 dbs = [row[0] for row in result if row[0].lower() not in system_dbs]
+            elif type in ("oracle", "oracle+oracledb"):
+                try:
+                    result = conn.execute(
+                        text("SELECT username FROM all_users WHERE oracle_maintained = 'N' ORDER BY username")
+                    )
+                    dbs = [row[0] for row in result]
+                except Exception:
+                    dbs = []
+                if not dbs:
+                    dbs = [user.upper()]
             else:
                 raise HTTPException(status_code=400, detail=f"Tipe tidak didukung: {type}")
         engine.dispose()
@@ -145,9 +168,16 @@ def list_tables(type: str, host: str = "localhost", port: int = 3306, user: str 
     try:
         engine = _get_engine(type, host, port, user, password, database)
         insp = sa_inspect(engine)
-        tables = insp.get_table_names()
+        if type in ("oracle", "oracle+oracledb"):
+            tables = insp.get_table_names(schema=database.upper()) or insp.get_table_names()
+        else:
+            tables = insp.get_table_names()
         engine.dispose()
         return {"tables": tables}
+    except OperationalError as e:
+        raise HTTPException(status_code=503, detail=f"Koneksi gagal: {e.orig or e}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
     except OperationalError as e:
         raise HTTPException(status_code=503, detail=f"Koneksi gagal: {e.orig or e}")
     except Exception as e:
@@ -247,13 +277,16 @@ def list_columns(
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
 
-    # 4. Relational SQL (MySQL / PostgreSQL)
+    # 4. Relational SQL (MySQL / PostgreSQL / Oracle)
     if not database or not table:
         raise HTTPException(status_code=400, detail="Parameter 'database' dan 'table' wajib diisi.")
     try:
         engine = _get_engine(type, host, port, user, password, database)
         insp = sa_inspect(engine)
-        col_infos = insp.get_columns(table)
+        if type in ("oracle", "oracle+oracledb"):
+            col_infos = insp.get_columns(table, schema=database.upper()) or insp.get_columns(table)
+        else:
+            col_infos = insp.get_columns(table)
         engine.dispose()
         return {
             "table": table,

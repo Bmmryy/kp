@@ -8,6 +8,7 @@ from app.connectors.base import (
 from app.connectors.csv import CSVDestination, CSVSource
 from app.connectors.json import JSONDestination, JSONSource
 from app.connectors.mysql import MySQLDestination, MySQLSource
+from app.connectors.oracle import OracleDestination, OracleSource
 from app.connectors.postgresql import PostgreSQLDestination, PostgreSQLSource
 from app.connectors.registry import ConnectorRegistry
 from app.connectors.sqlite import SQLiteDestination, SQLiteSource
@@ -38,6 +39,10 @@ def _register_builtin_connectors() -> None:
     ConnectorRegistry.register_source("postgres", PostgreSQLSource)
     ConnectorRegistry.register_destination("postgres", PostgreSQLDestination)
 
+    # Oracle
+    ConnectorRegistry.register_source("oracle", OracleSource)
+    ConnectorRegistry.register_destination("oracle", OracleDestination)
+
 
 # Trigger auto-registration
 _register_builtin_connectors()
@@ -57,4 +62,6 @@ __all__ = [
     "MySQLDestination",
     "PostgreSQLSource",
     "PostgreSQLDestination",
+    "OracleSource",
+    "OracleDestination",
 ]

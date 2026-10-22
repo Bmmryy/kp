@@ -108,7 +108,7 @@ class SchemaEvolutionVerifier:
 
                     if target_canonical != col.data_type:
                         needs_alteration = True
-                    elif dialect.lower() in ("mysql", "postgresql", "postgres"):
+                    elif dialect.lower() in ("mysql", "postgresql", "postgres", "oracle"):
                         # Check length / precision widening
                         # e.g. VARCHAR(50) vs incoming VARCHAR(255) or VARCHAR vs TEXT
                         m_exist = re.search(r"\((\d+)(?:,\s*(\d+))?\)", exist_type_str)
@@ -118,12 +118,12 @@ class SchemaEvolutionVerifier:
                             inc_len = int(m_incoming.group(1))
                             if inc_len > exist_len:
                                 needs_alteration = True
-                        elif m_exist and ("TEXT" in native_type.upper() or "LONGTEXT" in native_type.upper()):
+                        elif m_exist and ("TEXT" in native_type.upper() or "LONGTEXT" in native_type.upper() or "CLOB" in native_type.upper()):
                             needs_alteration = True
-                        elif "TEXT" in exist_type_str.upper() and m_incoming:
+                        elif ("TEXT" in exist_type_str.upper() or "CLOB" in exist_type_str.upper()) and m_incoming:
                             pass
 
-                    if needs_alteration and dialect.lower() in ("mysql", "postgresql", "postgres"):
+                    if needs_alteration and dialect.lower() in ("mysql", "postgresql", "postgres", "oracle"):
                         mod_cols.append(col)
                         mod_msg = (
                             f"[Verified Schema Evolution] Perubahan tipe/kapasitas data terdeteksi pada '{col.name}': "
@@ -134,6 +134,8 @@ class SchemaEvolutionVerifier:
 
                         if dialect.lower() == "mysql":
                             ddl = f"ALTER TABLE {table_quoted} MODIFY COLUMN {col_quoted} {native_type}"
+                        elif dialect.lower() == "oracle":
+                            ddl = f"ALTER TABLE {table_quoted} MODIFY {col_quoted} {native_type}"
                         else:
                             ddl = f"ALTER TABLE {table_quoted} ALTER COLUMN {col_quoted} TYPE {native_type}"
 
