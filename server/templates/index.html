@@ -283,10 +283,10 @@
           <div class="card-body">
             <div class="quick-grid">
 
-              <!-- Quick 1: CSV ke SQLite -->
+              <!-- Template 1: File ke Database -->
               <div class="quick-card">
                 <div class="quick-flow-icons">
-                  <div class="quick-flow-badge" title="CSV Document">
+                  <div class="quick-flow-badge" title="CSV / Excel Document">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                       <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                       <polyline points="14 2 14 8 20 8"></polyline>
@@ -298,7 +298,7 @@
                     <line x1="5" y1="12" x2="19" y2="12"></line>
                     <polyline points="12 5 19 12 12 19"></polyline>
                   </svg>
-                  <div class="quick-flow-badge" title="SQLite Database">
+                  <div class="quick-flow-badge" title="Database Staging / SQL">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                       <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
                       <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
@@ -306,41 +306,15 @@
                     </svg>
                   </div>
                 </div>
-                <div class="quick-title">CSV ke SQLite</div>
-                <div class="quick-desc">Import dataset file CSV lokal langsung ke database SQLite.</div>
-                <button class="btn btn-secondary btn-sm" onclick="presetCSVtoSQLite()">Gunakan Template</button>
+                <div class="quick-title">File ke Database Ingestion</div>
+                <div class="quick-desc">Import dataset file CSV atau Excel (.xlsx) langsung ke database relasional / staging.</div>
+                <button class="btn btn-secondary btn-sm" onclick="presetFileToDatabase()">Gunakan Template</button>
               </div>
 
-              <!-- Quick 2: SQLite ke JSON -->
+              <!-- Template 2: Database to Database Sync -->
               <div class="quick-card">
                 <div class="quick-flow-icons">
-                  <div class="quick-flow-badge" title="SQLite Database">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
-                      <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
-                      <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
-                    </svg>
-                  </div>
-                  <svg class="quick-flow-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                    <polyline points="12 5 19 12 12 19"></polyline>
-                  </svg>
-                  <div class="quick-flow-badge" title="JSON File">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <polyline points="16 18 22 12 16 6"></polyline>
-                      <polyline points="8 6 2 12 8 18"></polyline>
-                    </svg>
-                  </div>
-                </div>
-                <div class="quick-title">SQLite ke JSON</div>
-                <div class="quick-desc">Ekstraksi tabel SQLite ke dokumen JSON siap pakai.</div>
-                <button class="btn btn-secondary btn-sm" onclick="presetSQLiteToJSON()">Gunakan Template</button>
-              </div>
-
-              <!-- Quick 3: MySQL ke PostgreSQL -->
-              <div class="quick-card">
-                <div class="quick-flow-icons">
-                  <div class="quick-flow-badge" title="MySQL Server">
+                  <div class="quick-flow-badge" title="Source MySQL Database">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                       <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
                       <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
@@ -352,7 +326,7 @@
                     <line x1="5" y1="12" x2="19" y2="12"></line>
                     <polyline points="12 5 19 12 12 19"></polyline>
                   </svg>
-                  <div class="quick-flow-badge" title="PostgreSQL Server">
+                  <div class="quick-flow-badge" title="Target PostgreSQL Database">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                       <rect x="3" y="4" width="18" height="16" rx="3"></rect>
                       <line x1="3" y1="10" x2="21" y2="10"></line>
@@ -360,40 +334,115 @@
                     </svg>
                   </div>
                 </div>
-                <div class="quick-title">MySQL ke PostgreSQL</div>
-                <div class="quick-desc">Migrasi data relasional lintas engine database.</div>
-                <button class="btn btn-secondary btn-sm" onclick="presetMySQLtoPostgres()">Gunakan Template</button>
+                <div class="quick-title">Database to Database Sync</div>
+                <div class="quick-desc">Sinkronisasi data relasional antar database engine (MySQL ke PostgreSQL) dengan replikasi skema otomatis.</div>
+                <button class="btn btn-secondary btn-sm" onclick="presetDBtoDBSync()">Gunakan Template</button>
               </div>
 
-              <!-- Quick 4: Install Database RS (Featured) -->
-              <div class="quick-card featured">
+              <!-- Template 3: Database ke Excel (.xlsx) Export -->
+              <div class="quick-card">
                 <div class="quick-flow-icons">
-                  <div class="quick-flow-badge" style="color:var(--accent)" title="Hospital Database">
+                  <div class="quick-flow-badge" title="Relational Database">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-3"></path>
-                      <line x1="9" y1="9" x2="9" y2="9.01"></line>
-                      <line x1="9" y1="13" x2="9" y2="13.01"></line>
-                      <line x1="9" y1="17" x2="9" y2="17.01"></line>
+                      <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+                      <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+                      <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
                     </svg>
                   </div>
-                  <svg class="quick-flow-arrow" style="color:var(--accent)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <svg class="quick-flow-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="5" y1="12" x2="19" y2="12"></line>
                     <polyline points="12 5 19 12 12 19"></polyline>
                   </svg>
-                  <div class="quick-flow-badge" style="color:var(--accent)" title="MySQL 1-Click Install">
+                  <div class="quick-flow-badge" style="color:var(--success)" title="Excel Spreadsheet (.xlsx)">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                      <polyline points="14 2 14 8 20 8"></polyline>
+                      <rect x="8" y="12" width="8" height="6" rx="1"></rect>
+                      <line x1="8" y1="15" x2="16" y2="15"></line>
                     </svg>
                   </div>
                 </div>
-                <div class="quick-title">Install Database RS</div>
-                <div class="quick-desc">Import 14 tabel HospitalManagementSystem ke MySQL secara otomatis.</div>
-                <button class="btn btn-primary btn-sm" id="btn-install-db" onclick="installHospitalDatabase()">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                <div class="quick-title">Database ke Excel (.xlsx) Export</div>
+                <div class="quick-desc">Ekstraksi data kueri basis data langsung menjadi spreadsheet Excel (.xlsx) siap unduh untuk laporan.</div>
+                <button class="btn btn-secondary btn-sm" onclick="presetDBtoExcel()">Gunakan Template</button>
+              </div>
+
+              <!-- Template 4: Data Cleansing & Normalization -->
+              <div class="quick-card">
+                <div class="quick-flow-icons">
+                  <div class="quick-flow-badge" title="Raw Dataset">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                      <line x1="9" y1="13" x2="15" y2="13"></line>
+                      <line x1="9" y1="17" x2="13" y2="17"></line>
+                    </svg>
+                  </div>
+                  <svg class="quick-flow-arrow" style="color:var(--purple,#AF52DE)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                    <polyline points="12 5 19 12 12 19"></polyline>
                   </svg>
-                  Install Database
-                </button>
+                  <div class="quick-flow-badge" style="color:var(--purple,#AF52DE)" title="Clean Standardized Data">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+                    </svg>
+                  </div>
+                </div>
+                <div class="quick-title">Data Cleansing & Normalization</div>
+                <div class="quick-desc">Pembersihan data otomatis: standardisasi teks (Trim &amp; Capitalize) dan penanganan nilai kosong (Fill Null).</div>
+                <button class="btn btn-secondary btn-sm" onclick="presetDataCleansing()">Gunakan Template</button>
+              </div>
+
+              <!-- Template 5: JSON & Log Stream Ingestion -->
+              <div class="quick-card">
+                <div class="quick-flow-icons">
+                  <div class="quick-flow-badge" title="JSON / JSONL Document">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="16 18 22 12 16 6"></polyline>
+                      <polyline points="8 6 2 12 8 18"></polyline>
+                    </svg>
+                  </div>
+                  <svg class="quick-flow-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                    <polyline points="12 5 19 12 12 19"></polyline>
+                  </svg>
+                  <div class="quick-flow-badge" title="Analytics Database">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+                      <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+                      <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+                    </svg>
+                  </div>
+                </div>
+                <div class="quick-title">JSON &amp; Log Stream Ingestion</div>
+                <div class="quick-desc">Ingest dokumen JSON atau file log JSONL semi-terstruktur ke dalam database analitik siap kueri.</div>
+                <button class="btn btn-secondary btn-sm" onclick="presetJSONtoDB()">Gunakan Template</button>
+              </div>
+
+              <!-- Template 6: Enterprise Oracle Migration -->
+              <div class="quick-card">
+                <div class="quick-flow-icons">
+                  <div class="quick-flow-badge" title="Relational Database">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+                      <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+                      <line x1="6" y1="6" x2="6.01" y2="6"></line>
+                      <line x1="6" y1="18" x2="6.01" y2="18"></line>
+                    </svg>
+                  </div>
+                  <svg class="quick-flow-arrow" style="color:var(--error,#FF3B30)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                    <polyline points="12 5 19 12 12 19"></polyline>
+                  </svg>
+                  <div class="quick-flow-badge" style="color:var(--error,#FF3B30)" title="Oracle Database 23ai">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <polygon points="12 6 17 15 7 15"></polygon>
+                    </svg>
+                  </div>
+                </div>
+                <div class="quick-title">Enterprise Oracle Migration</div>
+                <div class="quick-desc">Migrasi data skala enterprise ke Oracle Database (Oracle 23ai / Cloud) dengan pemetaan tipe data otomatis.</div>
+                <button class="btn btn-secondary btn-sm" onclick="presetOracleSync()">Gunakan Template</button>
               </div>
 
             </div>
@@ -438,8 +487,8 @@
             </span>
             <div style="flex:1;max-width:440px">
               <input id="pipeline-name-input" class="form-control" type="text"
-                     placeholder="Nama Task / Project (contoh: Task 1: Sinkronisasi Pasien)"
-                     value="Task 1: Sinkronisasi Pasien"
+                     placeholder="Nama Task / Pipeline (contoh: Pipeline Integrasi Data)"
+                     value="Pipeline Integrasi Data"
                      style="font-weight:600;font-size:13.5px">
             </div>
           </div>
@@ -513,7 +562,7 @@
                 <div class="form-group">
                   <label class="form-label">Upload File</label>
                   <div class="upload-drop-zone" id="src-drop-zone">
-                    <input type="file" id="src-file-input" multiple accept=".csv,.json,.jsonl,.sqlite,.db"
+                    <input type="file" id="src-file-input" multiple accept=".csv,.xlsx,.xls,.json,.jsonl,.sqlite,.db"
                            onchange="handleSrcFileSelect(this.files)">
                     <div class="drop-icon">
                       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
@@ -1054,60 +1103,82 @@
 
 <script src="/static/app.js?v=20261022_apple"></script>
 <script>
-// ─── Quick-start presets ───────────────────────────────────────────────────
+// ─── Quick-start enterprise presets (General & Production-Ready) ───────────
 
-function applyPreset(src, srcOpts, dst, dstOpts, name) {
-  state.pipelineName = name;
-  state.selectedSource = src;
-  state.selectedDestination = dst;
-  showView("builder");
-
-  setTimeout(() => {
-    const nameInput = document.getElementById("pipeline-name-input");
-    if (nameInput) nameInput.value = name;
-    state.pipelineName = name;
-
-    renderConnectorChips("source", "source-chips", "source-fields");
-    renderConnectorChips("destination", "dest-chips", "dest-fields");
-    renderConnectorFields(src, "source-fields");
-    renderConnectorFields(dst, "dest-fields");
-
-    // Fill source values
-    for (const [k, v] of Object.entries(srcOpts)) {
-      const el = document.getElementById(`field-source-fields-${k}`);
-      if (el) el.value = v;
-    }
-    // Fill destination values
-    for (const [k, v] of Object.entries(dstOpts)) {
-      const el = document.getElementById(`field-dest-fields-${k}`);
-      if (el) el.value = v;
-    }
-  }, 50);
+function presetFileToDatabase() {
+  applyRunToPipelineBuilder({
+    pipeline_name: "Import File CSV ke Database Staging",
+    source_type: "csv",
+    source_options: { path: "data/source_data.csv" },
+    destination_type: "sqlite",
+    destination_options: { path: "output/staging.sqlite", table_name: "staging_data", load_mode: "replace" },
+    transformations: []
+  });
 }
 
-function presetCSVtoSQLite() {
-  applyPreset(
-    "csv",    { path: "examples/patients.csv" },
-    "sqlite", { path: "output/patients.sqlite", table_name: "patients" },
-    "CSV → SQLite Migration"
-  );
+function presetDBtoDBSync() {
+  applyRunToPipelineBuilder({
+    pipeline_name: "Sinkronisasi MySQL ke PostgreSQL",
+    source_type: "mysql",
+    source_options: { host: "localhost", port: 3306, database: "production_db", user: "root", password: "" },
+    destination_type: "postgresql",
+    destination_options: { host: "localhost", port: 5432, database: "analytics_dw", user: "postgres", password: "", load_mode: "sync" },
+    transformations: []
+  });
 }
 
-function presetSQLiteToJSON() {
-  applyPreset(
-    "sqlite", { path: "output/patients.sqlite", table_name: "patients" },
-    "json",   { path: "output/patients_export.json" },
-    "SQLite → JSON Export"
-  );
+function presetDBtoExcel() {
+  applyRunToPipelineBuilder({
+    pipeline_name: "Ekstraksi Database ke Spreadsheet Excel (.xlsx)",
+    source_type: "mysql",
+    source_options: { host: "localhost", port: 3306, database: "production_db", user: "root", password: "" },
+    destination_type: "excel",
+    destination_options: { path: "output/laporan_data.xlsx" },
+    transformations: []
+  });
 }
 
-function presetMySQLtoPostgres() {
-  applyPreset(
-    "mysql",      { host: "localhost", port: 3306, database: "HospitalManagementSystem", user: "root", password: "" },
-    "postgresql", { host: "localhost", port: 5432, database: "hospital_dw", user: "postgres", password: "postgrespwd" },
-    "MySQL → PostgreSQL Migration"
-  );
+function presetDataCleansing() {
+  applyRunToPipelineBuilder({
+    pipeline_name: "Pipeline Data Cleansing & Normalization",
+    source_type: "csv",
+    source_options: { path: "data/dataset.csv" },
+    destination_type: "csv",
+    destination_options: { path: "output/clean_dataset.csv" },
+    transformations: [
+      { type: "trim", params: {} },
+      { type: "fill_null", params: { value: "-" } },
+      { type: "capitalize", params: {} }
+    ]
+  });
 }
+
+function presetJSONtoDB() {
+  applyRunToPipelineBuilder({
+    pipeline_name: "Ingest Dokumen JSON ke Database Analitik",
+    source_type: "json",
+    source_options: { path: "data/dataset.json" },
+    destination_type: "sqlite",
+    destination_options: { path: "output/analytics.sqlite", table_name: "json_records", load_mode: "append" },
+    transformations: []
+  });
+}
+
+function presetOracleSync() {
+  applyRunToPipelineBuilder({
+    pipeline_name: "Migrasi Enterprise ke Oracle Database",
+    source_type: "mysql",
+    source_options: { host: "localhost", port: 3306, database: "production_db", user: "root", password: "" },
+    destination_type: "oracle",
+    destination_options: { host: "localhost", port: 1521, service_name: "FREEPDB1", database: "SYSTEM", user: "system", password: "", load_mode: "sync" },
+    transformations: []
+  });
+}
+
+// Aliases for backwards compatibility
+function presetCSVtoSQLite() { presetFileToDatabase(); }
+function presetSQLiteToJSON() { presetJSONtoDB(); }
+function presetMySQLtoPostgres() { presetDBtoDBSync(); }
 
 // Populate dashboard connector chips after init
 const _origInit = init;

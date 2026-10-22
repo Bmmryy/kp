@@ -32,43 +32,43 @@ const API = {
 // Connector field definitions (what options each connector needs)
 const CONNECTOR_FIELDS = {
   csv: [
-    { key: "path",      label: "File Path",  type: "text",   placeholder: "data/patients.csv", required: true },
-    { key: "delimiter", label: "Delimiter",  type: "text",   placeholder: ",",                 required: false },
-    { key: "encoding",  label: "Encoding",   type: "text",   placeholder: "utf-8",             required: false },
+    { key: "path",      label: "File Path",  type: "text",   placeholder: "data/dataset.csv", required: true },
+    { key: "delimiter", label: "Delimiter",  type: "text",   placeholder: ",",                required: false },
+    { key: "encoding",  label: "Encoding",   type: "text",   placeholder: "utf-8",            required: false },
   ],
   excel: [
-    { key: "path",       label: "File Path (.xlsx)", type: "text", placeholder: "output/data.xlsx", required: true },
-    { key: "sheet_name", label: "Sheet Name",        type: "text", placeholder: "Sheet1",           required: false },
+    { key: "path",       label: "File Path (.xlsx)", type: "text", placeholder: "output/report.xlsx", required: true },
+    { key: "sheet_name", label: "Sheet Name",        type: "text", placeholder: "Sheet1",             required: false },
   ],
   xlsx: [
-    { key: "path",       label: "File Path (.xlsx)", type: "text", placeholder: "output/data.xlsx", required: true },
-    { key: "sheet_name", label: "Sheet Name",        type: "text", placeholder: "Sheet1",           required: false },
+    { key: "path",       label: "File Path (.xlsx)", type: "text", placeholder: "output/report.xlsx", required: true },
+    { key: "sheet_name", label: "Sheet Name",        type: "text", placeholder: "Sheet1",             required: false },
   ],
   json: [
-    { key: "path", label: "File Path", type: "text", placeholder: "data/patients.json", required: true },
+    { key: "path", label: "File Path", type: "text", placeholder: "data/dataset.json", required: true },
   ],
   jsonl: [
-    { key: "path", label: "File Path (JSONL)", type: "text", placeholder: "data/patients.jsonl", required: true },
+    { key: "path", label: "File Path (JSONL)", type: "text", placeholder: "data/events.jsonl", required: true },
   ],
   sqlite: [
-    { key: "path",       label: "Database Path", type: "text", placeholder: "data/hospital.sqlite", required: true },
-    { key: "table_name", label: "Table Name",     type: "text", placeholder: "patients",             required: false },
+    { key: "path",       label: "Database Path", type: "text", placeholder: "data/database.sqlite", required: true },
+    { key: "table_name", label: "Table Name",     type: "text", placeholder: "analytics_data",       required: false },
   ],
   mysql: [
-    { key: "host",       label: "Host",     type: "text",     placeholder: "localhost",   required: true },
-    { key: "port",       label: "Port",     type: "number",   placeholder: "3306",        required: false },
-    { key: "database",   label: "Database", type: "text",     placeholder: "HospitalManagementSystem", required: true },
-    { key: "user",       label: "User",     type: "text",     placeholder: "root",        required: true },
+    { key: "host",       label: "Host",     type: "text",     placeholder: "localhost",     required: true },
+    { key: "port",       label: "Port",     type: "number",   placeholder: "3306",          required: false },
+    { key: "database",   label: "Database", type: "text",     placeholder: "production_db", required: true },
+    { key: "user",       label: "User",     type: "text",     placeholder: "root",          required: true },
     { key: "password",   label: "Password", type: "password", placeholder: "kosongkan jika tanpa password", required: false },
-    { key: "table_name", label: "Table",    type: "text",     placeholder: "Department",  required: false },
+    { key: "table_name", label: "Table",    type: "text",     placeholder: "users",         required: false },
   ],
   postgresql: [
     { key: "host",       label: "Host",     type: "text",     placeholder: "localhost",    required: true },
     { key: "port",       label: "Port",     type: "number",   placeholder: "5432",         required: false },
-    { key: "database",   label: "Database", type: "text",     placeholder: "hospital_dw",  required: true },
+    { key: "database",   label: "Database", type: "text",     placeholder: "analytics_dw", required: true },
     { key: "user",       label: "User",     type: "text",     placeholder: "postgres",     required: true },
     { key: "password",   label: "Password", type: "password", placeholder: "••••••••",     required: false },
-    { key: "table_name", label: "Table",    type: "text",     placeholder: "patients_dim", required: false },
+    { key: "table_name", label: "Table",    type: "text",     placeholder: "dim_users",    required: false },
   ],
   oracle: [
     { key: "host",         label: "Host",         type: "text",     placeholder: "localhost",   required: true },
@@ -77,7 +77,7 @@ const CONNECTOR_FIELDS = {
     { key: "database",     label: "Schema/Owner", type: "text",     placeholder: "SYSTEM",      required: true },
     { key: "user",         label: "User",         type: "text",     placeholder: "system",      required: true },
     { key: "password",     label: "Password",     type: "password", placeholder: "••••••••",    required: false },
-    { key: "table_name",   label: "Table",        type: "text",     placeholder: "HOSPITAL_PATIENTS", required: false },
+    { key: "table_name",   label: "Table",        type: "text",     placeholder: "CUSTOMERS",   required: false },
   ],
 };
 CONNECTOR_FIELDS.postgres = CONNECTOR_FIELDS.postgresql;
@@ -1068,11 +1068,11 @@ function showCreateScheduleModal(prefillRun = null, editJob = null) {
       <div class="sc-modal-grid">
         <div class="form-group full-width" style="margin:0">
           <label class="form-label">Nama Jadwal</label>
-          <input class="form-control" id="sc-name" placeholder="Sinkronisasi Harian Pasien" style="width:100%;box-sizing:border-box">
+          <input class="form-control" id="sc-name" placeholder="Sinkronisasi Harian Data Produksi" style="width:100%;box-sizing:border-box">
         </div>
         <div class="form-group full-width" style="margin:0">
           <label class="form-label">Nama Pipeline</label>
-          <input class="form-control" id="sc-pipeline" placeholder="daily_sync" style="width:100%;box-sizing:border-box">
+          <input class="form-control" id="sc-pipeline" placeholder="daily_data_sync" style="width:100%;box-sizing:border-box">
         </div>
 
         <div class="form-group" style="margin:0">
@@ -1095,14 +1095,14 @@ function showCreateScheduleModal(prefillRun = null, editJob = null) {
             <input class="form-control" id="sc-src-user" type="text" placeholder="root">
             <input class="form-control" id="sc-src-pass" type="password" placeholder="password">
           </div>
-          <input class="form-control" id="sc-src-database" type="text" placeholder="Nama database (contoh: HospitalManagementSystem)" style="margin-bottom:6px;width:100%;box-sizing:border-box">
-          <input class="form-control" id="sc-src-table" type="text" placeholder="Nama tabel (contoh: Patients)" style="width:100%;box-sizing:border-box">
+          <input class="form-control" id="sc-src-database" type="text" placeholder="Nama database (contoh: production_db)" style="margin-bottom:6px;width:100%;box-sizing:border-box">
+          <input class="form-control" id="sc-src-table" type="text" placeholder="Nama tabel (contoh: users)" style="width:100%;box-sizing:border-box">
         </div>
 
         <!-- Source File fields (shown when file type selected) -->
         <div id="sc-src-file-fields" class="form-group full-width" style="margin:0">
           <label class="form-label">Path File Source</label>
-          <input class="form-control" id="sc-src-path" type="text" placeholder="data/patients.csv" style="width:100%;box-sizing:border-box">
+          <input class="form-control" id="sc-src-path" type="text" placeholder="data/dataset.csv" style="width:100%;box-sizing:border-box">
         </div>
 
         <!-- Destination SQL fields -->
@@ -1123,7 +1123,7 @@ function showCreateScheduleModal(prefillRun = null, editJob = null) {
         <!-- Destination File fields -->
         <div id="sc-dst-file-fields" class="form-group full-width" style="margin:0">
           <label class="form-label">Path File Output</label>
-          <input class="form-control" id="sc-dst-path" type="text" placeholder="output/patients_daily.csv" style="width:100%;box-sizing:border-box">
+          <input class="form-control" id="sc-dst-path" type="text" placeholder="output/daily_export.csv" style="width:100%;box-sizing:border-box">
         </div>
 
         <div class="form-group full-width" style="margin:0">
