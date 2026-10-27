@@ -10,73 +10,80 @@
 }
 
 /* -------------------------------------------------------------------
-   1. Design Tokens — Light Theme (Default)
+   1. Design Tokens — Light Theme (Default) — Golden #FFD16F Base
    ------------------------------------------------------------------- */
 :root,
 [data-theme="light"] {
-  /* Canvas & Surfaces */
-  --bg-canvas:        #F5F5F7;
-  --bg-subtle:        #FBFBFD;
-  --surface:          #FFFFFF;
-  --surface-subtle:   #F9F9FB;
-  --surface-hover:    #F2F2F7;
-  --surface-active:   #E5E5EA;
-  --surface-glass:    rgba(255, 255, 255, 0.82);
-  --surface-glass-topbar: rgba(245, 245, 247, 0.85);
+  /* Canvas & Surfaces — warm golden background with radial glow */
+  --bg-canvas:        #FFFFFF;
+  --bg-subtle:        #FFFFFF;
+  --surface:          rgba(255, 255, 255, 0.58);
+  --surface-subtle:   rgba(255, 248, 210, 0.55);
+  --surface-hover:    rgba(255, 209, 111, 0.20);
+  --surface-active:   rgba(255, 209, 111, 0.32);
+  --surface-glass:    rgba(255, 249, 225, 0.68);
+  --surface-glass-topbar: rgba(255, 246, 215, 0.82);
 
-  /* Typography Colors */
-  --text:             #1D1D1F;
-  --text-secondary:   #6E6E73;
-  --text-tertiary:    #86868B;
-  --text-quaternary:  #AEAEB2;
+  /* Typography Colors — warm dark tones */
+  --text:             #1A1200;
+  --text-secondary:   #6B5C2E;
+  --text-tertiary:    #9A8558;
+  --text-quaternary:  #C4AA79;
 
-  /* Borders */
-  --border:           #D2D2D7;
-  --border-subtle:    rgba(0, 0, 0, 0.06);
-  --border-strong:    rgba(0, 0, 0, 0.16);
-  --border-focus:     #007AFF;
+  /* Borders — golden tinted glass edges */
+  --border:           rgba(200, 155, 50, 0.28);
+  --border-subtle:    rgba(200, 155, 50, 0.12);
+  --border-strong:    rgba(180, 125, 20, 0.42);
+  --border-focus:     #C8860A;
 
-  /* Accents & Semantic Colors */
-  --accent:           #007AFF;
-  --accent-hover:     #0071E3;
-  --accent-active:    #005BB5;
-  --accent-tint:      rgba(0, 122, 255, 0.08);
-  --accent-tint-subtle: rgba(0, 122, 255, 0.04);
+  /* Accents & Semantic Colors — warm amber/gold primary */
+  --accent:           #B87500;
+  --accent-hover:     #A06400;
+  --accent-active:    #7D4E00;
+  --accent-tint:      rgba(184, 117, 0, 0.12);
+  --accent-tint-subtle: rgba(184, 117, 0, 0.06);
+
+  /* Brand Gold */
+  --gold:             #FFD16F;
+  --gold-dark:        #E6A800;
+  --gold-light:       #FFE9A8;
+  --gold-tint:        rgba(255, 209, 111, 0.40);
 
   --green:            #34C759;
-  --green-text:       #248A3D;
-  --green-tint:       rgba(52, 199, 89, 0.10);
+  --green-text:       #1A7A35;
+  --green-tint:       rgba(52, 199, 89, 0.12);
 
   --orange:           #FF9500;
-  --orange-text:      #B76E00;
-  --orange-tint:      rgba(255, 149, 0, 0.10);
+  --orange-text:      #8A4800;
+  --orange-tint:      rgba(255, 149, 0, 0.12);
 
   --red:              #FF3B30;
-  --red-text:         #D70015;
+  --red-text:         #C0001A;
   --red-tint:         rgba(255, 59, 48, 0.10);
 
   --purple:           #AF52DE;
-  --purple-text:      #8944AB;
+  --purple-text:      #7B2FA8;
   --purple-tint:      rgba(175, 82, 222, 0.10);
 
   --teal:             #30B0C7;
-  --teal-text:        #007D99;
+  --teal-text:        #006B80;
   --teal-tint:        rgba(48, 176, 199, 0.10);
 
   /* Geometry & Radii */
   --sidebar-w:        256px;
-  --radius-card:      16px;
-  --radius-btn:       10px;
+  --radius-card:      18px;
+  --radius-btn:       12px;
   --radius-input:     10px;
-  --radius-sm:        8px;
+  --radius-sm:        10px;
   --radius-pill:      9999px;
 
-  /* Ambient Shadows */
-  --shadow-subtle:    0 1px 3px rgba(0, 0, 0, 0.03), 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-card:      0 2px 8px -2px rgba(0, 0, 0, 0.04), 0 0 1px rgba(0, 0, 0, 0.08);
-  --shadow-hover:     0 8px 24px -4px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
-  --shadow-drawer:    0 -10px 32px rgba(0, 0, 0, 0.08), 0 -1px 3px rgba(0, 0, 0, 0.04);
-  --shadow-modal:     0 24px 64px rgba(0, 0, 0, 0.16), 0 4px 16px rgba(0, 0, 0, 0.08);
+  /* Liquid Glass Shadows — warm golden glow layered */
+  --shadow-subtle:    0 1px 4px rgba(184, 117, 0, 0.10), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-card:      0 4px 20px rgba(184, 117, 0, 0.12), 0 1px 0 rgba(255, 255, 255, 0.85) inset, 0 0 0 1px rgba(200, 155, 50, 0.18);
+  --shadow-hover:     0 14px 36px rgba(184, 117, 0, 0.20), 0 2px 8px rgba(184, 117, 0, 0.12), 0 1px 0 rgba(255, 255, 255, 0.92) inset;
+  --shadow-drawer:    0 -10px 32px rgba(184, 117, 0, 0.10), 0 -1px 3px rgba(184, 117, 0, 0.06);
+  --shadow-modal:     0 24px 64px rgba(184, 117, 0, 0.22), 0 4px 16px rgba(184, 117, 0, 0.12);
+  --shadow-glass:     0 8px 32px rgba(184, 117, 0, 0.18), 0 1px 0 rgba(255, 255, 255, 0.90) inset, 0 -1px 0 rgba(200, 155, 50, 0.22) inset;
 
   /* Typography Stack */
   --font:             -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
@@ -90,64 +97,79 @@
 }
 
 /* -------------------------------------------------------------------
-   2. Design Tokens — Dark Theme
+   2. Design Tokens — Dark Theme — #786FFF Violet/Indigo Base
    ------------------------------------------------------------------- */
 [data-theme="dark"] {
-  /* Canvas & Surfaces */
-  --bg-canvas:        #151516;
-  --bg-subtle:        #1C1C1E;
-  --surface:          #1C1C1E;
-  --surface-subtle:   #242426;
-  --surface-hover:    #2C2C2E;
-  --surface-active:   #3A3A3C;
-  --surface-glass:    rgba(28, 28, 30, 0.85);
-  --surface-glass-topbar: rgba(21, 21, 22, 0.85);
+  /* Canvas & Surfaces — deep violet-to-black */
+  --bg-canvas:        #0A0914;
+  --bg-subtle:        #0D0C1A;
+  --surface:          rgba(25, 22, 50, 0.70);
+  --surface-subtle:   rgba(30, 26, 60, 0.60);
+  --surface-hover:    rgba(120, 111, 255, 0.14);
+  --surface-active:   rgba(120, 111, 255, 0.24);
+  --surface-glass:    rgba(20, 17, 45, 0.72);
+  --surface-glass-topbar: rgba(15, 13, 35, 0.82);
 
   /* Typography Colors */
-  --text:             #F5F5F7;
-  --text-secondary:   #A1A1A6;
-  --text-tertiary:    #8E8E93;
-  --text-quaternary:  #636366;
+  --text:             #F0EEFF;
+  --text-secondary:   #A89FD8;
+  --text-tertiary:    #7B72B0;
+  --text-quaternary:  #524A80;
 
-  /* Borders */
-  --border:           #38383A;
-  --border-subtle:    rgba(255, 255, 255, 0.07);
-  --border-strong:    rgba(255, 255, 255, 0.15);
-  --border-focus:     #0A84FF;
+  /* Borders — violet glow edges */
+  --border:           rgba(120, 111, 255, 0.22);
+  --border-subtle:    rgba(120, 111, 255, 0.10);
+  --border-strong:    rgba(120, 111, 255, 0.38);
+  --border-focus:     #786FFF;
 
-  /* Accents & Semantic Colors */
-  --accent:           #0A84FF;
-  --accent-hover:     #409CFF;
-  --accent-active:    #0064D6;
-  --accent-tint:      rgba(10, 132, 255, 0.15);
-  --accent-tint-subtle: rgba(10, 132, 255, 0.08);
+  /* Accents & Semantic Colors — #786FFF violet primary */
+  --accent:           #786FFF;
+  --accent-hover:     #9488FF;
+  --accent-active:    #5A52D5;
+  --accent-tint:      rgba(120, 111, 255, 0.18);
+  --accent-tint-subtle: rgba(120, 111, 255, 0.09);
+
+  /* Brand Violet */
+  --violet:           #786FFF;
+  --violet-dark:      #5A52D5;
+  --violet-light:     #A89FFF;
+  --violet-tint:      rgba(120, 111, 255, 0.22);
 
   --green:            #30D158;
-  --green-text:       #30D158;
+  --green-text:       #4AE070;
   --green-tint:       rgba(48, 209, 88, 0.15);
 
-  --orange:           #FFD60A;
-  --orange-text:      #FFD60A;
-  --orange-tint:      rgba(255, 214, 10, 0.15);
+  --orange:           #FF9F0A;
+  --orange-text:      #FFB340;
+  --orange-tint:      rgba(255, 159, 10, 0.15);
 
   --red:              #FF453A;
-  --red-text:         #FF453A;
+  --red-text:         #FF6961;
   --red-tint:         rgba(255, 69, 58, 0.15);
 
   --purple:           #BF5AF2;
-  --purple-text:      #BF5AF2;
+  --purple-text:      #DA8FFF;
   --purple-tint:      rgba(191, 90, 242, 0.15);
 
   --teal:             #5AC8F5;
-  --teal-text:        #5AC8F5;
+  --teal-text:        #7DD8FF;
   --teal-tint:        rgba(90, 200, 245, 0.15);
 
-  /* Ambient Shadows (Dark Mode) */
-  --shadow-subtle:    0 1px 3px rgba(0, 0, 0, 0.4);
-  --shadow-card:      0 2px 12px rgba(0, 0, 0, 0.35), 0 0 1px rgba(255, 255, 255, 0.05);
-  --shadow-hover:     0 8px 28px rgba(0, 0, 0, 0.55), 0 1px 4px rgba(255, 255, 255, 0.08);
-  --shadow-drawer:    0 -10px 40px rgba(0, 0, 0, 0.6);
-  --shadow-modal:     0 24px 70px rgba(0, 0, 0, 0.7);
+  /* Geometry & Radii */
+  --sidebar-w:        256px;
+  --radius-card:      18px;
+  --radius-btn:       12px;
+  --radius-input:     10px;
+  --radius-sm:        10px;
+  --radius-pill:      9999px;
+
+  /* Liquid Glass Shadows — violet glow layered */
+  --shadow-subtle:    0 1px 4px rgba(120, 111, 255, 0.15), 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-card:      0 4px 20px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(120, 111, 255, 0.18), 0 1px 0 rgba(255, 255, 255, 0.06) inset;
+  --shadow-hover:     0 14px 40px rgba(120, 111, 255, 0.25), 0 4px 12px rgba(0, 0, 0, 0.5), 0 1px 0 rgba(255, 255, 255, 0.10) inset;
+  --shadow-drawer:    0 -10px 40px rgba(120, 111, 255, 0.15), 0 -1px 0 rgba(120, 111, 255, 0.20);
+  --shadow-modal:     0 24px 70px rgba(0, 0, 0, 0.8), 0 0 60px rgba(120, 111, 255, 0.20);
+  --shadow-glass:     0 8px 32px rgba(120, 111, 255, 0.20), 0 1px 0 rgba(255, 255, 255, 0.08) inset, 0 -1px 0 rgba(120, 111, 255, 0.20) inset;
 }
 
 /* -------------------------------------------------------------------
@@ -1624,4 +1646,789 @@ table tr:hover td {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* ===================================================================
+   LIGHT MODE — FIGMA SPEC — Golden #FFD16F → #F5F5F7
+   Sidebar: white solid | Main area: diagonal gradient
+   Cards/Buttons: rgba(240,240,240,0.3) liquid glass
+   =================================================================== */
+
+/* --- Layout & body: clean white base --- */
+[data-theme="light"] body,
+[data-theme="light"] .layout {
+  background: #F5F5F7 !important;
+  background-attachment: fixed !important;
+}
+
+/* --- Main content area: gradient #F5F5F7 → #FFD16F diagonal (Figma spec) --- */
+[data-theme="light"] .main {
+  background: linear-gradient(119.72deg, #F5F5F7 0%, #FFD16F 99.94%) !important;
+}
+
+/* --- Sidebar: pure white, no glass --- */
+[data-theme="light"] .sidebar {
+  background: #FFFFFF !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border-right: 1px solid #E5E5EA !important;
+  box-shadow: none !important;
+}
+
+/* --- Topbar: transparent (sits on gradient) --- */
+[data-theme="light"] .topbar {
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border-bottom: 1px solid rgba(210, 210, 215, 0.40) !important;
+  box-shadow: none !important;
+}
+
+/* --- Topbar status chip & icon button: Figma glass --- */
+[data-theme="light"] .topbar-status {
+  background: rgba(240, 240, 240, 0.30) !important;
+  box-shadow:
+    -27px 66px 29px rgba(145, 145, 145, 0.01),
+    -15px 37px 24px rgba(145, 145, 145, 0.03),
+    -7px 17px 18px rgba(145, 145, 145, 0.04),
+    -2px 4px 10px rgba(145, 145, 145, 0.05),
+    inset 0px -5px 4px rgba(255, 255, 255, 0.25),
+    inset 0px 4px 4px rgba(255, 255, 255, 0.25) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  border-radius: 20px !important;
+  border: none !important;
+  color: #1D1D1F !important;
+}
+
+[data-theme="light"] .topbar-btn {
+  background: rgba(240, 240, 240, 0.30) !important;
+  box-shadow:
+    -27px 66px 29px rgba(145, 145, 145, 0.01),
+    -15px 37px 24px rgba(145, 145, 145, 0.03),
+    -7px 17px 18px rgba(145, 145, 145, 0.04),
+    -2px 4px 10px rgba(145, 145, 145, 0.05),
+    inset 0px -5px 4px rgba(255, 255, 255, 0.25),
+    inset 0px 4px 4px rgba(255, 255, 255, 0.25) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  border-radius: 20px !important;
+  border: none !important;
+  color: #1D1D1F !important;
+}
+
+[data-theme="light"] .topbar-btn:hover {
+  background: rgba(240, 240, 240, 0.50) !important;
+  color: #000000 !important;
+}
+
+/* --- Logo icon: golden gradient --- */
+[data-theme="light"] .sidebar-logo .logo-icon {
+  background: linear-gradient(145deg, #FFD16F 0%, #C8860A 100%) !important;
+  box-shadow: 0 2px 12px rgba(200, 134, 10, 0.35) !important;
+  color: #fff !important;
+}
+
+/* --- Active nav item: Figma spec amber tint --- */
+[data-theme="light"] .nav-item.active {
+  background: rgba(239, 179, 28, 0.22) !important;
+  color: #EEC662 !important;
+  font-weight: 600 !important;
+  border-radius: 10px !important;
+  box-shadow: none !important;
+}
+
+[data-theme="light"] .nav-item.active .nav-icon {
+  color: #EEC662 !important;
+}
+
+[data-theme="light"] .nav-item:hover {
+  background: rgba(239, 179, 28, 0.12) !important;
+  color: #1D1D1F !important;
+}
+
+/* --- Sidebar footer: Figma solid golden --- */
+[data-theme="light"] .sidebar-footer {
+  background: #EFB421 !important;
+  border-top: 1px solid #EFB522 !important;
+  border-radius: 0 !important;
+}
+
+[data-theme="light"] .sidebar-footer .status-badge {
+  color: #FFFFFF !important;
+  font-weight: 600 !important;
+}
+
+/* --- Stat cards: Figma exact glass spec --- */
+[data-theme="light"] .stat-card {
+  background: rgba(240, 240, 240, 0.30) !important;
+  backdrop-filter: blur(12.5px) !important;
+  -webkit-backdrop-filter: blur(12.5px) !important;
+  border: none !important;
+  border-radius: 20px !important;
+  box-shadow:
+    -27px 66px 29px rgba(145, 145, 145, 0.01),
+    -15px 37px 24px rgba(145, 145, 145, 0.03),
+    -7px 17px 18px rgba(145, 145, 145, 0.04),
+    -2px 4px 10px rgba(145, 145, 145, 0.05) !important;
+}
+
+[data-theme="light"] .stat-card:hover {
+  background: rgba(240, 240, 240, 0.46) !important;
+  transform: translateY(-2px) !important;
+  box-shadow:
+    -27px 66px 29px rgba(145, 145, 145, 0.02),
+    -15px 37px 24px rgba(145, 145, 145, 0.05),
+    -7px 17px 18px rgba(145, 145, 145, 0.07),
+    -2px 4px 10px rgba(145, 145, 145, 0.09) !important;
+}
+
+/* --- Generic .card: Figma glass --- */
+[data-theme="light"] .card {
+  background: rgba(240, 240, 240, 0.30) !important;
+  backdrop-filter: blur(12.5px) !important;
+  -webkit-backdrop-filter: blur(12.5px) !important;
+  border: none !important;
+  border-radius: 20px !important;
+  box-shadow:
+    -27px 66px 29px rgba(145, 145, 145, 0.01),
+    -15px 37px 24px rgba(145, 145, 145, 0.03),
+    -7px 17px 18px rgba(145, 145, 145, 0.04),
+    -2px 4px 10px rgba(145, 145, 145, 0.05) !important;
+}
+
+[data-theme="light"] .card-header {
+  background: rgba(255, 255, 255, 0.18) !important;
+  border-bottom: 1px solid rgba(210, 210, 215, 0.25) !important;
+}
+
+/* --- Quick cards (Template cards): Figma exact yellow gradient glass --- */
+[data-theme="light"] .quick-card {
+  background: linear-gradient(180deg, rgba(255, 250, 220, 0.50) 0%, rgba(255, 241, 151, 0.50) 100%) !important;
+  backdrop-filter: blur(2px) !important;
+  -webkit-backdrop-filter: blur(2px) !important;
+  border: none !important;
+  border-radius: 20px !important;
+  box-shadow:
+    0px 11.3915px 22.3363px rgba(255, 227, 42, 0.19),
+    inset 0px -2px 1px rgba(255, 241, 151, 0.40) !important;
+}
+
+[data-theme="light"] .quick-card:hover {
+  background: linear-gradient(180deg, rgba(255, 250, 220, 0.72) 0%, rgba(255, 241, 151, 0.72) 100%) !important;
+  box-shadow:
+    0px 18px 32px rgba(255, 227, 42, 0.30),
+    inset 0px -2px 1px rgba(255, 241, 151, 0.60) !important;
+  transform: translateY(-2px) !important;
+}
+
+/* --- Quick flow badges: white with border (Figma) --- */
+[data-theme="light"] .quick-flow-badge {
+  background: #FFFFFF !important;
+  border: 1px solid #D2D2D7 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: none !important;
+}
+
+[data-theme="light"] .quick-card:hover .quick-flow-badge {
+  transform: scale(1.05) !important;
+  color: #B87500 !important;
+}
+
+/* --- "Gunakan Template" buttons: Figma glass --- */
+[data-theme="light"] .quick-card .btn {
+  background: rgba(240, 240, 240, 0.30) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  border: none !important;
+  border-radius: 20px !important;
+  color: #1D1D1F !important;
+  font-weight: 500 !important;
+  box-shadow:
+    -27px 66px 29px rgba(145, 145, 145, 0.01),
+    -15px 37px 24px rgba(145, 145, 145, 0.03),
+    -7px 17px 18px rgba(145, 145, 145, 0.04),
+    -2px 4px 10px rgba(145, 145, 145, 0.05),
+    inset 0px -5px 4px rgba(255, 255, 255, 0.25),
+    inset 0px 4px 4px rgba(255, 255, 255, 0.25) !important;
+}
+
+[data-theme="light"] .quick-card .btn:hover {
+  background: rgba(240, 240, 240, 0.52) !important;
+  color: #000000 !important;
+}
+
+/* --- Primary button: solid golden --- */
+[data-theme="light"] .btn-primary {
+  background: linear-gradient(160deg, #FFD16F 0%, #C8860A 100%) !important;
+  color: #4A2E00 !important;
+  font-weight: 600 !important;
+  border: 1px solid rgba(255, 255, 255, 0.30) !important;
+  border-radius: 12px !important;
+  box-shadow:
+    0 2px 12px rgba(200, 134, 10, 0.35),
+    inset 0px 1px 0px rgba(255, 255, 255, 0.40) !important;
+}
+
+[data-theme="light"] .btn-primary:hover {
+  background: linear-gradient(160deg, #FFD980 0%, #D99510 100%) !important;
+  box-shadow: 0 4px 18px rgba(200, 134, 10, 0.45), inset 0px 1px 0px rgba(255, 255, 255, 0.50) !important;
+}
+
+/* --- Secondary button: Figma glass --- */
+[data-theme="light"] .btn-secondary {
+  background: rgba(240, 240, 240, 0.30) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  border: none !important;
+  border-radius: 20px !important;
+  color: #1D1D1F !important;
+  box-shadow:
+    -2px 4px 10px rgba(145, 145, 145, 0.05),
+    inset 0px -5px 4px rgba(255, 255, 255, 0.25),
+    inset 0px 4px 4px rgba(255, 255, 255, 0.25) !important;
+}
+
+[data-theme="light"] .btn-secondary:hover {
+  background: rgba(240, 240, 240, 0.50) !important;
+  color: #000000 !important;
+}
+
+/* --- Pipeline panels: Figma glass --- */
+[data-theme="light"] .pipeline-panel {
+  background: rgba(240, 240, 240, 0.30) !important;
+  backdrop-filter: blur(12.5px) !important;
+  -webkit-backdrop-filter: blur(12.5px) !important;
+  border: none !important;
+  border-radius: 20px !important;
+  box-shadow:
+    -27px 66px 29px rgba(145, 145, 145, 0.01),
+    -15px 37px 24px rgba(145, 145, 145, 0.03),
+    -7px 17px 18px rgba(145, 145, 145, 0.04),
+    -2px 4px 10px rgba(145, 145, 145, 0.05) !important;
+}
+
+[data-theme="light"] .pipeline-panel-header {
+  background: rgba(255, 255, 255, 0.20) !important;
+  border-bottom: 1px solid rgba(210, 210, 215, 0.22) !important;
+}
+
+/* --- Task header bar: Figma glass --- */
+[data-theme="light"] .task-header-bar {
+  background: rgba(240, 240, 240, 0.30) !important;
+  backdrop-filter: blur(12.5px) !important;
+  -webkit-backdrop-filter: blur(12.5px) !important;
+  border: none !important;
+  border-radius: 20px !important;
+  box-shadow:
+    -27px 66px 29px rgba(145, 145, 145, 0.01),
+    -15px 37px 24px rgba(145, 145, 145, 0.03),
+    -7px 17px 18px rgba(145, 145, 145, 0.04),
+    -2px 4px 10px rgba(145, 145, 145, 0.05) !important;
+}
+
+/* --- Connector chip: glass --- */
+[data-theme="light"] .connector-chip {
+  background: rgba(240, 240, 240, 0.30) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  border: none !important;
+  color: #1D1D1F !important;
+  box-shadow: -2px 4px 10px rgba(145, 145, 145, 0.05), inset 0px 2px 2px rgba(255, 255, 255, 0.20) !important;
+}
+
+[data-theme="light"] .connector-chip:hover {
+  background: rgba(240, 240, 240, 0.52) !important;
+  color: #000000 !important;
+}
+
+/* --- Form controls --- */
+[data-theme="light"] .form-control,
+[data-theme="light"] .form-select {
+  background: rgba(255, 255, 255, 0.70) !important;
+  border: 1px solid rgba(210, 210, 215, 0.50) !important;
+  color: #1D1D1F !important;
+}
+
+[data-theme="light"] .form-control:focus,
+[data-theme="light"] .form-select:focus {
+  border-color: #C8860A !important;
+  box-shadow: 0 0 0 3px rgba(200, 134, 10, 0.15) !important;
+}
+
+/* --- Upload drop zone --- */
+[data-theme="light"] .upload-drop-zone {
+  background: rgba(255, 255, 255, 0.40) !important;
+  border-color: rgba(200, 155, 50, 0.30) !important;
+}
+
+[data-theme="light"] .upload-drop-zone:hover {
+  background: rgba(255, 241, 151, 0.20) !important;
+  border-color: rgba(200, 134, 10, 0.50) !important;
+}
+
+/* --- Progress drawer & log console --- */
+[data-theme="light"] .progress-drawer {
+  background: #FFFFFF !important;
+  border-top: 1px solid #D2D2D7 !important;
+  backdrop-filter: none !important;
+}
+
+[data-theme="light"] .drawer-header {
+  background: #F9F9FB !important;
+  border-bottom: 1px solid #E5E5EA !important;
+}
+
+/* --- Toast --- */
+[data-theme="light"] .toast {
+  background: rgba(255, 255, 255, 0.85) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(210, 210, 215, 0.40) !important;
+  box-shadow:
+    -2px 4px 10px rgba(145, 145, 145, 0.08),
+    inset 0px 2px 2px rgba(255, 255, 255, 0.50) !important;
+}
+
+/* --- Section & card icons: amber --- */
+[data-theme="light"] .section-icon,
+[data-theme="light"] .card-icon {
+  color: #B87500 !important;
+}
+
+/* --- Stat icon badge colors --- */
+[data-theme="light"] .stat-icon-badge.blue   { background: rgba(0, 122, 255, 0.08) !important; color: #007AFF !important; }
+[data-theme="light"] .stat-icon-badge.green  { background: rgba(52, 199, 89, 0.10) !important; color: #248A3D !important; }
+[data-theme="light"] .stat-icon-badge.red    { background: rgba(255, 59, 48, 0.10) !important; color: #D70015 !important; }
+[data-theme="light"] .stat-icon-badge.indigo { background: rgba(88, 86, 214, 0.12) !important; color: #5856D6 !important; }
+[data-theme="light"] .stat-icon-badge.teal   { background: rgba(48, 176, 199, 0.10) !important; color: #007D99 !important; }
+[data-theme="light"] .stat-icon-badge.gray   { background: rgba(142, 142, 147, 0.12) !important; color: #6E6E73 !important; }
+
+/* --- Table hover: subtle warm tint --- */
+[data-theme="light"] table tr:hover td {
+  background: rgba(255, 241, 151, 0.18) !important;
+}
+
+/* --- Transform rule & radio card backgrounds --- */
+[data-theme="light"] .transform-rule-item,
+[data-theme="light"] .radio-card,
+[data-theme="light"] .transform-card {
+  background: rgba(255, 255, 255, 0.45) !important;
+  border-color: rgba(210, 210, 215, 0.40) !important;
+}
+
+/* --- Verify button --- */
+[data-theme="light"] .verify-btn {
+  background: rgba(240, 240, 240, 0.30) !important;
+  border: 1px solid rgba(210, 210, 215, 0.50) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+}
+
+/* --- Metric box: glass --- */
+[data-theme="light"] .metric-box {
+  background: rgba(240, 240, 240, 0.30) !important;
+  border-color: rgba(210, 210, 215, 0.30) !important;
+}
+
+/* --- Stat value colors from Figma --- */
+[data-theme="light"] .stat-value {
+  color: #1D1D1F !important;
+}
+
+/* ===================================================================
+   DARK MODE — LIQUID GLASS — #786FFF Violet Theme
+   Background gradient: #786FFF → Black (deep radial violet)
+   =================================================================== */
+
+/* --- Background: deep violet-to-black radial gradient --- */
+[data-theme="dark"] body,
+[data-theme="dark"] .layout {
+  background: radial-gradient(ellipse 80% 55% at 30% 15%, rgba(120, 111, 255, 0.85) 0%, rgba(80, 68, 200, 0.55) 22%, rgba(30, 20, 80, 0.80) 45%, rgba(8, 5, 25, 1) 72%, #000000 100%) !important;
+  background-attachment: fixed !important;
+}
+
+[data-theme="dark"] .main {
+  background: transparent !important;
+  background: radial-gradient(ellipse 80% 55% at 30% 15%, rgba(120, 111, 255, 0.85) 0%, rgba(80, 68, 200, 0.55) 22%, rgba(30, 20, 80, 0.80) 45%, rgba(8, 5, 25, 1) 72%, #000000 100%) !important;
+  background-attachment: fixed !important;
+}
+
+/* --- Sidebar: deep violet glass --- */
+[data-theme="dark"] .sidebar {
+  background: rgba(15, 12, 38, 0.65) !important;
+  backdrop-filter: blur(36px) saturate(180%) brightness(1.10) !important;
+  -webkit-backdrop-filter: blur(36px) saturate(180%) brightness(1.10) !important;
+  border-right: 1px solid rgba(120, 111, 255, 0.22) !important;
+  box-shadow: 2px 0 24px rgba(120, 111, 255, 0.12) !important;
+}
+
+/* --- Topbar: dark violet glass --- */
+[data-theme="dark"] .topbar {
+  background: rgba(12, 9, 30, 0.72) !important;
+  backdrop-filter: blur(30px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(30px) saturate(180%) !important;
+  border-bottom: 1px solid rgba(120, 111, 255, 0.20) !important;
+  box-shadow: 0 1px 0 rgba(120, 111, 255, 0.10) inset !important;
+}
+
+/* --- Logo icon: violet gradient --- */
+[data-theme="dark"] .sidebar-logo .logo-icon {
+  background: linear-gradient(145deg, #786FFF 0%, #3D36B0 100%) !important;
+  box-shadow: 0 2px 16px rgba(120, 111, 255, 0.55) !important;
+  color: #fff !important;
+}
+
+/* --- Active nav item: violet glow highlight --- */
+[data-theme="dark"] .nav-item.active {
+  background: rgba(120, 111, 255, 0.22) !important;
+  color: #C4BEFF !important;
+  font-weight: 600 !important;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06) inset !important;
+}
+
+[data-theme="dark"] .nav-item.active .nav-icon {
+  color: #9488FF !important;
+}
+
+[data-theme="dark"] .nav-item:hover {
+  background: rgba(120, 111, 255, 0.14) !important;
+  color: #E8E4FF !important;
+}
+
+/* --- Sidebar footer: violet gradient strip --- */
+[data-theme="dark"] .sidebar-footer {
+  background: linear-gradient(135deg, rgba(120, 111, 255, 0.80) 0%, rgba(50, 40, 160, 0.90) 100%) !important;
+  border-top: 1px solid rgba(120, 111, 255, 0.30) !important;
+}
+
+[data-theme="dark"] .sidebar-footer .status-badge {
+  color: #E8E4FF !important;
+  font-weight: 600 !important;
+}
+
+/* --- Stat cards: violet glass --- */
+[data-theme="dark"] .stat-card {
+  background: rgba(20, 16, 50, 0.58) !important;
+  backdrop-filter: blur(24px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
+  border: 1px solid rgba(120, 111, 255, 0.20) !important;
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.50),
+    0 1px 0 rgba(255, 255, 255, 0.06) inset,
+    0 0 0 1px rgba(120, 111, 255, 0.14) !important;
+}
+
+[data-theme="dark"] .stat-card:hover {
+  background: rgba(30, 24, 70, 0.72) !important;
+  border-color: rgba(120, 111, 255, 0.40) !important;
+  box-shadow:
+    0 16px 44px rgba(120, 111, 255, 0.22),
+    0 4px 12px rgba(0, 0, 0, 0.50),
+    0 1px 0 rgba(255, 255, 255, 0.10) inset !important;
+  transform: translateY(-3px) !important;
+}
+
+/* --- Generic card: violet glass --- */
+[data-theme="dark"] .card {
+  background: rgba(18, 14, 44, 0.60) !important;
+  backdrop-filter: blur(28px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(160%) !important;
+  border: 1px solid rgba(120, 111, 255, 0.20) !important;
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.50),
+    0 1px 0 rgba(255, 255, 255, 0.06) inset !important;
+}
+
+[data-theme="dark"] .card-header {
+  background: rgba(120, 111, 255, 0.08) !important;
+  border-bottom: 1px solid rgba(120, 111, 255, 0.18) !important;
+}
+
+/* --- Quick cards (template): violet glass --- */
+[data-theme="dark"] .quick-card {
+  background: rgba(18, 14, 44, 0.55) !important;
+  backdrop-filter: blur(20px) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(150%) !important;
+  border: 1px solid rgba(120, 111, 255, 0.18) !important;
+  box-shadow:
+    0 4px 20px rgba(0, 0, 0, 0.45),
+    0 1px 0 rgba(255, 255, 255, 0.05) inset !important;
+}
+
+[data-theme="dark"] .quick-card:hover {
+  background: rgba(28, 22, 65, 0.75) !important;
+  border-color: rgba(120, 111, 255, 0.45) !important;
+  box-shadow:
+    0 16px 44px rgba(120, 111, 255, 0.22),
+    0 4px 12px rgba(0, 0, 0, 0.50),
+    0 1px 0 rgba(255, 255, 255, 0.10) inset !important;
+  transform: translateY(-3px) !important;
+}
+
+[data-theme="dark"] .quick-flow-badge {
+  background: rgba(120, 111, 255, 0.14) !important;
+  border: 1px solid rgba(120, 111, 255, 0.25) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  color: #A89FFF !important;
+}
+
+/* --- Primary button: violet liquid glass glow --- */
+[data-theme="dark"] .btn-primary {
+  background: linear-gradient(160deg, #9488FF 0%, #786FFF 40%, #5A52D5 100%) !important;
+  color: #FFFFFF !important;
+  font-weight: 600 !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  box-shadow:
+    0 2px 16px rgba(120, 111, 255, 0.50),
+    0 1px 0 rgba(255, 255, 255, 0.25) inset !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25) !important;
+}
+
+[data-theme="dark"] .btn-primary:hover {
+  background: linear-gradient(160deg, #A89FFF 0%, #9488FF 40%, #786FFF 100%) !important;
+  box-shadow:
+    0 6px 24px rgba(120, 111, 255, 0.65),
+    0 1px 0 rgba(255, 255, 255, 0.30) inset !important;
+}
+
+/* --- Secondary button: violet glass --- */
+[data-theme="dark"] .btn-secondary {
+  background: rgba(120, 111, 255, 0.12) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(120, 111, 255, 0.28) !important;
+  color: #C4BEFF !important;
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.30),
+    0 1px 0 rgba(255, 255, 255, 0.07) inset !important;
+}
+
+[data-theme="dark"] .btn-secondary:hover {
+  background: rgba(120, 111, 255, 0.22) !important;
+  border-color: rgba(120, 111, 255, 0.50) !important;
+  color: #E8E4FF !important;
+}
+
+/* --- Topbar buttons: violet glass --- */
+[data-theme="dark"] .topbar-btn {
+  background: rgba(120, 111, 255, 0.12) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(120, 111, 255, 0.24) !important;
+  color: #A89FFF !important;
+  box-shadow:
+    0 1px 6px rgba(0, 0, 0, 0.30),
+    0 1px 0 rgba(255, 255, 255, 0.06) inset !important;
+}
+
+[data-theme="dark"] .topbar-btn:hover {
+  background: rgba(120, 111, 255, 0.24) !important;
+  border-color: rgba(120, 111, 255, 0.50) !important;
+  color: #E8E4FF !important;
+}
+
+/* --- Topbar status chip: violet glass --- */
+[data-theme="dark"] .topbar-status {
+  background: rgba(120, 111, 255, 0.12) !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+  border: 1px solid rgba(120, 111, 255, 0.22) !important;
+  color: #A89FFF !important;
+}
+
+/* --- Pipeline panels: violet glass --- */
+[data-theme="dark"] .pipeline-panel {
+  background: rgba(18, 14, 44, 0.58) !important;
+  backdrop-filter: blur(22px) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(22px) saturate(150%) !important;
+  border: 1px solid rgba(120, 111, 255, 0.20) !important;
+  box-shadow:
+    0 4px 20px rgba(0, 0, 0, 0.45),
+    0 1px 0 rgba(255, 255, 255, 0.05) inset !important;
+}
+
+[data-theme="dark"] .pipeline-panel-header {
+  background: rgba(120, 111, 255, 0.08) !important;
+  border-bottom: 1px solid rgba(120, 111, 255, 0.16) !important;
+}
+
+/* --- Task header bar: violet glass --- */
+[data-theme="dark"] .task-header-bar {
+  background: rgba(18, 14, 44, 0.62) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(120, 111, 255, 0.20) !important;
+  box-shadow:
+    0 4px 20px rgba(0, 0, 0, 0.45),
+    0 1px 0 rgba(255, 255, 255, 0.06) inset !important;
+}
+
+/* --- Connector chip: violet glass --- */
+[data-theme="dark"] .connector-chip {
+  background: rgba(120, 111, 255, 0.10) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(120, 111, 255, 0.22) !important;
+  color: #A89FFF !important;
+}
+
+[data-theme="dark"] .connector-chip:hover {
+  border-color: rgba(120, 111, 255, 0.55) !important;
+  color: #E8E4FF !important;
+  background: rgba(120, 111, 255, 0.20) !important;
+}
+
+/* --- Form controls: violet tinted glass --- */
+[data-theme="dark"] .form-control,
+[data-theme="dark"] .form-select {
+  background: rgba(15, 11, 38, 0.65) !important;
+  border: 1px solid rgba(120, 111, 255, 0.24) !important;
+  color: #F0EEFF !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+}
+
+[data-theme="dark"] .form-control:focus,
+[data-theme="dark"] .form-select:focus {
+  border-color: #786FFF !important;
+  box-shadow: 0 0 0 3px rgba(120, 111, 255, 0.20) !important;
+}
+
+[data-theme="dark"] .form-control::placeholder {
+  color: #524A80 !important;
+}
+
+/* --- Progress drawer: violet glass --- */
+[data-theme="dark"] .progress-drawer {
+  background: rgba(12, 9, 30, 0.82) !important;
+  backdrop-filter: blur(28px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(160%) !important;
+  border-top: 1px solid rgba(120, 111, 255, 0.22) !important;
+}
+
+/* --- Toast: violet glass --- */
+[data-theme="dark"] .toast {
+  background: rgba(20, 16, 50, 0.85) !important;
+  backdrop-filter: blur(28px) !important;
+  -webkit-backdrop-filter: blur(28px) !important;
+  border: 1px solid rgba(120, 111, 255, 0.28) !important;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.60),
+    0 0 20px rgba(120, 111, 255, 0.18) !important;
+  color: #F0EEFF !important;
+}
+
+/* --- Section icon & card icon: violet --- */
+[data-theme="dark"] .section-icon,
+[data-theme="dark"] .card-icon {
+  color: #9488FF !important;
+}
+
+/* --- Stat icon badge in dark --- */
+[data-theme="dark"] .stat-icon-badge.blue {
+  background: rgba(120, 111, 255, 0.18) !important;
+  color: #9488FF !important;
+}
+
+/* --- Table rows hover: violet tint --- */
+[data-theme="dark"] table tr:hover td {
+  background: rgba(120, 111, 255, 0.10) !important;
+}
+
+/* --- Upload drop zone: violet glass --- */
+[data-theme="dark"] .upload-drop-zone {
+  background: rgba(15, 11, 38, 0.50) !important;
+  border-color: rgba(120, 111, 255, 0.30) !important;
+}
+
+[data-theme="dark"] .upload-drop-zone:hover {
+  background: rgba(120, 111, 255, 0.10) !important;
+  border-color: rgba(120, 111, 255, 0.55) !important;
+}
+
+/* --- Quick card buttons "Gunakan Template": violet glass --- */
+[data-theme="dark"] .quick-card .btn {
+  background: rgba(120, 111, 255, 0.14) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(120, 111, 255, 0.28) !important;
+  color: #C4BEFF !important;
+  font-weight: 600 !important;
+  box-shadow:
+    0 1px 8px rgba(0, 0, 0, 0.30),
+    0 1px 0 rgba(255, 255, 255, 0.06) inset !important;
+}
+
+[data-theme="dark"] .quick-card .btn:hover {
+  background: rgba(120, 111, 255, 0.28) !important;
+  border-color: rgba(120, 111, 255, 0.60) !important;
+  color: #E8E4FF !important;
+  box-shadow:
+    0 4px 18px rgba(120, 111, 255, 0.35),
+    0 1px 0 rgba(255, 255, 255, 0.10) inset !important;
+}
+
+/* --- Scrollbar: violet tint --- */
+[data-theme="dark"] ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-track {
+  background: rgba(120, 111, 255, 0.05);
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: rgba(120, 111, 255, 0.30);
+  border-radius: 3px;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(120, 111, 255, 0.55);
+}
+
+/* --- Progress bar fill: violet gradient --- */
+[data-theme="dark"] .progress-bar-fill {
+  background: linear-gradient(90deg, #786FFF 0%, #A89FFF 100%) !important;
+}
+
+/* --- Step dot active: violet --- */
+[data-theme="dark"] .step-dot.active {
+  background: #786FFF !important;
+  border-color: #786FFF !important;
+  box-shadow: 0 0 10px rgba(120, 111, 255, 0.55) !important;
+}
+
+/* --- Info banner: violet tint --- */
+[data-theme="dark"] .info-banner {
+  background: rgba(120, 111, 255, 0.12) !important;
+  border: 1px solid rgba(120, 111, 255, 0.25) !important;
+  color: #A89FFF !important;
+}
+
+/* --- Drawer header: dark violet glass --- */
+[data-theme="dark"] .drawer-header {
+  background: rgba(15, 12, 38, 0.70) !important;
+  border-bottom: 1px solid rgba(120, 111, 255, 0.18) !important;
+}
+
+/* --- Nav section label: violet muted --- */
+[data-theme="dark"] .nav-section-label {
+  color: #524A80 !important;
+}
+
+/* --- Pills in dark: violet tinted accents --- */
+[data-theme="dark"] .pill-running {
+  background: rgba(120, 111, 255, 0.18) !important;
+  color: #A89FFF !important;
+}
+
+/* --- Verify btn in dark: violet --- */
+[data-theme="dark"] .verify-btn:hover {
+  border-color: #786FFF !important;
+  color: #9488FF !important;
+  background: rgba(120, 111, 255, 0.10) !important;
 }
