@@ -101,6 +101,7 @@ def cast_value(
                     return True
                 elif val_lower in ("false", "f", "no", "n", "0"):
                     return False
+                raise ValueError(f"Invalid boolean string literal: '{value}'")
             return bool(value)
 
         elif target_type == DataType.DATE:

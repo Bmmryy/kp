@@ -35,6 +35,16 @@ class JoinTransformer(Transformer):
             if key is not None:
                 lookup.setdefault(str(key), []).append(r_row)
 
+        # Pre-calculate distinct right column names
+        all_right_cols: List[str] = []
+        if right_rows:
+            seen_r_cols = set()
+            for r in right_rows:
+                for k in r.keys():
+                    if k not in seen_r_cols:
+                        seen_r_cols.add(k)
+                        all_right_cols.append(k)
+
         merged_rows: List[Dict[str, Any]] = []
         for l_row in dataset.rows:
             l_key = l_row.get(left_on)
@@ -52,12 +62,11 @@ class JoinTransformer(Transformer):
             elif join_type == "left":
                 # Left join: preserve left row with None for right columns
                 combined = dict(l_row)
-                if right_rows:
-                    sample_right = right_rows[0]
-                    for k in sample_right.keys():
-                        if k != right_on:
-                            dest_key = f"{prefix_right}{k}" if prefix_right else k
-                            combined[dest_key] = None
+                for k in all_right_cols:
+                    if k == right_on and left_on == right_on:
+                        continue
+                    dest_key = f"{prefix_right}{k}" if prefix_right else k
+                    combined[dest_key] = None
                 merged_rows.append(combined)
 
         out_name = f"{dataset.schema_def.name}_joined"

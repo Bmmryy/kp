@@ -87,6 +87,23 @@ class PipelineRun:
         }
 
 
+def _safe_create_queue(loop: asyncio.AbstractEventLoop) -> asyncio.Queue:
+    """Buat asyncio.Queue terikat pada event loop target secara thread-safe."""
+    try:
+        if asyncio.get_running_loop() is loop:
+            return asyncio.Queue()
+    except RuntimeError:
+        pass
+
+    async def _make_q():
+        return asyncio.Queue()
+
+    try:
+        return asyncio.run_coroutine_threadsafe(_make_q(), loop).result(timeout=2)
+    except Exception:
+        return asyncio.Queue()
+
+
 class PipelineRunnerService:
     """Singleton service managing all pipeline runs."""
 
@@ -148,16 +165,7 @@ class PipelineRunnerService:
             transformations=transformations or [],
         )
         run._loop = loop
-        try:
-            run._event_queue = asyncio.Queue()
-        except RuntimeError:
-            # Jika dipanggil dari thread worker tanpa running loop aktif di thread tersebut
-            run._event_queue = asyncio.Queue(loop=loop) if hasattr(asyncio.Queue, '__init__') and 'loop' in asyncio.Queue.__init__.__code__.co_varnames else None
-            if run._event_queue is None:
-                # Untuk Python 3.10+, buat queue di dalam thread loop
-                future = asyncio.run_coroutine_threadsafe(asyncio.sleep(0), loop)
-                future.result(timeout=2)
-                run._event_queue = asyncio.Queue()
+        run._event_queue = _safe_create_queue(loop)
         self._runs[run_id] = run
 
         self._executor.submit(
@@ -203,7 +211,7 @@ class PipelineRunnerService:
             transformations=transformations or [],
         )
         run._loop = loop
-        run._event_queue = asyncio.Queue()
+        run._event_queue = _safe_create_queue(loop)
         self._runs[run_id] = run
 
         self._executor.submit(

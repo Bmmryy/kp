@@ -24,6 +24,7 @@ Usage in pipeline YAML::
 from __future__ import annotations
 
 from typing import Optional
+from urllib.parse import quote_plus
 
 from app.connectors.base import ConnectorConfig
 from app.connectors.sql_base import SQLBaseDestination, SQLBaseSource
@@ -48,8 +49,10 @@ class MySQLSource(SQLBaseSource):
         return "mysql"
 
     def _build_url(self) -> str:
+        user_quoted = quote_plus(self._user)
+        pw_quoted = f":{quote_plus(self._password)}" if self._password else ""
         return (
-            f"mysql+pymysql://{self._user}:{self._password}"
+            f"mysql+pymysql://{user_quoted}{pw_quoted}"
             f"@{self._host}:{self._port}/{self._database}"
             f"?charset={self._charset}"
         )
@@ -78,8 +81,10 @@ class MySQLDestination(SQLBaseDestination):
         return "mysql"
 
     def _build_url(self) -> str:
+        user_quoted = quote_plus(self._user)
+        pw_quoted = f":{quote_plus(self._password)}" if self._password else ""
         return (
-            f"mysql+pymysql://{self._user}:{self._password}"
+            f"mysql+pymysql://{user_quoted}{pw_quoted}"
             f"@{self._host}:{self._port}/{self._database}"
             f"?charset={self._charset}"
         )

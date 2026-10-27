@@ -99,7 +99,11 @@ class SchedulerService:
         if self._is_running or not self._loop:
             return
         self._is_running = True
-        self._task = self._loop.create_task(self._worker_loop())
+        coro = self._worker_loop()
+        task = self._loop.create_task(coro)
+        if task is None:
+            coro.close()
+        self._task = task
         logger.info("Scheduler service worker loop started.")
 
     def stop(self) -> None:
@@ -251,15 +255,17 @@ class SchedulerService:
             job.last_run_at = datetime.now()
             job.run_count += 1
             job.last_status = "triggered"
-            if job.is_enabled:
-                job.next_run_at = job.calculate_next_run()
             logger.info("Triggered schedule '%s' -> Run ID %s", job.name, run_id)
             return run_id
         except Exception as err:
+            job.last_run_at = datetime.now()
             job.last_status = "error"
             job.last_error = str(err)
             logger.exception("Failed to trigger schedule '%s': %s", job.name, err)
             return None
+        finally:
+            if job.is_enabled:
+                job.next_run_at = job.calculate_next_run()
 
     @staticmethod
     async def _async_wrap(fn):

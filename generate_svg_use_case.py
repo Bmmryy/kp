@@ -1,0 +1,284 @@
+#!/usr/bin/env python3
+"""
+Generate high-resolution SVG & PNG of the Use Case Diagram
+matching the ULM academic format.
+"""
+
+import os
+import subprocess
+
+SVG_PATH = "/Users/ghn/.gemini/antigravity/scratch/ngoding anjay/USE_CASE_DIAGRAM_SISTEM_INTEGRASI_DATA.svg"
+PNG_PATH = "/Users/ghn/.gemini/antigravity/scratch/ngoding anjay/USE_CASE_DIAGRAM_SISTEM_INTEGRASI_DATA.png"
+
+def generate_svg():
+    width = 1100
+    height = 2500
+
+    svg_content = f'''<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}" width="{width}" height="{height}">
+  <defs>
+    <!-- Arrowhead markers -->
+    <marker id="arrow-open" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1 L 9 5 L 0 9" fill="none" stroke="#1D1D1F" stroke-width="1.5" stroke-linecap="round"/>
+    </marker>
+  </defs>
+
+  <!-- Canvas Background -->
+  <rect x="0" y="0" width="{width}" height="{height}" fill="#FFFFFF"/>
+
+  <!-- System Boundary -->
+  <rect x="230" y="40" width="790" height="2380" fill="#FFFFFF" stroke="#1D1D1F" stroke-width="1.8"/>
+  <text x="625" y="75" font-family="Times New Roman" font-size="15" font-weight="bold" fill="#1D1D1F" text-anchor="middle" letter-spacing="0.5">SISTEM INTEGRASI DATA BERBASIS WEB</text>
+
+  <!-- ACTORS (Stick Figures) -->
+  <!-- Actor 1: Operator Data -->
+  <g id="actor_operator" transform="translate(60, 420)">
+    <!-- Head -->
+    <circle cx="35" cy="22" r="14" fill="#FFFFFF" stroke="#1D1D1F" stroke-width="1.8"/>
+    <!-- Body -->
+    <line x1="35" y1="36" x2="35" y2="82" stroke="#1D1D1F" stroke-width="1.8"/>
+    <!-- Arms -->
+    <line x1="8" y1="52" x2="62" y2="52" stroke="#1D1D1F" stroke-width="1.8"/>
+    <!-- Legs -->
+    <line x1="35" y1="82" x2="14" y2="128" stroke="#1D1D1F" stroke-width="1.8"/>
+    <line x1="35" y1="82" x2="56" y2="128" stroke="#1D1D1F" stroke-width="1.8"/>
+    <!-- Label -->
+    <text x="35" y="146" font-family="Times New Roman" font-size="13" font-weight="bold" fill="#1D1D1F" text-anchor="middle">Operator Data</text>
+  </g>
+
+  <!-- Actor 2: Administrator Sistem -->
+  <g id="actor_admin" transform="translate(60, 1420)">
+    <!-- Head -->
+    <circle cx="35" cy="22" r="14" fill="#FFFFFF" stroke="#1D1D1F" stroke-width="1.8"/>
+    <!-- Body -->
+    <line x1="35" y1="36" x2="35" y2="82" stroke="#1D1D1F" stroke-width="1.8"/>
+    <!-- Arms -->
+    <line x1="8" y1="52" x2="62" y2="52" stroke="#1D1D1F" stroke-width="1.8"/>
+    <!-- Legs -->
+    <line x1="35" y1="82" x2="14" y2="128" stroke="#1D1D1F" stroke-width="1.8"/>
+    <line x1="35" y1="82" x2="56" y2="128" stroke="#1D1D1F" stroke-width="1.8"/>
+    <!-- Label -->
+    <text x="35" y="146" font-family="Times New Roman" font-size="13" font-weight="bold" fill="#1D1D1F" text-anchor="middle">Administrator Sistem</text>
+  </g>
+
+  <!-- SOLID LINES FROM ACTORS TO USE CASES -->
+  <!-- Operator lines (start x=130, y=470) -->
+  <g stroke="#1D1D1F" stroke-width="1.3" fill="none">
+    <line x1="130" y1="460" x2="270" y2="115"/>  <!-- to UC1 -->
+    <line x1="130" y1="465" x2="270" y2="185"/>  <!-- to UC2 -->
+    <line x1="130" y1="472" x2="270" y2="396"/>  <!-- to UC3 -->
+    <line x1="130" y1="480" x2="270" y2="746"/>  <!-- to UC8 -->
+    <line x1="130" y1="490" x2="270" y2="1126"/> <!-- to UC14 -->
+    <line x1="130" y1="500" x2="270" y2="1466"/> <!-- to UC19 (Run Pipeline) -->
+    <line x1="130" y1="510" x2="270" y2="2005"/> <!-- to UC25 -->
+    <line x1="130" y1="520" x2="270" y2="2085"/> <!-- to UC26 -->
+
+    <!-- Admin lines (start x=130, y=1470) -->
+    <line x1="130" y1="1450" x2="270" y2="396"/>  <!-- to UC3 -->
+    <line x1="130" y1="1455" x2="270" y2="746"/>  <!-- to UC8 -->
+    <line x1="130" y1="1460" x2="270" y2="1126"/> <!-- to UC14 -->
+    <line x1="130" y1="1470" x2="270" y2="1466"/> <!-- to UC19 -->
+    <line x1="130" y1="1480" x2="270" y2="1786"/> <!-- to UC23 (Scheduler) -->
+    <line x1="130" y1="1490" x2="270" y2="2005"/> <!-- to UC25 -->
+    <line x1="130" y1="1500" x2="270" y2="2085"/> <!-- to UC26 -->
+  </g>
+
+  <!-- DASHED RELATION LINES (<<include>> and <<extend>>) -->
+  <g stroke="#1D1D1F" stroke-width="1.1" stroke-dasharray="4,4" fill="none">
+    <!-- Source extends (Sub -> Hub) -->
+    <line x1="640" y1="295" x2="510" y2="385" marker-end="url(#arrow-open)"/>
+    <line x1="640" y1="365" x2="510" y2="392" marker-end="url(#arrow-open)"/>
+    <!-- Source includes (Hub -> Sub) -->
+    <line x1="510" y1="400" x2="640" y2="434" marker-end="url(#arrow-open)"/>
+    <line x1="510" y1="408" x2="640" y2="499" marker-end="url(#arrow-open)"/>
+
+    <!-- Transform includes (Hub -> Sub) -->
+    <line x1="510" y1="735" x2="640" y2="604" marker-end="url(#arrow-open)"/>
+    <line x1="510" y1="740" x2="640" y2="669" marker-end="url(#arrow-open)"/>
+    <line x1="510" y1="746" x2="640" y2="734" marker-end="url(#arrow-open)"/>
+    <line x1="510" y1="752" x2="640" y2="799" marker-end="url(#arrow-open)"/>
+    <line x1="510" y1="758" x2="640" y2="864" marker-end="url(#arrow-open)"/>
+
+    <!-- Destination extends (Sub -> Hub) -->
+    <line x1="640" y1="995" x2="510" y2="1115" marker-end="url(#arrow-open)"/>
+    <line x1="640" y1="1065" x2="510" y2="1122" marker-end="url(#arrow-open)"/>
+    <!-- Destination includes (Hub -> Sub) -->
+    <line x1="510" y1="1130" x2="640" y2="1135" marker-end="url(#arrow-open)"/>
+    <line x1="510" y1="1138" x2="640" y2="1204" marker-end="url(#arrow-open)"/>
+
+    <!-- Run includes (Hub -> Sub) -->
+    <line x1="510" y1="1455" x2="640" y2="1394" marker-end="url(#arrow-open)"/>
+    <line x1="510" y1="1466" x2="640" y2="1459" marker-end="url(#arrow-open)"/>
+    <line x1="510" y1="1475" x2="640" y2="1524" marker-end="url(#arrow-open)"/>
+
+    <!-- Schedule include (Hub -> Sub) -->
+    <line x1="510" y1="1786" x2="640" y2="1785" marker-end="url(#arrow-open)"/>
+  </g>
+
+  <!-- LABELS ON DASHED ARROWS -->
+  <g font-family="Times New Roman" font-size="9" font-style="italic" fill="#1D1D1F" text-anchor="middle">
+    <!-- Source -->
+    <rect x="555" y="325" width="56" height="13" fill="#FFFFFF"/>
+    <text x="583" y="335">&lt;&lt;extend&gt;&gt;</text>
+    <rect x="555" y="365" width="56" height="13" fill="#FFFFFF"/>
+    <text x="583" y="375">&lt;&lt;extend&gt;&gt;</text>
+    <rect x="555" y="405" width="56" height="13" fill="#FFFFFF"/>
+    <text x="583" y="415">&lt;&lt;include&gt;&gt;</text>
+    <rect x="555" y="445" width="56" height="13" fill="#FFFFFF"/>
+    <text x="583" y="455">&lt;&lt;include&gt;&gt;</text>
+
+    <!-- Transform -->
+    <rect x="555" y="650" width="56" height="13" fill="#FFFFFF"/>
+    <text x="583" y="660">&lt;&lt;include&gt;&gt;</text>
+    <rect x="555" y="690" width="56" height="13" fill="#FFFFFF"/>
+    <text x="583" y="700">&lt;&lt;include&gt;&gt;</text>
+    <rect x="555" y="730" width="56" height="13" fill="#FFFFFF"/>
+    <text x="583" y="740">&lt;&lt;include&gt;&gt;</text>
+    <rect x="555" y="765" width="56" height="13" fill="#FFFFFF"/>
+    <text x="583" y="775">&lt;&lt;include&gt;&gt;</text>
+    <rect x="555" y="800" width="56" height="13" fill="#FFFFFF"/>
+    <text x="583" y="810">&lt;&lt;include&gt;&gt;</text>
+
+    <!-- Dest -->
+    <rect x="555" y="1040" width="56" height="13" fill="#FFFFFF"/>
+    <text x="583" y="1050">&lt;&lt;extend&gt;&gt;</text>
+    <rect x="555" y="1080" width="56" height="13" fill="#FFFFFF"/>
+    <text x="583" y="1090">&lt;&lt;extend&gt;&gt;</text>
+    <rect x="555" y="1120" width="56" height="13" fill="#FFFFFF"/>
+    <text x="583" y="1130">&lt;&lt;include&gt;&gt;</text>
+    <rect x="555" y="1160" width="56" height="13" fill="#FFFFFF"/>
+    <text x="583" y="1170">&lt;&lt;include&gt;&gt;</text>
+
+    <!-- Run -->
+    <rect x="555" y="1415" width="56" height="13" fill="#FFFFFF"/>
+    <text x="583" y="1425">&lt;&lt;include&gt;&gt;</text>
+    <rect x="555" y="1450" width="56" height="13" fill="#FFFFFF"/>
+    <text x="583" y="1460">&lt;&lt;include&gt;&gt;</text>
+    <rect x="555" y="1490" width="56" height="13" fill="#FFFFFF"/>
+    <text x="583" y="1500">&lt;&lt;include&gt;&gt;</text>
+
+    <!-- Schedule -->
+    <rect x="555" y="1775" width="56" height="13" fill="#FFFFFF"/>
+    <text x="583" y="1785">&lt;&lt;include&gt;&gt;</text>
+  </g>
+
+  <!-- OVALS (USE CASES) -->
+  <!-- Hubs (Left Column) -->
+  <g stroke="#1D1D1F" stroke-width="1.6" fill="#FFFFFF">
+    <!-- Top -->
+    <ellipse cx="390" cy="115" rx="120" ry="25"/>
+    <ellipse cx="390" cy="185" rx="120" ry="25"/>
+    <!-- Source -->
+    <ellipse cx="390" cy="396" rx="120" ry="26"/>
+    <!-- Transform -->
+    <ellipse cx="390" cy="746" rx="120" ry="26"/>
+    <!-- Dest -->
+    <ellipse cx="390" cy="1126" rx="120" ry="26"/>
+    <!-- Run -->
+    <ellipse cx="390" cy="1466" rx="120" ry="26"/>
+    <!-- Schedule -->
+    <ellipse cx="390" cy="1786" rx="120" ry="26"/>
+    <!-- History & Files -->
+    <ellipse cx="390" cy="2005" rx="120" ry="25"/>
+    <ellipse cx="390" cy="2085" rx="120" ry="25"/>
+  </g>
+
+  <!-- Hub Texts -->
+  <g font-family="Times New Roman" font-size="11.5" font-weight="bold" fill="#1D1D1F" text-anchor="middle">
+    <text x="390" y="119">Lihat Status Engine &amp; Metrik</text>
+    <text x="390" y="189">Pilih Template Pipeline Siap Pakai</text>
+    <text x="390" y="400">Konfigurasi Sumber Data</text>
+    <text x="390" y="742">Konfigurasi Transformasi</text>
+    <text x="390" y="756">&amp; Pemetaan Kolom</text>
+    <text x="390" y="1122">Konfigurasi Tujuan Data</text>
+    <text x="390" y="1136">&amp; Mode Muat</text>
+    <text x="390" y="1470">Eksekusi Pipeline Data</text>
+    <text x="390" y="1782">Kelola Penjadwalan Tugas</text>
+    <text x="390" y="1796">(Task Scheduler)</text>
+    <text x="390" y="2009">Lihat Riwayat Eksekusi &amp; Log</text>
+    <text x="390" y="2089">Kelola &amp; Unduh Berkas Data</text>
+  </g>
+
+  <!-- Subs (Right Column) -->
+  <g stroke="#1D1D1F" stroke-width="1.3" fill="#FFFFFF">
+    <!-- Source subs -->
+    <ellipse cx="775" cy="295" rx="135" ry="25"/>
+    <ellipse cx="775" cy="365" rx="135" ry="25"/>
+    <ellipse cx="775" cy="434" rx="135" ry="24"/>
+    <ellipse cx="775" cy="499" rx="135" ry="24"/>
+
+    <!-- Transform subs -->
+    <ellipse cx="775" cy="604" rx="135" ry="24"/>
+    <ellipse cx="775" cy="669" rx="135" ry="24"/>
+    <ellipse cx="775" cy="734" rx="135" ry="24"/>
+    <ellipse cx="775" cy="799" rx="135" ry="24"/>
+    <ellipse cx="775" cy="864" rx="135" ry="24"/>
+
+    <!-- Dest subs -->
+    <ellipse cx="775" cy="995" rx="135" ry="25"/>
+    <ellipse cx="775" cy="1065" rx="135" ry="25"/>
+    <ellipse cx="775" cy="1135" rx="135" ry="25"/>
+    <ellipse cx="775" cy="1204" rx="135" ry="24"/>
+
+    <!-- Run subs -->
+    <ellipse cx="775" cy="1394" rx="135" ry="24"/>
+    <ellipse cx="775" cy="1459" rx="135" ry="24"/>
+    <ellipse cx="775" cy="1524" rx="135" ry="24"/>
+
+    <!-- Schedule subs -->
+    <ellipse cx="775" cy="1785" rx="135" ry="25"/>
+  </g>
+
+  <!-- Sub Texts -->
+  <g font-family="Times New Roman" font-size="11" fill="#1D1D1F" text-anchor="middle">
+    <!-- Source -->
+    <text x="775" y="291">Upload Berkas Dokumen</text>
+    <text x="775" y="304" font-size="9.5" fill="#555555">(CSV, Excel, JSON, SQLite)</text>
+    <text x="775" y="361">Koneksi Basis Data Relasional</text>
+    <text x="775" y="374" font-size="9.5" fill="#555555">(MySQL, PostgreSQL, Oracle)</text>
+    <text x="775" y="438">Inspeksi Struktur Kolom Otomatis</text>
+    <text x="775" y="495">Override Tipe Kolom Data</text>
+    <text x="775" y="508" font-size="9.5" fill="#555555">(Type Casting)</text>
+
+    <!-- Transform -->
+    <text x="775" y="600">Pemetaan Kolom Sumber-Tujuan</text>
+    <text x="775" y="613" font-size="9.5" fill="#555555">(Aksi 1-ke-1 &amp; Ignore)</text>
+    <text x="775" y="665">Pembersihan &amp; Format Teks</text>
+    <text x="775" y="678" font-size="9.5" fill="#555555">(Trim &amp; Case Convert)</text>
+    <text x="775" y="730">Penanganan Nilai Kosong</text>
+    <text x="775" y="743" font-size="9.5" fill="#555555">(Fill Null &amp; Drop Null)</text>
+    <text x="775" y="795">Penyensoran Data Sensitif</text>
+    <text x="775" y="808" font-size="9.5" fill="#555555">(Masking Telepon / NIK)</text>
+    <text x="775" y="868">Penyaringan Baris Data (Filter)</text>
+
+    <!-- Dest -->
+    <text x="775" y="991">Format Berkas Ekspor Target</text>
+    <text x="775" y="1004" font-size="9.5" fill="#555555">(CSV, Excel .xlsx, SQLite, JSONL)</text>
+    <text x="775" y="1061">Basis Data Relasional Target</text>
+    <text x="775" y="1074" font-size="9.5" fill="#555555">(MySQL, PostgreSQL, Oracle)</text>
+    <text x="775" y="1131">Pemilihan Mode Muat Data</text>
+    <text x="775" y="1144" font-size="9.5" fill="#555555">(Sync, Append, Truncate, Replace)</text>
+    <text x="775" y="1200">Konfirmasi Peringatan</text>
+    <text x="775" y="1213" font-size="9.5" fill="#555555">Operasi Destruktif</text>
+
+    <!-- Run -->
+    <text x="775" y="1390">Verifikasi Evolusi Skema</text>
+    <text x="775" y="1403" font-size="9.5" fill="#555555">(ADD / DROP Column)</text>
+    <text x="775" y="1455">Pemantauan Progres Real-Time</text>
+    <text x="775" y="1468" font-size="9.5" fill="#555555">(SSE Stream 0-100%)</text>
+    <text x="775" y="1520">Unduh Berkas Hasil Langsung</text>
+    <text x="775" y="1533" font-size="9.5" fill="#555555">dari Progress Drawer</text>
+
+    <!-- Schedule -->
+    <text x="775" y="1781">Tambah Jadwal Cron Baru &amp;</text>
+    <text x="775" y="1794" font-size="9.5" fill="#555555">Picu Eksekusi Manual</text>
+  </g>
+
+</svg>
+'''
+    with open(SVG_PATH, "w", encoding="utf-8") as f:
+        f.write(svg_content)
+    print(f"SVG berhasil dibuat: {SVG_PATH}")
+
+if __name__ == "__main__":
+    generate_svg()

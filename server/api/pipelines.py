@@ -328,7 +328,9 @@ def download_file(path: str) -> FileResponse:
 def install_hospital_sql() -> Dict[str, Any]:
     """Install / re-import Hospital_Management_System.sql secara otomatis."""
     import subprocess
-    sql_path = Path("/tmp/hospital_v3.sql")
+    sql_path = Path("data/hospital_mysql.sql")
+    if not sql_path.exists():
+        sql_path = Path("/tmp/hospital_v3.sql")
     if not sql_path.exists():
         sql_path = Path("/Users/ghn/.gemini/antigravity/brain/1c06a422-44e4-4627-b23e-92f843b079bf/scratch/hospital_mysql.sql")
 
@@ -336,8 +338,18 @@ def install_hospital_sql() -> Dict[str, Any]:
         raise HTTPException(status_code=404, detail="File SQL konversi tidak ditemukan.")
 
     cmd = ["mysql", "-u", "root", "--force"]
-    with open(sql_path, "r", encoding="utf-8") as f:
-        res = subprocess.run(cmd, stdin=f, capture_output=True, text=True, timeout=120)
+    try:
+        with open(sql_path, "r", encoding="utf-8") as f:
+            res = subprocess.run(cmd, stdin=f, capture_output=True, text=True, timeout=120)
+        if res.returncode != 0:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Gagal mengimpor SQL: {res.stderr or res.stdout or 'Error eksekusi perintah mysql.'}"
+            )
+    except FileNotFoundError:
+        raise HTTPException(status_code=500, detail="Perintah 'mysql' CLI tidak ditemukan di sistem host.")
+    except subprocess.TimeoutExpired:
+        raise HTTPException(status_code=504, detail="Import SQL melebihi batas waktu (timeout 120s).")
 
     # Get row counts
     count_cmd = ["mysql", "-u", "root", "HospitalManagementSystem", "-e", "SHOW TABLES;"]

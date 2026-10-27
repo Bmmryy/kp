@@ -8,6 +8,7 @@ Menyediakan endpoint untuk:
 from __future__ import annotations
 
 from typing import Any, Dict, List
+from urllib.parse import quote_plus
 
 import sqlalchemy as sa
 from fastapi import APIRouter, HTTPException
@@ -24,18 +25,19 @@ router = APIRouter(prefix="/api/connector", tags=["connector"])
 
 def _build_url(db_type: str, host: str, port: int, user: str, password: str, database: str = "") -> str:
     """Build SQLAlchemy connection URL dari parameter koneksi."""
-    u = user.strip() if user else ""
-    pw = password.strip() if (password and db_type in ("oracle", "oracle+oracledb")) else (password or "")
+    u = quote_plus(user.strip()) if user else ""
+    raw_pw = password.strip() if (password and db_type in ("oracle", "oracle+oracledb")) else (password or "")
+    pw = f":{quote_plus(raw_pw)}" if raw_pw else ""
     if db_type in ("mysql", "mysql+pymysql"):
         db_part = f"/{database}" if database else ""
-        return f"mysql+pymysql://{u}:{pw}@{host}:{port}{db_part}?charset=utf8mb4"
+        return f"mysql+pymysql://{u}{pw}@{host}:{port}{db_part}?charset=utf8mb4"
     elif db_type in ("postgresql", "postgres", "postgresql+psycopg2"):
         db_part = f"/{database}" if database else "/postgres"
-        return f"postgresql+psycopg2://{u}:{pw}@{host}:{port}{db_part}"
+        return f"postgresql+psycopg2://{u}{pw}@{host}:{port}{db_part}"
     elif db_type in ("oracle", "oracle+oracledb"):
         # Untuk Oracle: database parameter = schema/user, service_name selalu FREEPDB1
         # Gunakan service_name tetap FREEPDB1 agar koneksi tidak putus saat ganti schema
-        return f"oracle+oracledb://{u}:{pw}@{host}:{port}/?service_name=FREEPDB1"
+        return f"oracle+oracledb://{u}{pw}@{host}:{port}/?service_name=FREEPDB1"
     else:
         raise ValueError(f"Tipe database tidak didukung: {db_type}")
 

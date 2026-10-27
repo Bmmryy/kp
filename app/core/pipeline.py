@@ -147,11 +147,12 @@ class Pipeline:
                 )
 
             if transformed_datasets:
-                for batch in transformed_datasets:
+                for idx, batch in enumerate(transformed_datasets):
+                    batch_mode = self.load_mode if idx == 0 else "append"
                     rows_loaded = self.destination.load(
                         dataset=batch,
                         table_name=self.destination_table,
-                        mode=self.load_mode,
+                        mode=batch_mode,
                     )
                     context.metrics.rows_loaded += rows_loaded
 
