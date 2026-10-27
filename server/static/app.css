@@ -228,22 +228,27 @@ html, body {
 
 /* Apple Squircle App Icon */
 .sidebar-logo .logo-icon {
-  width: 34px;
-  height: 34px;
-  background: linear-gradient(145deg, var(--accent) 0%, #0056B3 100%);
-  border-radius: 9px;
+  width: 38px;
+  height: 38px;
+  background: transparent;
+  border-radius: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #FFFFFF;
-  box-shadow: 0 2px 8px rgba(0, 122, 255, 0.28);
-  transition: transform 0.35s var(--ease-bounce), box-shadow 0.35s ease;
+  box-shadow: none;
   flex-shrink: 0;
 }
 
-.sidebar-logo .logo-mark:hover .logo-icon {
-  transform: scale(1.06) rotate(3deg);
-  box-shadow: 0 4px 14px rgba(0, 122, 255, 0.38);
+.sidebar-logo .logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transition: transform 0.35s var(--ease-bounce);
+  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.16));
+}
+
+.sidebar-logo .logo-mark:hover .logo-img {
+  transform: scale(1.08) rotate(3deg);
 }
 
 .sidebar-logo .logo-name {
@@ -1722,11 +1727,10 @@ table tr:hover td {
   color: #000000 !important;
 }
 
-/* --- Logo icon: golden gradient --- */
+/* --- Logo icon --- */
 [data-theme="light"] .sidebar-logo .logo-icon {
-  background: linear-gradient(145deg, #FFD16F 0%, #C8860A 100%) !important;
-  box-shadow: 0 2px 12px rgba(200, 134, 10, 0.35) !important;
-  color: #fff !important;
+  background: transparent !important;
+  box-shadow: none !important;
 }
 
 /* --- Active nav item: Figma spec amber tint --- */
@@ -2073,11 +2077,10 @@ table tr:hover td {
   box-shadow: 0 1px 0 rgba(120, 111, 255, 0.10) inset !important;
 }
 
-/* --- Logo icon: violet gradient --- */
+/* --- Logo icon --- */
 [data-theme="dark"] .sidebar-logo .logo-icon {
-  background: linear-gradient(145deg, #786FFF 0%, #3D36B0 100%) !important;
-  box-shadow: 0 2px 16px rgba(120, 111, 255, 0.55) !important;
-  color: #fff !important;
+  background: transparent !important;
+  box-shadow: none !important;
 }
 
 /* --- Active nav item: violet glow highlight --- */
