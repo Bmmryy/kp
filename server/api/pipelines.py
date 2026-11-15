@@ -50,9 +50,10 @@ class MultiRunRequest(BaseModel):
     transformations: List[Dict[str, Any]] = Field(default_factory=list)
 
 
-# Upload directory
+# Upload directory & constraints
 UPLOAD_DIR = Path("uploads")
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+MAX_UPLOAD_SIZE = 100 * 1024 * 1024  # 100 MB
 
 
 # ---------------------------------------------------------------------------
@@ -83,25 +84,27 @@ async def run_pipeline(request: Request, body: RunPipelineRequest) -> RunPipelin
 
 @router.post("/upload")
 async def upload_files(files: List[UploadFile] = File(...)) -> List[Dict[str, Any]]:
-    """Upload satu atau lebih file (CSV, JSON, JSONL, SQLite) ke direktori uploads/.
+    """Upload satu atau lebih file (CSV, Excel, JSON, JSONL, SQLite) ke direktori uploads/.
 
     Returns daftar {file_id, name, path, size} untuk dipakai sebagai source path.
     """
     results = []
     for f in files:
-        suffix = Path(f.filename or "upload").suffix or ".tmp"
-        # Buat nama unik dengan timestamp
+        safe_name = Path(f.filename or "upload").name
         import uuid as _uuid
         uid = _uuid.uuid4().hex[:8]
-        dest_name = f"{uid}_{f.filename}"
+        dest_name = f"{uid}_{safe_name}"
         dest_path = UPLOAD_DIR / dest_name
 
         content = await f.read()
+        if len(content) > MAX_UPLOAD_SIZE:
+            raise HTTPException(status_code=413, detail=f"Ukuran file '{safe_name}' melebihi batas maksimum 100MB.")
+
         dest_path.write_bytes(content)
 
         results.append({
             "file_id": uid,
-            "original_name": f.filename,
+            "original_name": safe_name,
             "saved_name": dest_name,
             "path": str(dest_path),
             "size_bytes": len(content),

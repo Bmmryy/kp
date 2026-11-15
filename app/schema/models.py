@@ -177,44 +177,69 @@ class Dataset(BaseModel):
             return cls(schema=TableSchema(name=name, columns=[]), rows=[])
 
         import re
+
+        def _detect_type(v: Any) -> Optional[DataType]:
+            if v is None:
+                return None
+            if isinstance(v, Decimal):
+                return DataType.DECIMAL
+            if isinstance(v, bool):
+                return DataType.BOOLEAN
+            if isinstance(v, int):
+                return DataType.INTEGER
+            if isinstance(v, float):
+                return DataType.FLOAT
+            if isinstance(v, datetime):
+                return DataType.DATETIME
+            if isinstance(v, date):
+                return DataType.DATE
+            if isinstance(v, (dict, list)):
+                return DataType.JSON
+            if isinstance(v, str):
+                s = v.strip()
+                if not s or s.lower() in ("null", "none", "nan"):
+                    return None
+                if s.lower() in ("true", "false"):
+                    return DataType.BOOLEAN
+                if re.match(r"^-?\d+\.\d{3,}$", s):
+                    return DataType.DECIMAL
+                if re.match(r"^-?\d+\.\d+$", s):
+                    return DataType.FLOAT
+                if re.match(r"^-?\d+$", s):
+                    return DataType.INTEGER
+                if re.match(r"^\d{4}-\d{2}-\d{2}$", s):
+                    return DataType.DATE
+                if re.match(r"^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}", s):
+                    return DataType.DATETIME
+                return DataType.STRING
+            return DataType.STRING
+
+        def _widen_type(curr: DataType, new_t: DataType) -> DataType:
+            if curr == new_t:
+                return curr
+            if curr == DataType.STRING or new_t == DataType.STRING:
+                return DataType.STRING
+            types = {curr, new_t}
+            if types <= {DataType.INTEGER, DataType.FLOAT}:
+                return DataType.FLOAT
+            if types <= {DataType.INTEGER, DataType.DECIMAL}:
+                return DataType.DECIMAL
+            if types <= {DataType.FLOAT, DataType.DECIMAL}:
+                return DataType.DECIMAL
+            if types <= {DataType.DATE, DataType.DATETIME}:
+                return DataType.DATETIME
+            return DataType.STRING
+
         all_keys: Dict[str, DataType] = {}
         for r in rows[:100]:  # inspect up to 100 rows
             for k, v in r.items():
-                if k not in all_keys or all_keys[k] == DataType.STRING:
-                    if v is None:
-                        continue
-                    if isinstance(v, Decimal):
-                        all_keys[k] = DataType.DECIMAL
-                    elif isinstance(v, bool):
-                        all_keys[k] = DataType.BOOLEAN
-                    elif isinstance(v, int):
-                        all_keys[k] = DataType.INTEGER
-                    elif isinstance(v, float):
-                        all_keys[k] = DataType.FLOAT
-                    elif isinstance(v, (datetime,)):
-                        all_keys[k] = DataType.DATETIME
-                    elif isinstance(v, (date,)):
-                        all_keys[k] = DataType.DATE
-                    elif isinstance(v, (dict, list)):
-                        all_keys[k] = DataType.JSON
-                    elif isinstance(v, str):
-                        s = v.strip()
-                        if s.lower() in ("true", "false"):
-                            all_keys[k] = DataType.BOOLEAN
-                        elif re.match(r"^-?\d+\.\d{3,}$", s):  # e.g. 1250.5055 with high precision
-                            all_keys[k] = DataType.DECIMAL
-                        elif re.match(r"^-?\d+\.\d+$", s):
-                            all_keys[k] = DataType.FLOAT
-                        elif re.match(r"^-?\d+$", s):
-                            all_keys[k] = DataType.INTEGER
-                        elif re.match(r"^\d{4}-\d{2}-\d{2}$", s):
-                            all_keys[k] = DataType.DATE
-                        elif re.match(r"^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}", s):
-                            all_keys[k] = DataType.DATETIME
-                        else:
-                            all_keys[k] = DataType.STRING
-                    else:
-                        all_keys[k] = DataType.STRING
+                inferred = _detect_type(v)
+                if inferred is None:
+                    continue
+                if k not in all_keys:
+                    all_keys[k] = inferred
+                else:
+                    all_keys[k] = _widen_type(all_keys[k], inferred)
 
         cols = [
             ColumnDefinition(

@@ -298,6 +298,33 @@ def list_columns(
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
 
+    # 3.5. Excel File (XLSX / XLS)
+    if type in ("excel", "xlsx", "xls"):
+        from pathlib import Path as _Path
+        fpath = _Path(path)
+        if not fpath.exists():
+            raise HTTPException(status_code=404, detail=f"File '{path}' tidak ditemukan.")
+        try:
+            from app.connectors.base import ConnectorConfig
+            from app.connectors.excel import ExcelSource
+            cfg = ConnectorConfig(name="tmp", connector_type="excel", options={"path": str(fpath)})
+            src = ExcelSource(cfg)
+            schema = src.get_schema(fpath.stem)
+            return {
+                "table": schema.name,
+                "columns": [
+                    {
+                        "name": col.name,
+                        "type": col.data_type.value,
+                        "nullable": col.nullable,
+                        "primary_key": col.primary_key,
+                    }
+                    for col in schema.columns
+                ],
+            }
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
     # 4. Relational SQL (MySQL / PostgreSQL / Oracle)
     if not database or not table:
         raise HTTPException(status_code=400, detail="Parameter 'database' dan 'table' wajib diisi.")

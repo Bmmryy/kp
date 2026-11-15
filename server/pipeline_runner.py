@@ -285,6 +285,17 @@ class PipelineRunnerService:
                         built_transformers.append(TransformationRegistry.create(t_cfg))
                         logger.info("Attached transformer '%s' to pipeline '%s'", t_type, run.pipeline_name)
 
+            # Auto-inject cast_columns if column_types override is provided
+            column_types = source_options.get("column_types")
+            if column_types and isinstance(column_types, dict):
+                import app.transformations  # noqa: F401
+                from app.transformations.base import TransformerConfig as TC
+                from app.transformations.registry import TransformationRegistry as TR
+                cast_cfg = TC(type="cast_columns", params={"column_types": column_types})
+                cast_transformer = TR.create(cast_cfg)
+                built_transformers = [cast_transformer] + built_transformers
+                logger.info("Attached cast_columns to single-source pipeline '%s': %s", run.pipeline_name, column_types)
+
             pipeline = Pipeline(
                 name=run.pipeline_name,
                 source=source,
@@ -402,7 +413,7 @@ class PipelineRunnerService:
                 # Inject cast_columns transformer if column_types override provided by user
                 source_transformers = list(built_transformers)
                 column_types = src_opts.get("column_types")
-                if column_types and isinstance(column_types, dict) and destination_type not in ("csv", "json", "jsonl", "sqlite"):
+                if column_types and isinstance(column_types, dict):
                     from app.transformations.base import TransformerConfig as TC
                     from app.transformations.registry import TransformationRegistry as TR
                     cast_cfg = TC(type="cast_columns", params={"column_types": column_types})

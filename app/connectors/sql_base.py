@@ -498,23 +498,24 @@ class SQLBaseDestination(DestinationConnector):
             return 0
 
         q_cols = ", ".join(self._quote_identifier(c) for c in cols)
-        placeholders = ", ".join(f":{c}" for c in cols)
+        # Use indexed param names :p_0, :p_1, ... to safely bind columns with spaces/special characters
+        param_names = [f"p_{i}" for i in range(len(cols))]
+        placeholders = ", ".join(f":{p}" for p in param_names)
         insert_sql = f"INSERT INTO {qt} ({q_cols}) VALUES ({placeholders})"
 
-        # Ensure each row only contains keys for our columns (handle partial rows)
-        col_set = set(cols)
-        col_set_lower = {c.lower(): c for c in cols}
+        # Ensure each row maps cleanly to indexed parameter keys (handle partial rows)
         sanitized_rows = []
         for row in dataset.rows:
             new_row = {}
-            for c in cols:
+            for i, c in enumerate(cols):
+                param_key = param_names[i]
                 # Try exact match first, then case-insensitive
                 if c in row:
-                    new_row[c] = row[c]
+                    new_row[param_key] = row[c]
                 else:
                     lower_key = c.lower()
                     found = next((v for k, v in row.items() if k.lower() == lower_key), None)
-                    new_row[c] = found
+                    new_row[param_key] = found
             sanitized_rows.append(new_row)
 
         logger.debug(

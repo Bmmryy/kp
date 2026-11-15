@@ -197,12 +197,18 @@ class AddColumnTransformer(Transformer):
         col_name = self.config.params.get("name")
         if not col_name:
             return input_schema
+        type_str = self.config.params.get("data_type", "string")
+        try:
+            canonical_type = DataType.from_str(type_str)
+        except Exception:
+            canonical_type = DataType.STRING
+
         new_schema = input_schema.model_copy(deep=True)
         if not new_schema.has_column(col_name):
             new_schema.add_column(
                 ColumnDefinition(
                     name=col_name,
-                    data_type=DataType.STRING,
+                    data_type=canonical_type,
                     nullable=True,
                 )
             )

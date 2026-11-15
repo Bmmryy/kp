@@ -1,19 +1,37 @@
 version: "3.9"
 
-# FlowETL Development Database Stack
-#
-# Services:
-#   mysql    — MySQL 8.0 on port 3306   (database: hospital_db)
-#   postgres — PostgreSQL 16 on port 5432 (database: hospital_dw)
+# FlowETL Stack: Web Application + PostgreSQL + MySQL
 #
 # Usage:
-#   docker compose up -d          # start both services
+#   docker compose up -d          # start all services including app
 #   docker compose ps             # check health status
 #   docker compose down -v        # stop and remove volumes
-#
-# Credentials match .env.example defaults. Override via environment variables.
 
 services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: flowetl_app
+    restart: unless-stopped
+    ports:
+      - "${FLOWETL_PORT:-8000}:8000"
+    environment:
+      - FLOWETL_ENV=production
+      - FLOWETL_HOST=0.0.0.0
+      - FLOWETL_PORT=8000
+      - MYSQL_HOST=mysql
+      - POSTGRES_HOST=postgres
+    volumes:
+      - ./uploads:/app/uploads
+      - ./data:/app/data
+      - ./output:/app/output
+    depends_on:
+      mysql:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
   mysql:
     image: mysql:8.0
     container_name: flowetl_mysql
